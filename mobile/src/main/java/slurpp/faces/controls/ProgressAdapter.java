@@ -1,6 +1,7 @@
 package slurpp.faces.controls;
 
 import android.content.Context;
+import android.support.v7.graphics.Palette;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,7 +10,6 @@ import android.widget.BaseAdapter;
 import java.util.ArrayList;
 
 import slurpp.faces.R;
-import slurpp.faces.objects.ProgressItem;
 import slurpp.faces.objects.SwatchView;
 
 /**
@@ -17,27 +17,25 @@ import slurpp.faces.objects.SwatchView;
  */
 public class ProgressAdapter extends BaseAdapter {
 
-    private ArrayList<ProgressItem> mPreferences;
+    private ArrayList<Palette.Swatch> mPreferences;
     private Context mContext;
     private int currentIndex=0;
 
     public ProgressAdapter(Context context){
         mContext = context;
-        mPreferences = new ArrayList<ProgressItem>();
-        mPreferences.add(new ProgressItem(mContext,R.string.info_background_colour,true));
-        mPreferences.add(new ProgressItem(mContext,R.string.info_text_colour,false));
-        mPreferences.add(new ProgressItem(mContext,R.string.info_line_colour,false));
+        mPreferences = new ArrayList<>();
     }
 
 
-    public ProgressAdapter(Context context, ArrayList<ProgressItem> values){
+    public ProgressAdapter(Context context, ArrayList<Palette.Swatch> values){
         mContext = context;
         setSwatches(values);
     }
 
 
 
-    public void setSwatches(ArrayList<ProgressItem> values){
+
+    public void setSwatches(ArrayList<Palette.Swatch> values){
         mPreferences = values;
     }
 
@@ -52,6 +50,11 @@ public class ProgressAdapter extends BaseAdapter {
         return mPreferences.get(position);
     }
 
+
+    public void setSwatch(int position, Palette.Swatch object){
+        mPreferences.set(position,object);
+    }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -62,16 +65,9 @@ public class ProgressAdapter extends BaseAdapter {
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View gridItem = (convertView == null)?inflater.inflate(R.layout.swatchgridview, null):convertView;
         SwatchView swatch = (SwatchView) gridItem.findViewById(R.id.grid_swatch);
-        ProgressItem progressItem = mPreferences.get(position);
-        if(position == currentIndex){
-            swatch.setStrokeResource(R.color.green);
-            swatch.setFillColor(progressItem.color());
-        }else{
-            swatch.setFillResource(R.color.grey);
-            if(progressItem.color()!=-2)
-                swatch.setFillColor(progressItem.color());
-            swatch.setStrokeColor(-2);
-        }
+        Palette.Swatch progressItem = mPreferences.get(position);
+        swatch.setStrokeResource(progressItem.getBodyTextColor());//todo change this back to white
+        swatch.setFillColor(progressItem.getRgb());
         return gridItem;
     }
 
@@ -81,9 +77,8 @@ public class ProgressAdapter extends BaseAdapter {
         }
     }
 
-    public int currentPreference(){
-        return mPreferences.get(currentIndex).text();
-    }
+
+
 
     public int getCurrentIndex(){
         return currentIndex;

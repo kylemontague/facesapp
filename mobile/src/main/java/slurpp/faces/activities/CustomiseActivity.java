@@ -13,7 +13,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.HorizontalScrollView;
@@ -30,8 +29,6 @@ import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.ProgressAdapter;
 import slurpp.faces.controls.SwatchAdapter;
-import slurpp.faces.objects.ProgressItem;
-import slurpp.faces.objects.SwatchView;
 import slurpp.faces.utils.BlurBuilder;
 
 
@@ -109,11 +106,12 @@ public class CustomiseActivity extends FragmentActivity{
     private void setup(){
         faceButton = (Button) findViewById(R.id.TakePhoto);
         faceButton.setTypeface(Font.get(this, Font.QUICKSAND_BOLD));
-        faceButton.setVisibility(View.INVISIBLE);
+        faceButton.setText(R.string.save);
+        faceButton.setVisibility(View.VISIBLE);
         faceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                setColour();
+                saveFace();
             }
         });
 
@@ -138,7 +136,7 @@ public class CustomiseActivity extends FragmentActivity{
         if(mOverlayView != null){
             mInfoOverlay = new InfoFragment();
             //todo update to the correct image.
-            mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_background_colour,-1, InfoFragment.type.TOP));
+            mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_pick_colours,-1, InfoFragment.type.TOP));
             getSupportFragmentManager().beginTransaction().add(R.id.info_overlay,mInfoOverlay).commit();
             View v = findViewById(R.id.info_overlay);
             v.bringToFront();
@@ -156,44 +154,42 @@ public class CustomiseActivity extends FragmentActivity{
         //  Needed for communication between watch and device.
     }
 
-    private void setColour() {
-        //todo set the colour in the configuration file.
-        ProgressItem item = (ProgressItem)progressAdapter.getItem(preferenceIndex);
-        item.addColor(selectedSwatch);
-        faceValues.add(colourFromRGB(selectedSwatch));
-        progressAdapter.next();
-        preferenceIndex++;
-        progressbar.removeAllViews();
-        for(int x=0;x<progressAdapter.getCount();x++){
-            progressbar.addView(progressAdapter.getView(x,null,progressbar));
-        }
-        mInfoOverlay.setText(progressAdapter.currentPreference());
-        swatchAdapter.setSelected(-2);
-        updateSwatches();
-        faceButton.setVisibility(View.INVISIBLE);
+//    private void setColour() {
+//        //todo set the colour in the configuration file.
+//        Palette.Swatch item = (Palette.Swatch)progressAdapter.getItem(preferenceIndex);
+//        progressAdapter.setSwatch(preferenceIndex, (Palette.Swatch) swatchAdapter.getItem(selectedSwatch));
+//        faceValues.add(colourFromRGB(selectedSwatch));
+//
+//        progressbar.removeAllViews();
+//        for(int x=0;x<progressAdapter.getCount();x++){
+//            progressbar.addView(progressAdapter.getView(x,null,progressbar));
+//        }
+//
+//        updateSwatches();
+//        faceButton.setVisibility(View.INVISIBLE);
+//
+//        if(preferenceIndex >= progressAdapter.getCount()){
+//            //finished
+//            faceButton.setText(R.string.save);
+//            faceButton.setVisibility(View.VISIBLE);
+//            faceButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    saveFace();
+//                }
+//            });
+//            mInfoOverlay.setText(R.string.info_colours_selected);
+//        }
+//    }
 
-        if(preferenceIndex >= progressAdapter.getCount()){
-            //finished
-            faceButton.setText(R.string.save);
-            faceButton.setVisibility(View.VISIBLE);
-            faceButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    saveFace();
-                }
-            });
-            mInfoOverlay.setText(R.string.info_colours_selected);
-        }
-    }
-
-    private void updateProgressBar(int rgb){
-        Log.d("PROGRESS_UPDATE", "" + rgb);
-        View gridItem = progressbar.getChildAt(progressAdapter.getCurrentIndex());
-        SwatchView view = (SwatchView) gridItem.findViewById(R.id.grid_swatch);
-        view.setFillColor(rgb);
-        view.invalidate();
-        view.refreshDrawableState();
-    }
+//    private void updateProgressBar(int rgb){
+//        Log.d("PROGRESS_UPDATE", "" + rgb);
+//        View gridItem = progressbar.getChildAt(progressAdapter.getCurrentIndex());
+//        SwatchView view = (SwatchView) gridItem.findViewById(R.id.grid_swatch);
+//        view.setFillColor(rgb);
+//        view.invalidate();
+//        view.refreshDrawableState();
+//    }
 
 
     public void saveFace(){
@@ -207,7 +203,8 @@ public class CustomiseActivity extends FragmentActivity{
         int[] prefIDs = WatchDraw.FACE.getPreferences(currentFace);
         String[] prefValues = new String[faceValues.size()];
         faceValues.toArray(prefValues);
-        updateWatchFace(currentFace.toString(), prefIDs, prefValues);
+        //TODO update watch / wear device
+        //updateWatchFace(currentFace.toString(), prefIDs, prefValues);
 
 
     }
@@ -215,29 +212,29 @@ public class CustomiseActivity extends FragmentActivity{
     private void updateInterface(Bitmap image){
         Palette p = Palette.generate(image,20);
         final List<Palette.Swatch> swatches = p.getSwatches();
-        if(swatches != null && swatches.size()>0){
+        if(swatches.size()>0){
             swatchAdapter = new SwatchAdapter(this,swatches);
             swatchContainer.setVisibility(View.VISIBLE);
             swatchContainer.setAdapter(swatchAdapter);
             LayoutAnimationController lac = new LayoutAnimationController(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.abc_fade_in), 0.4f); //0.5f == time between appearance of listview items.
             swatchContainer.setLayoutAnimation(lac);
-            swatchContainer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-                    swatchAdapter.setSelected(position);
-                    selectedSwatch = swatchAdapter.getColour(position);
-                    updateProgressBar(selectedSwatch);
-                    String tmp_colour = colourFromRGB(selectedSwatch);//tmp.getRgb());
-                    //todo this should update the watch preview app.
-                    if(preferenceIndex < preferences.length) {
-                        updateWatchface(getString(preferences[preferenceIndex]), tmp_colour);
-                    }
-                    faceButton.setVisibility(View.VISIBLE);
-                    updateSwatches();
-
-                }
-            });
+//            swatchContainer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+//                @Override
+//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+//
+//                    swatchAdapter.setSelected(position);
+//                    selectedSwatch = swatchAdapter.getColour(position);
+//                    //updateProgressBar(selectedSwatch);
+//                    String tmp_colour = colourFromRGB(selectedSwatch);//tmp.getRgb());
+//                    //todo this should update the watch preview app.
+//                    if(preferenceIndex < preferences.length) {
+//                        updateWatchface(getString(preferences[preferenceIndex]), tmp_colour);
+//                    }
+//                    faceButton.setVisibility(View.VISIBLE);
+//                    updateSwatches();
+//
+//                }
+//            });
             swatchContainer.startLayoutAnimation();
             faceButton.setVisibility(View.INVISIBLE);
 

@@ -53,5 +53,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="text_ambient_mode">Ambient</string>
     <string name="text_active_mode">Active</string>
+    <string name="info_pick_colours">Pick your colours</string>
+    <string name="Swatch_ID_ViewTag">SwatchID</string>
 
 </resources>

@@ -1,13 +1,11 @@
 package slurpp.faces.objects;
 
-import android.content.ClipData;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
 
 import slurpp.faces.R;
@@ -47,7 +45,7 @@ public class SwatchView extends View {
         mInnerBounds = new RectF();
         setFillColor(R.color.green);
         this.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-        this.setOnTouchListener(new MyTouchListener());
+
     }
 
     public void setFillColor(int color){
@@ -100,18 +98,7 @@ public class SwatchView extends View {
 
 
 
-    private final class MyTouchListener implements View.OnTouchListener {
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN && mStrokePaint !=null) {
-                ClipData data = ClipData.newPlainText("", "");
-                View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
-                view.startDrag(data, shadowBuilder, view, 0);
-                return true;
-            } else {
-                return false;
-            }
-        }
-    }
+
 
 
 }

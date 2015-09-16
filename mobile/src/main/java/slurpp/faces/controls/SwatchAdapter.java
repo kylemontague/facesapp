@@ -1,8 +1,11 @@
 package slurpp.faces.controls;
 
+import android.content.ClipData;
 import android.content.Context;
+import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -26,11 +29,13 @@ public class SwatchAdapter extends BaseAdapter {
     private Context mContext;
     private int MAX_COLOURS = 16;
     private int[] stockColours = new int[0];//{R.color.black,R.color.white};//R.color.green,R.color.red};
-    private int selected = -2;
 
     private ArrayList<Swatch> colours;
     private ArrayList<Swatch> allColours;
     private ArrayList<Integer> markers;
+
+    private int currentMarker =-1;
+    private SwatchView markerView=null;
 
     public SwatchAdapter(Context context, List<Swatch> values){
         mContext = context;
@@ -79,9 +84,12 @@ public class SwatchAdapter extends BaseAdapter {
         View gridItem = (convertView == null)?inflater.inflate(R.layout.swatchgridview, null):convertView;
         SwatchView swatch = (SwatchView) gridItem.findViewById(R.id.grid_swatch);
         swatch.setOnDragListener(new SwatchDragListener());
+        swatch.setOnTouchListener(new MarkerTouchListener());
         swatch.setFillColor(colours.get(position).getRgb());
-        if(position == selected || markers.contains(Integer.valueOf(position)))
+        swatch.setStrokeColor(-2);
+        if(markers.contains(Integer.valueOf(position)))
             swatch.setStrokeResource(R.color.white);
+        swatch.setTag(R.string.Swatch_ID_ViewTag,position);
         return gridItem;
     }
 
@@ -99,22 +107,14 @@ public class SwatchAdapter extends BaseAdapter {
         colours = subset;
     }
 
-    public void setSelected(int position){
-        if(selected != position) {
-            selected = position;
-            notifyDataSetChanged();
-        }
-    }
 
-    public int getSelected(){
-        if(selected !=-2)
-            return getColour(selected);
-        return -2;
-    }
 
 
     public void addMarker(int position){
         markers.add(Integer.valueOf(position));
+
+        for(Integer m:markers)
+            Log.d("Markers","Swatch:"+m.toString());
     }
 
     public void removeMarker(int position) {
@@ -174,21 +174,29 @@ public class SwatchAdapter extends BaseAdapter {
                     break;
                 case DragEvent.ACTION_DRAG_ENTERED:
                     //v.setBackgroundDrawable(enterShape);
+
                     break;
                 case DragEvent.ACTION_DRAG_EXITED:
                     //v.setBackgroundDrawable(normalShape);
                     break;
                 case DragEvent.ACTION_DROP:
                     // Dropped, reassign View to ViewGroup
-//                    View view = (View) event.getLocalState();
-//                    ViewGroup owner = (ViewGroup) view.getParent();
-//                    owner.removeView(view);
-//                    GridView container = (GridView) v;
-//                    container.addView(view);
-//                    view.setVisibility(View.VISIBLE);
+                    View view = (View) event.getLocalState();
+
+                    if(v.getTag(R.string.Swatch_ID_ViewTag)!=null) {
+                        int index = (int) v.getTag(R.string.Swatch_ID_ViewTag);
+                        Log.d("SWATCH", "DROPPER ON SWATCH:" + index);
+                        removeMarker(currentMarker);
+                        addMarker(index);
+                        notifyDataSetChanged();
+                        view.invalidate();
+                        v.invalidate();
+                        currentMarker = -1;
+                    }
+
                     break;
                 case DragEvent.ACTION_DRAG_ENDED:
-                    //v.setBackgroundDrawable(normalShape);
+                    currentMarker = -1;
                 default:
                     break;
             }
@@ -197,4 +205,23 @@ public class SwatchAdapter extends BaseAdapter {
     }
 
 
+
+    private final class MarkerTouchListener implements View.OnTouchListener {
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            if(view.getTag(R.string.Swatch_ID_ViewTag)!=null) {
+                int index = (int) view.getTag(R.string.Swatch_ID_ViewTag);
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN && containsMarker(index) && currentMarker == -1) {
+                    Log.d("SWATCH", "MARKER SELECTED:" +index);
+                    currentMarker = index;
+                    ClipData data = ClipData.newPlainText("", "");
+                    markerView = (SwatchView)view;
+                    markerView.setFillResource(R.color.transparent);
+                    View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(markerView);
+                    view.startDrag(data, shadowBuilder, view, 0);
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 }
