@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Faces</string>
+    <string name="hour_text">nine</string>
+    <string name="min_text">forty seven</string>
+    <integer name="hour_number">9</integer>
+    <integer name="min_number">47</integer>
+
+    <string name="wordsmith_face">Once upon a time...</string>
+    <string name="fill_face_title">Filling Time</string>
+    <string name="business_face_title">Business Time</string>
+
+    <!--THESE ARE THE PREFERENCES RELATING TO THE WATCHES-->
+    <string name="PREF_CURRENT_FACE">PREF.CURRENT_FACE</string>
+    <string name="PREF_BACKGROUND_COLOUR">PREF.BACKGROUND.COLOUR</string>
+    <string name="PREF_HOUR_COLOUR">PREF.HOUR.COLOUR</string>
+    <string name="PREF_MINUTE_COLOUR">PREF.MINUTE.COLOUR</string>
+    <string name="PREF_SECOND_COLOUR">PREF.SECOND.COLOUR</string>
+    <string name="PREF_ACCENT_COLOUR">PREF.ACCENT.COLOUR</string>
+
+    <!--THESE ARE THE WATCH FACES-->
+    <string name="OUAT_FaceName">OUAT_FACE</string>
+    <string name="FillUp_FaceName">FILL_UP_FACE</string>
+    <string name="Business_FaceName">BUSINESS_FACE</string>
+
+
+</resources>

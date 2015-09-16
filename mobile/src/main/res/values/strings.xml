@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Faces</string>
+    <string name="freshin_up">freshin\' up</string>
+    <string name="take_photo">Take Photo</string>
+    <string name="start">start customising</string>
+    <string name="save">save</string>
+    <string name="history">old timers</string>
+    <string name="get_started">get started</string>
+    <string name="action_settings">Settings</string>
+    <integer name="swatch_position">101</integer>
+
+
+    <string name="message_swipe_faces">Swipe Left / Right To Pick A Face</string>
+
+    <!--THESE ARE THE PREFERENCES RELATING TO THE WATCHES-->
+    <string name="PREF_CURRENT_FACE">PREF.CURRENT_FACE</string>
+    <string name="PREF_BACKGROUND_COLOUR">PREF.BACKGROUND.COLOUR</string>
+    <string name="PREF_HOUR_COLOUR">PREF.HOUR.COLOUR</string>
+    <string name="PREF_MINUTE_COLOUR">PREF.MINUTE.COLOUR</string>
+    <string name="PREF_SECOND_COLOUR">PREF.SECOND.COLOUR</string>
+    <string name="PREF_ACCENT_COLOUR">PREF.ACCENT.COLOUR</string>
+
+    <!--THESE ARE THE WATCH FACES-->
+    <string name="OUAT_FaceName">OUAT_FACE</string>
+    <string name="FillUp_FaceName">FILL_UP_FACE</string>
+    <string name="Business_FaceName">BUSINESS_FACE</string>
+    <string name="Unknown_FaceName">UNKNOWN_FACE</string>
+
+    <!--THERE ARE THE NAMES OF THE WATCH FACES-->
+    <string name="wordsmith_face">Once upon a time...</string>
+    <string name="fill_face_title">Filling Time</string>
+    <string name="business_face_title">Business Time</string>
+    <string name="faces_face_title">Faces</string>
+    <string name="unknown_face_title">Mystery Face</string>
+
+
+
+    <!--APP USAGE INFORMATION-->
+    <string name="info_swipe_to_select">Swipe to choose a Face</string>
+    <string name="info_take_a_photo">Take a photo to create a palette for your Face</string>
+    <string name="info_happy_palette">Happy with the palette?</string>
+    <string name="info_background_colour">Pick a Background Colour</string>
+    <string name="info_text_colour">Pick a Text Colour</string>
+    <string name="info_line_colour">Pick a Line Colour</string>
+    <string name="info_colours_selected">Colours Selected!</string>
+    <string name="madeby"><![CDATA[Made by Slurpp]]></string>
+    <string name="set_colour">Set Colour</string>
+
+    <string name="button_select_face">Select this face</string>
+    <string name="title_activity_test_sizes">TestSizes</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="text_ambient_mode">Ambient</string>
+    <string name="text_active_mode">Active</string>
+
+</resources>

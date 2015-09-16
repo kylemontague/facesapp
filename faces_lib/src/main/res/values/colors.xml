@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#ffffff</color>
+    <color name="black">#080a0d</color>
+    <color name="swatch_background">#080a0d</color>
+    <color name="green">#34a5a4</color>
+    <color name="red">#d93550</color>
+    <color name="light">#E6E6E6</color>
+    <color name="transparent">#00ffffff</color>
+    <color name="grey">#161b21</color>
+    <color name="light_grey">#666666</color>
+    <color name="light_purple">#ff662d91</color>
+    <color name="dark_purple">#ff1e1c4f</color>
+    <color name="fill_default_background">#ff89c4bb</color>
+    <color name="fill_default_accent">#ffcde9e6</color>
+    <color name="business_default_background">#ff131947</color>
+    <color name="business_default_hour">#ffc7fd00</color>
+    <color name="business_default_minute">#ff55ee45</color>
+    <color name="business_default_second">#ff3c797f</color>
+    <color name="ambient_background">#000000</color>
+    <color name="ambient_foreground">#ffffff</color>
+</resources>

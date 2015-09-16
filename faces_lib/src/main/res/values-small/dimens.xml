@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="small_font">16sp</dimen>
+    <dimen name="normal_font">26dp</dimen>
+    <dimen name="large_font">40sp</dimen>
+    <dimen name="xlarge_font">60sp</dimen>
+
+
+    <dimen name="xthin_stroke">.25dp</dimen>
+    <dimen name="thin_stroke">.5dp</dimen>
+    <dimen name="normal_stroke">1dp</dimen>
+    <dimen name="thick_stroke">2dp</dimen>
+    <dimen name="xthick_stroke">4dp</dimen>
+    <dimen name="xxthick_stroke">6dp</dimen>
+
+</resources>

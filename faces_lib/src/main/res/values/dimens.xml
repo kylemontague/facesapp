@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="small_font">20sp</dimen>
+    <dimen name="normal_font">32sp</dimen>
+    <dimen name="large_font">50sp</dimen>
+    <dimen name="xlarge_font">75sp</dimen>
+
+    <dimen name="xthin_stroke">.5dp</dimen>
+    <dimen name="thin_stroke">1dp</dimen>
+    <dimen name="normal_stroke">2dp</dimen>
+    <dimen name="thick_stroke">4dp</dimen>
+    <dimen name="xthick_stroke">6dp</dimen>
+    <dimen name="xxthick_stroke">8dp</dimen>
+
+
+    <!-- OUAT FACE-->
+    <dimen name="ouat_xOffset">-60dp</dimen>
+    <dimen name="ouat_yOffset">-35dp</dimen>
+    <dimen name="ouat_fontsize">42sp</dimen>
+
+    <!-- Business Time FACE -->
+    <dimen name="business_centre_radius">5dp</dimen>
+    <dimen name="business_hour_stroke">6dp</dimen>
+    <dimen name="business_min_stroke">4dp</dimen>
+    <dimen name="business_sec_stroke">2dp</dimen>
+    <dimen name="business_holo_stroke">@dimen/business_min_stroke</dimen>
+</resources>
