@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="false">
+    <item android:drawable="@drawable/faces_face_dark_square" android:duration="300"/>
+    <item android:drawable="@drawable/faces_face_dark" android:duration="300"/>
+    <item android:drawable="@drawable/faces_face_light" android:duration="300"/>
+    <item android:drawable="@drawable/faces_face_light_square" android:duration="300"/>
+</animation-list>
