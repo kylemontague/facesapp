@@ -105,6 +105,7 @@ public class Home extends FragmentActivity {
     public void onPause(){
         super.onPause();
         showPreview = false;
+        mOverlayView.setVisibility(View.INVISIBLE);
     }
 
 
@@ -114,9 +115,7 @@ public class Home extends FragmentActivity {
     private void setup(){
         mobileListener = new MobileListener(getApplicationContext());
 
-
-
-        currentFace = WatchDraw.FACE.FACES_FACE;
+        currentFace = WatchDraw.FACE.OUA_TIME;
 
         takePhoto= (Button) findViewById(R.id.TakePhoto);
         takePhoto.setTypeface(Font.get(this, Font.QUICKSAND_BOLD));
@@ -214,15 +213,7 @@ public class Home extends FragmentActivity {
         }
     }
 
-    private void setFace(int index){
-        //todo tell the watch to redraw
 
-//        PreviewCanvas pc = (PreviewCanvas) watchPreview.getChildAt(0);
-//        pc.update(faces[index],configs[index]);
-//        pc.invalidate();
-//        pc.destroyDrawingCache();
-
-    }
 
     public void takePhoto(){
         Intent i=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
@@ -257,7 +248,7 @@ public class Home extends FragmentActivity {
     private void createFaces(){
         ArrayList<CustomFace> faces = new ArrayList<>();
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME,colours,"Test Watch 1"));
-        faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FACES_FACE,colours,"Test Watch 2"));
+        //faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FACES_FACE,colours,"Test Watch 2"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.OUA_TIME,colours,"Test Watch 3"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FILL_TIME,colours,"Test Watch 4"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME, colours, "Test Watch 5"));

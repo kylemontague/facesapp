@@ -18,6 +18,7 @@ import java.util.List;
 import slurpp.faces.R;
 import slurpp.faces.data.ColourContrast;
 import slurpp.faces.objects.SwatchView;
+import slurpp.faces.utils.ColourConverter;
 
 import static android.support.v7.graphics.Palette.Swatch;
 
@@ -51,7 +52,7 @@ public class SwatchAdapter extends BaseAdapter {
         //colours.addAll(ColourUtil.GenerateAnalogous(values.get(0).getRgb(), 5));
         int totalColours =0;
 
-        Collections.sort(new ArrayList<>(values),new HSLComparator());
+        Collections.sort(new ArrayList<>(values),new ChromaComparator());
         for(Swatch s:values){
             if(totalColours == (MAX_COLOURS-stockColours.length))
                 break;
@@ -108,6 +109,9 @@ public class SwatchAdapter extends BaseAdapter {
     }
 
 
+    public void clearMarkers(){
+        markers = new ArrayList<>();
+    }
 
 
     public void addMarker(int position){
@@ -124,6 +128,10 @@ public class SwatchAdapter extends BaseAdapter {
 
     public boolean containsMarker(int position){
         return markers.contains(Integer.valueOf(position));
+    }
+
+    public ArrayList<Integer> getMarkers(){
+        return markers;
     }
 
     public class PopulationComparator implements Comparator<Swatch>{
@@ -160,6 +168,27 @@ public class SwatchAdapter extends BaseAdapter {
 //            if(s < 0)
 //                return -1;
             return 0;
+        }
+    }
+
+    public class ChromaComparator implements Comparator<Swatch>{
+
+        @Override
+        public int compare(Swatch s1, Swatch s2) {
+            double c1 = chroma(s1);
+            double c2 = chroma(s2);
+
+            if(c1 > c2)
+                return 1;
+            else if(c1 < c2)
+                return -1;
+            return 0;
+        }
+
+
+        private double chroma(Swatch swatch){
+            double[] lab = ColourConverter.rgb2lab(swatch.getRgb());
+            return Math.sqrt(Math.pow(lab[1],2)+ Math.pow(lab[2],2));
         }
     }
 

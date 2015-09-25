@@ -48,7 +48,7 @@ public class ApplicationTest extends ApplicationTestCase<Application> {
     public void TestCustomFaceArray(){
         ArrayList<CustomFace> faces = new ArrayList<>();
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME,colours,"Test Watch 1"));
-        faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FACES_FACE,colours,"Test Watch 2"));
+        //faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FACES_FACE,colours,"Test Watch 2"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.OUA_TIME,colours,"Test Watch 3"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FILL_TIME,colours,"Test Watch 4"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME, colours, "Test Watch 5"));

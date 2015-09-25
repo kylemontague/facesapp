@@ -1,11 +1,14 @@
 package slurpp.faces.activities;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.graphics.Palette;
 import android.util.Log;
@@ -17,6 +20,8 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+
+import com.squareup.seismic.ShakeDetector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +37,7 @@ import slurpp.faces.controls.SwatchAdapter;
 import slurpp.faces.utils.BlurBuilder;
 
 
-public class CustomiseActivity extends FragmentActivity{
+public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener{
 
 
     public static String EXTRA_BITMAP_IMAGE= "EXTRA_BITMAP_IMAGE";
@@ -81,16 +86,20 @@ public class CustomiseActivity extends FragmentActivity{
         setup();
 
 
-        updateInterface(mImage);
+
         //todo change this to get the id from the preferences
         //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         setCurrentPreviewWatch(currentFace);
+        updateInterface(mImage);
         faceValues = new ArrayList<>();
         faceValues.add("" + currentFace.ordinal());
 
         mobileListener = new MobileListener(getApplicationContext());
 
 
+        SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        ShakeDetector sd = new ShakeDetector(this);
+        sd.start(sensorManager);
 
 
     }
@@ -99,7 +108,6 @@ public class CustomiseActivity extends FragmentActivity{
     protected void onResume(){
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
         startPreview();
     }
 
@@ -111,7 +119,13 @@ public class CustomiseActivity extends FragmentActivity{
         faceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                saveFace();
+
+//                int mIndex = (int)swatchAdapter.getMarkers().get(0);
+//                swatchAdapter.subsetColours((Palette.Swatch)swatchAdapter.getItem(mIndex));
+//                updateSwatches();
+
+
+                //saveFace();
             }
         });
 
@@ -124,8 +138,7 @@ public class CustomiseActivity extends FragmentActivity{
         ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
         imageView = findViewById(R.id.blur_image);
         Drawable img = new BitmapDrawable(getResources(), mImage);
-        img.setAlpha(200);
-        //todo remove b&w colour filter here.
+        img.setAlpha(150);
         img.setColorFilter(filter);
         imageView.setBackground(img);
 
@@ -145,8 +158,6 @@ public class CustomiseActivity extends FragmentActivity{
         progressbarContainer = (HorizontalScrollView) findViewById(R.id.progressbarContainer);
         progressbarContainer.setVisibility(View.VISIBLE);
         progressbar = (LinearLayout) findViewById(R.id.progressbar);
-
-        //todo add the images / icons in the correct states.
 
 
 
@@ -236,7 +247,7 @@ public class CustomiseActivity extends FragmentActivity{
 //                }
 //            });
             swatchContainer.startLayoutAnimation();
-            faceButton.setVisibility(View.INVISIBLE);
+            //faceButton.setVisibility(View.INVISIBLE);
 
         }else
         {
@@ -250,16 +261,20 @@ public class CustomiseActivity extends FragmentActivity{
         for(int x=0;x<progressAdapter.getCount();x++){
             progressbar.addView(progressAdapter.getView(x,null,progressbar));
         }
-
-        //todo need to pass the correct number of markers to create
-        randomSelection(3);
+        randomSelection(preferences.length);
     }
 
 
     private void updateSwatches(){
 
-        swatchContainer.setAdapter(swatchAdapter);
-        swatchContainer.invalidateViews();
+
+        CustomiseActivity.this.runOnUiThread(new Runnable() {
+            public void run() {
+                swatchContainer.setAdapter(swatchAdapter);
+                swatchContainer.invalidateViews();
+            }
+        });
+
     }
 
     private String colourFromRGB(int rgb){
@@ -296,7 +311,7 @@ public class CustomiseActivity extends FragmentActivity{
             @Override
             public void run() {
                 Random rn = new Random(System.currentTimeMillis());
-                int n = 16 + 1;
+                int n = swatchAdapter.getCount();
                 markers = new int[count];
                 int x=0;
                 while (x < markers.length){
@@ -319,4 +334,14 @@ public class CustomiseActivity extends FragmentActivity{
     }
 
 
+
+    Vibrator vibrator = null;
+    @Override
+    public void hearShake() {
+        if(vibrator == null)
+            vibrator = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator.vibrate(200);
+        swatchAdapter.clearMarkers();
+        randomSelection(preferences.length);
+    }
 }

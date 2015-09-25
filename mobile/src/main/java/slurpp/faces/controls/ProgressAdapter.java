@@ -19,7 +19,6 @@ public class ProgressAdapter extends BaseAdapter {
 
     private ArrayList<Palette.Swatch> mPreferences;
     private Context mContext;
-    private int currentIndex=0;
 
     public ProgressAdapter(Context context){
         mContext = context;
@@ -71,17 +70,5 @@ public class ProgressAdapter extends BaseAdapter {
         return gridItem;
     }
 
-    public void next() {
-        if (currentIndex < mPreferences.size() - 1) {
-            currentIndex++;
-        }
-    }
-
-
-
-
-    public int getCurrentIndex(){
-        return currentIndex;
-    }
 
 }

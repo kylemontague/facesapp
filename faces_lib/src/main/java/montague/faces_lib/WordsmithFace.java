@@ -44,6 +44,11 @@ public class WordsmithFace implements Face, SharedPreferences.OnSharedPreference
     }
 
     @Override
+    public void setColours(int[] values) {
+
+    }
+
+    @Override
     public int xOffset(Shape faceShape) {
         return (int)mTextScale* ((faceShape == Shape.ROUND)?-80:-80);
     }

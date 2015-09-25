@@ -38,9 +38,9 @@ public class PreviewActivity extends Activity {
 
         Bundle extras = getIntent().getExtras();
         //get parameters from the bundle.
-        int face = WatchDraw.FACE.FACES_FACE.ordinal();
+        int face = WatchDraw.FACE.OUA_TIME.ordinal();
         if(extras!=null)
-            face = extras.getInt(getString(R.string.PREVIEW_CURRENT_FACE),WatchDraw.FACE.FACES_FACE.ordinal());
+            face = extras.getInt(getString(R.string.PREVIEW_CURRENT_FACE),WatchDraw.FACE.OUA_TIME.ordinal());
 
         watchPreview = (RelativeLayout)findViewById(R.id.watch);
         watchFragment = new WatchFragment();

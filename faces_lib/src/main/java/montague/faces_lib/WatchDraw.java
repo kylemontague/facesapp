@@ -14,12 +14,12 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 /**
- * Created by kylemontague on 13/06/15.
+ * Created by Kyle Montague on 13/06/15.
  */
 public class WatchDraw {
 
     public enum FACE {
-        FACES_FACE,
+//        FACES_FACE,
         OUA_TIME,
         FILL_TIME,
         BUSINESS_TIME,
@@ -35,15 +35,15 @@ public class WatchDraw {
             //load the watch from the preferences
             switch (face) {
                 case OUA_TIME:
-                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_SECOND_COLOUR};
+                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR};
                 case FILL_TIME:
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR};
                 case BUSINESS_TIME:
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_MINUTE_COLOUR, R.string.PREF_SECOND_COLOUR};
                 case TWO_TIME:
-                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_SECOND_COLOUR};
-                case FACES_FACE:
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
+//                case FACES_FACE:
+//                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
                 default:
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
             }
@@ -53,15 +53,15 @@ public class WatchDraw {
             //load the watch from the preferences
             switch (face) {
                 case OUA_TIME:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_HOUR_COLOUR, R.string.PREVIEW_SECOND_COLOUR};
+                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
                 case TWO_TIME:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_HOUR_COLOUR, R.string.PREVIEW_SECOND_COLOUR};
+                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
                 case FILL_TIME:
                     return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR};
                 case BUSINESS_TIME:
                     return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_HOUR_COLOUR, R.string.PREVIEW_MINUTE_COLOUR, R.string.PREVIEW_SECOND_COLOUR};
-                case FACES_FACE:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
+//                case FACES_FACE:
+//                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
                 default:
                     return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
             }
@@ -70,15 +70,34 @@ public class WatchDraw {
 
 
 
+    private static Rect scaleRect(Rect bounds, float scale){
+        float w = bounds.width()*scale;
+        float h = bounds.height()*scale;
+        float l = (bounds.width()-w)/2;
+        float t = (bounds.height()-h)/2;
+        return new Rect((int)(bounds.left+l),(int)(bounds.top+t),(int)(bounds.right-l),(int)(bounds.bottom-t));
+    }
 
-
-
+    private static Rect scaleRect(Rect bounds, float scaleX, float scaleY){
+        float w = bounds.width()*scaleX;
+        float h = bounds.height()*scaleY;
+        float l = (bounds.width()-w)/2;
+        float t = (bounds.height()-h)/2;
+        return new Rect((int)(bounds.left+l), bounds.top,(int)(bounds.right-l),(int)(bounds.bottom-t));
+    }
 
     public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset) {
+        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false);
+    }
+
+    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean isPreview) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
-        if(shape == Face.Shape.SQUARE)
-            canvas.drawRect(bounds,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
+        if(shape == Face.Shape.SQUARE) {
+            if(isPreview)
+                bounds = scaleRect(bounds,.9f, .99f);
+            canvas.drawRect(bounds, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+        }
         else
             canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
 
@@ -93,8 +112,8 @@ public class WatchDraw {
         // Find the center. Ignore the window insets so that, on round watches
         // with a "chin", the watch face is centered on the entire screen, not
         // just the usable portion.
-        float centerX = width / 2f;
-        float centerY = height / 2f;
+        float centerX = bounds.centerX();
+        float centerY = bounds.centerY();
 
         //Compute rotations and lengths for the clock hands.
 
@@ -134,10 +153,17 @@ public class WatchDraw {
 
 
     public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard) {
+        FillTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
+    }
+
+    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview) {
 
         int accentColor = watchConfig.accentColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
         int bgColor = watchConfig.backgroundColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
         //todo fix the start and stop positions of the seconds tick.
+        if(shape == Face.Shape.SQUARE && isPreview)
+            bounds = scaleRect(bounds,.9f, .99f);
+
         RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
 
         int hours = mTime.get(Calendar.HOUR);
@@ -183,19 +209,25 @@ public class WatchDraw {
     }
 
     public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset) {
+        PrideTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false);
+    }
+
+    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset,  boolean isPreview) {
+
+        if(shape == Face.Shape.SQUARE && isPreview)
+            bounds = scaleRect(bounds,.9f, .99f);
 
         //purple, blue, green, yellow, orange, red
         int colours[]= new int[]{0xFF750787, 0xFF004dff, 0xff008026, 0xffffed00, 0xffff8c00, 0xffe40303};
 
         int accentColor = watchConfig.accentColour(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
         int bgColor = watchConfig.backgroundColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
-        //todo fix the start and stop positions of the seconds tick.
         RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
         RectF vertBF= new RectF(bounds.centerX(),bounds.top,bounds.centerX(),bounds.bottom);
 
 
         mTime.setToNow();
-        float split = (float)Math.min((((mTime.second+1.0f)/61.0f)*bounds.width())/bounds.width(),1.0f);
+        float split = Math.min((((mTime.second+1.0f)/61.0f)*bounds.width())/bounds.width(),1.0f);
 
         //Paint txtPaint = makeTonePaint(bF,bgColor,accentColor,split,watchConfig.hoursPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
         Bitmap back = makeToneGrad(bF,colours, shape);
@@ -208,10 +240,19 @@ public class WatchDraw {
 
 
     public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard) {
+        OUATime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
+    }
+
+    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
-        if(shape == Face.Shape.SQUARE)
-            canvas.drawRect(bounds,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
+
+
+        if(shape == Face.Shape.SQUARE) {
+            if(isPreview)
+                bounds = scaleRect(bounds,.9f, .99f);
+            canvas.drawRect(bounds, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+        }
         else
             canvas.drawCircle(bounds.centerX(),bounds.centerY(),bounds.width()/2,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
 
@@ -219,12 +260,12 @@ public class WatchDraw {
         int width = bounds.width();
         int height = bounds.height();
 
-        float centerX = width / 2f;
-        float centerY = height / 2f;
+        float centerX =bounds.centerX();
+        float centerY = bounds.centerY();
 
         //draw second counter
         if (!mAmbient) {
-            int radius = (int)((width/2)*.9f);//todo 128;
+            int radius = (int)((width/2)*.9f);
             int angle = mTime.get(Calendar.SECOND) * 6;
             RectF rectF = new RectF(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
             canvas.drawArc(rectF, -90, angle, false, watchConfig.secondsPaint(mAmbient? Face.State.AMBIENT:Face.State.ACTIVE));
@@ -240,9 +281,15 @@ public class WatchDraw {
     }
 
     public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard) {
-        //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
-        RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
+        TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
+    }
 
+    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview) {
+        //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
+        if(shape == Face.Shape.SQUARE && isPreview)
+            bounds = scaleRect(bounds,.9f, .99f);
+
+        RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
         Bitmap bgBit = makeLinearGrad(bF,watchConfig.backgroundColour(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE), watchConfig.accentColour(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE), shape);
         canvas.drawBitmap(bgBit, bounds, bounds, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
 
@@ -251,16 +298,8 @@ public class WatchDraw {
         if(peekCard.top > 0)
             height = peekCard.top;
 
-        float centerX = width / 2f;
-        float centerY = height / 2f;
-
-        //draw second counter
-//        if (!mAmbient) {
-//            int radius = (int)((width/2)*.9f);//todo 128;
-//            int angle = mTime.second * 6;
-//            RectF rectF = new RectF(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-//            canvas.drawArc(rectF, -90, angle, false, watchConfig.secondsPaint(mAmbient? Face.State.AMBIENT:Face.State.ACTIVE));
-//        }
+        float centerX = bounds.centerX();
+        float centerY = bounds.centerY();
 
         int hours = mTime.get(Calendar.HOUR_OF_DAY)%12;
         if(hours == 0)

@@ -47,7 +47,7 @@
     <string name="madeby"><![CDATA[Made by Slurpp]]></string>
     <string name="set_colour">Set Colour</string>
 
-    <string name="button_select_face">Select this face</string>
+    <string name="button_select_face">Select</string>
     <string name="title_activity_test_sizes">TestSizes</string>
 
     <string name="hello_world">Hello world!</string>
@@ -55,5 +55,8 @@
     <string name="text_active_mode">Active</string>
     <string name="info_pick_colours">Pick your colours</string>
     <string name="Swatch_ID_ViewTag">SwatchID</string>
+    <string name="button_edit_face">Edit</string>
+    <string name="button_face_colours">Colours</string>
+    <string name="button_face_settings">Settings</string>
 
 </resources>

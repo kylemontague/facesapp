@@ -42,6 +42,11 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
     }
 
     @Override
+    public void setColours(int[] values) {
+
+    }
+
+    @Override
     public int xOffset(Shape faceShape) {
         return (int)mTextScale*((faceShape == Shape.ROUND)?-80:-80);
     }
