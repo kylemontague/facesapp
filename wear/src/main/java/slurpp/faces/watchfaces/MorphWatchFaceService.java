@@ -12,7 +12,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
-import android.support.wearable.watchface.WatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.Gravity;
@@ -134,9 +133,8 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                //Todo need to fix this timezone stuff.
-//                mTime.clear(intent.getStringExtra("time-zone"));
-//                mTime.setToNow();
+                mCalendar.setTimeZone(TimeZone.getTimeZone(intent.getStringExtra("time-zone")));
+                mCalendar.setTime(new Date());
             }
         };
 
@@ -219,8 +217,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onTapCommand(int tapType, int x, int y, long eventTime) {
-            Log.d("TAP_WATCH","type:"+tapType+" location:["+x+","+y+"] timestamp:"+eventTime);
-            //todo change the tap actions.
+            //Log.d("TAP_WATCH","type:"+tapType+" location:["+x+","+y+"] timestamp:"+eventTime);
             if(tapType == 2) {
                 onAmbientModeChanged((mAmbient)?false:true);
             }

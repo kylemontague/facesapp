@@ -14,13 +14,18 @@ import android.widget.TextView;
 import montague.faces_lib.Global;
 import slurpp.faces.Font;
 import slurpp.faces.MobileListener;
-import slurpp.faces.R;
+
+import static slurpp.faces.R.animator;
+import static slurpp.faces.R.drawable;
+import static slurpp.faces.R.id;
+import static slurpp.faces.R.layout;
 
 /**
  * Created by kylemontague on 18/12/14.
  */
 public class SplashActivity extends Activity{
-    ImageView iv1;
+   // ImageView iv1;
+    ImageView straps;
     TextView madeby;
     AnimationDrawable Anim;
 //    PathView svgView;
@@ -29,9 +34,10 @@ public class SplashActivity extends Activity{
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.splash);
-        iv1 = (ImageView) findViewById(R.id.watch);
-        madeby = (TextView)findViewById(R.id.madeby_text);
+        setContentView(layout.splash);
+        //iv1 = (ImageView) findViewById(id.watch);
+        straps = (ImageView)findViewById(id.watch_background);
+        madeby = (TextView)findViewById(id.madeby_text);
         madeby.setTypeface(Font.get(getApplicationContext(), Font.QUICKSAND_BOLD));
 
         MobileListener mobileListener = new MobileListener(getApplicationContext());
@@ -50,12 +56,14 @@ public class SplashActivity extends Activity{
         super.onResume();
 
         try {
-            if(isRound)
-                Anim = (AnimationDrawable)getResources().getDrawable(R.drawable.loader_rounded);
-            else
-                Anim = (AnimationDrawable)getResources().getDrawable(R.drawable.loader_squared);
-            Anim.setOneShot(true);
-            iv1.setBackground(Anim);
+            int draw = drawable.loader_rounded2;
+            if(!isRound) {
+                draw = drawable.loader_squared2;
+                //straps.setImageResource(drawable.watch_strap_square);
+            }
+            Anim = (AnimationDrawable)getResources().getDrawable(draw);
+            Anim.setOneShot(false);
+            straps.setImageDrawable(Anim);
             Anim.start();
             final Handler handler = new Handler();
 
@@ -64,11 +72,11 @@ public class SplashActivity extends Activity{
                 public void run() {
                     hasLoaded();
                 }
-            }, 2500);
+            }, 1200);
 //            svgView.reveal(iv1,400);
 
         } catch (Exception e) {
-            // TODO: handle exception
+
         }
 
 
@@ -84,7 +92,7 @@ public class SplashActivity extends Activity{
         Log.d("WEAR SETTINGS","Active:"+active+", Round:"+round);
         Intent i = new Intent(this,Home.class);
         startActivity(i);
-        overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
+        overridePendingTransition(animator.fade_in, animator.fade_out);
     }
 
 

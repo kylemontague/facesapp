@@ -16,7 +16,8 @@ public interface Face {
 
     enum Shape {
         ROUND,
-        SQUARE
+        SQUARE,
+        UNKNOWN
     }
 
     enum State {
@@ -24,68 +25,71 @@ public interface Face {
         AMBIENT
     }
 
-    public int xOffset(Shape faceShape);
+    void setColours(int[] values);
 
-    public int yOffset(Shape faceShape);
+    int xOffset(Shape faceShape);
 
-    public void setAsCurrentFace();
-    public String getFaceName();
+    int yOffset(Shape faceShape);
 
-
-    public Mode mode();
-
-
-    public Paint datePaint(State faceState);
-
-    public Paint hoursPaint(State faceState);
-
-    public Paint minutesPaint(State faceState);
-
-    public Paint secondsPaint(State faceState);
-
-    public Paint meridianPaint(State faceState);
-
-    public Paint backgroundPaint(State faceState);
-
-    public Paint accentPaint(State faceState);
+    void setAsCurrentFace();
+    String getFaceName();
 
 
-    public Typeface dateType(State faceState);
+    Mode mode();
 
-    public Typeface hoursType(State faceState);
 
-    public Typeface minutesType(State faceState);
 
-    public Typeface secondsType(State faceState);
+    Paint datePaint(State faceState);
 
-    public Typeface meridianType(State faceState); //am pm
+    Paint hoursPaint(State faceState);
 
-    public int dateTextSize();
+    Paint minutesPaint(State faceState);
 
-    public int hoursTextSize();
+    Paint secondsPaint(State faceState);
 
-    public int minutesTextSize();
+    Paint meridianPaint(State faceState);
 
-    public int secondsTextSize();
+    Paint backgroundPaint(State faceState);
 
-    public int meridianTextSize();
+    Paint accentPaint(State faceState);
 
-    public int dateTextColour(State faceState);
 
-    public int hoursTextColour(State faceState);
+    Typeface dateType(State faceState);
 
-    public int minutesTextColour(State faceState);
+    Typeface hoursType(State faceState);
 
-    public int secondsTextColour(State faceState);
+    Typeface minutesType(State faceState);
 
-    public int meridianTextColour(State faceState);
+    Typeface secondsType(State faceState);
 
-    public int backgroundColour(State faceState);
+    Typeface meridianType(State faceState); //am pm
 
-    public int accentColour(State faceState);
+    int dateTextSize();
 
-    public String makeString(int stringID);
+    int hoursTextSize();
 
-    public void changedState(State faceState);
+    int minutesTextSize();
+
+    int secondsTextSize();
+
+    int meridianTextSize();
+
+    int dateTextColour(State faceState);
+
+    int hoursTextColour(State faceState);
+
+    int minutesTextColour(State faceState);
+
+    int secondsTextColour(State faceState);
+
+    int meridianTextColour(State faceState);
+
+    int backgroundColour(State faceState);
+
+    int accentColour(State faceState);
+
+    String makeString(int stringID);
+
+    void changedState(State faceState);
 
 }

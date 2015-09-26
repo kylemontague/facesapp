@@ -2,7 +2,6 @@ package montague.faces_lib;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.view.View;
@@ -20,6 +19,7 @@ public class PreviewCanvas extends View {
     GregorianCalendar mCal;
     Bitmap straps;
     boolean ambientMode;
+    boolean clipBounds = false;
 
     public PreviewCanvas(Context context){
         super(context);
@@ -27,12 +27,17 @@ public class PreviewCanvas extends View {
     }
 
     public PreviewCanvas(Context context, WatchDraw.FACE watch_face, Face watch_config, Face.Shape shape) {
+        this(context, watch_face, watch_config, shape, false);
+    }
+
+    public PreviewCanvas(Context context, WatchDraw.FACE watch_face, Face watch_config, Face.Shape shape, boolean shouldClipBounds) {
         super(context);
         mWatchFace = watch_face;
         mConfig = watch_config;
         mCal = new GregorianCalendar();
         mShape = shape;
         ambientMode = false;
+        clipBounds = shouldClipBounds;
         //todo need to update to square straps also
         //this.setBackgroundResource(R.drawable.watch_strap);
         //straps = BitmapFactory.decodeResource(getResources(),(mShape == Face.Shape.ROUND)?R.drawable.watch_strap:R.drawable.watch_strap);
@@ -56,20 +61,20 @@ public class PreviewCanvas extends View {
         Rect card = new Rect(0,0,0,0);
         switch (mWatchFace){
             case BUSINESS_TIME:
-                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0);
+                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, clipBounds);
                 break;
             case FILL_TIME:
-                WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card);
+                WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds);
                 break;
-            case FACES_FACE:
-                Bitmap image = BitmapFactory.decodeResource(getResources(),(mShape == Face.Shape.ROUND)?R.drawable.rounded_49:R.drawable.square_49);
-                WatchDraw.FacesFace(image, canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0);
-                break;
+//            case FACES_FACE:
+//                Bitmap image = BitmapFactory.decodeResource(getResources(),(mShape == Face.Shape.ROUND)?R.drawable.rounded_49:R.drawable.square_49);
+//                WatchDraw.FacesFace(image, canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0);
+//                break;
             case OUA_TIME:
-                WatchDraw.OUATime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card);
+                WatchDraw.OUATime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds);
                 break;
             case TWO_TIME:
-                WatchDraw.TwoTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps,0, card);
+                WatchDraw.TwoTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps,0, card, clipBounds);
                 break;
             default:
                 break;

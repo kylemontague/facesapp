@@ -44,6 +44,11 @@ public class OUATFace implements Face, SharedPreferences.OnSharedPreferenceChang
     }
 
     @Override
+    public void setColours(int[] values) {
+
+    }
+
+    @Override
     public int xOffset(Shape faceShape) {
         return (int)mContext.getResources().getDimension(R.dimen.ouat_xOffset);
     }

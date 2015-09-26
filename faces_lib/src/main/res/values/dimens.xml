@@ -16,7 +16,7 @@
     <!-- OUAT FACE-->
     <dimen name="ouat_xOffset">-60dp</dimen>
     <dimen name="ouat_yOffset">-35dp</dimen>
-    <dimen name="ouat_fontsize">42sp</dimen>
+    <dimen name="ouat_fontsize">40sp</dimen>
 
     <!-- Business Time FACE -->
     <dimen name="business_centre_radius">5dp</dimen>

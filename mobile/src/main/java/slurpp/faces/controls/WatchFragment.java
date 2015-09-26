@@ -12,7 +12,6 @@ import android.widget.RelativeLayout;
 
 import montague.faces_lib.BusinessFaceConfig;
 import montague.faces_lib.Face;
-import montague.faces_lib.FacesFaceConfig;
 import montague.faces_lib.FillFaceConfig;
 import montague.faces_lib.OUATFace;
 import montague.faces_lib.PreviewCanvas;
@@ -26,7 +25,7 @@ import slurpp.faces.R;
  */
 public class WatchFragment extends Fragment {
 
-    private static final WatchDraw.FACE[] faces = {WatchDraw.FACE.FACES_FACE,WatchDraw.FACE.OUA_TIME, WatchDraw.FACE.FILL_TIME, WatchDraw.FACE.BUSINESS_TIME, WatchDraw.FACE.TWO_TIME};
+    private static final WatchDraw.FACE[] faces = WatchDraw.FACE.values();
     private WatchDraw.FACE mFace;
     private RelativeLayout watchPreview;
     private ImageView watchStraps;
@@ -40,7 +39,6 @@ public class WatchFragment extends Fragment {
     public void setArguments(Bundle args){
         super.setArguments(args);
         int id = args.getInt("ARG.WATCH_FACE",0);
-        //todo load ID from dataset
         mFace = faces[id];
     }
 
@@ -49,14 +47,15 @@ public class WatchFragment extends Fragment {
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_preview_slide, container, false);
         watchPreview = (RelativeLayout) rootView.findViewById(R.id.watch);
         Context c= getActivity().getApplicationContext();
-        Face.Shape s = Face.Shape.ROUND;
-        PreviewCanvas previewCanvas = new PreviewCanvas(c,mFace,getConfig(c,mFace), s);
+        //TODO CHANGE TO THE CURRENT FACE SHAPE
+        Face.Shape s = Face.Shape.SQUARE;
+        PreviewCanvas previewCanvas = new PreviewCanvas(c,mFace,getConfig(c,mFace), s, true);
         previewCanvas.setAmbientMode(ambientMode);
         watchPreview.addView(previewCanvas);
 
         watchStraps = (ImageView) rootView.findViewById(R.id.watch_background);
-        //todo need to change to square strap.
-        watchStraps.setImageResource(s== Face.Shape.ROUND?R.drawable.watch_strap:R.drawable.watch_strap);
+        //TODO CHANGE TO THE NEW STRAPS
+        watchStraps.setImageResource(s== Face.Shape.ROUND?R.drawable.watch_strap:R.drawable.watch_strap_square);
         return rootView;
     }
 
@@ -70,8 +69,6 @@ public class WatchFragment extends Fragment {
                 return new FillFaceConfig(c);
             case BUSINESS_TIME:
                 return new BusinessFaceConfig(c);
-            case FACES_FACE:
-                return new FacesFaceConfig(c);
         }
         return null;
     }
@@ -87,9 +84,6 @@ public class WatchFragment extends Fragment {
                 break;
             case BUSINESS_TIME:
                 name =  R.string.business_face_title;
-                break;
-            case FACES_FACE:
-                name =  R.string.faces_face_title;
                 break;
             case TWO_TIME:
                 name =  R.string.two_times_face_title;
