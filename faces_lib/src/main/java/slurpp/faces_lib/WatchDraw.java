@@ -10,7 +10,9 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.text.format.Time;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.GregorianCalendar;
 
 /**
@@ -86,11 +88,11 @@ public class WatchDraw {
         return new Rect((int)(bounds.left+l), bounds.top,(int)(bounds.right-l),(int)(bounds.bottom-t));
     }
 
-    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset) {
-        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false);
+    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean showDate) {
+        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false, showDate);
     }
 
-    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean isPreview) {
+    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean isPreview, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
         if(shape == Face.Shape.SQUARE) {
@@ -152,11 +154,11 @@ public class WatchDraw {
     }
 
 
-    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard) {
-        FillTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
+    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
+        FillTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,showDate);
     }
 
-    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview) {
+    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
 
         int accentColor = watchConfig.accentColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
         int bgColor = watchConfig.backgroundColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
@@ -166,11 +168,10 @@ public class WatchDraw {
 
         RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
 
-        int hours = mTime.get(Calendar.HOUR);
-        if(hours == 0)
-            hours = 12;
 
-        String timeString = hours+":"+((mTime.get(Calendar.MINUTE)<10)?"0"+mTime.get(Calendar.MINUTE):mTime.get(Calendar.MINUTE));
+
+
+
         Paint base = watchConfig.hoursPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
         setTextSizeForWidth(base, (bounds.width() * .85f), "00:00");
 
@@ -196,8 +197,22 @@ public class WatchDraw {
             txtPaint.setStyle(Paint.Style.STROKE);
         }
         Rect b = new Rect();
-        float txtWidth = txtPaint.measureText(timeString);
-        txtPaint.getTextBounds("00:00", 0, "00:00".length(), b);
+        float txtWidth;
+        String timeString;
+        if(!showDate) {
+            int hours = mTime.get(Calendar.HOUR);
+            if(hours == 0)
+                hours = 12;
+            timeString = hours + ":" + ((mTime.get(Calendar.MINUTE) < 10) ? "0" + mTime.get(Calendar.MINUTE) : mTime.get(Calendar.MINUTE));
+            txtWidth = txtPaint.measureText(timeString);
+            txtPaint.getTextBounds("00:00", 0, "00:00".length(), b);
+        }else{
+            timeString = WatchDraw.datestring(mTime.getTime(),UK_DATE); //todo should change this based on locale (US format)
+            txtPaint.setTextSize(txtPaint.getTextSize()/1.5f);
+            txtWidth = txtPaint.measureText(timeString);
+            txtPaint.getTextBounds(timeString, 0, timeString.length(), b);
+        }
+
         if(peekCard.top > 0) {
             bF.set(bF.left, bF.top, bF.right, peekCard.top);
             canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), bF.centerY()+b.height(), txtPaint);
@@ -208,11 +223,11 @@ public class WatchDraw {
 
     }
 
-    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset) {
-        PrideTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false);
+    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset , boolean showDate) {
+        PrideTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false,showDate);
     }
 
-    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset,  boolean isPreview) {
+    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset,  boolean isPreview, boolean showDate) {
 
         if(shape == Face.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
@@ -239,11 +254,11 @@ public class WatchDraw {
     }
 
 
-    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard) {
-        OUATime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
+    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
+        OUATime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false, showDate);
     }
 
-    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview) {
+    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
 
@@ -280,11 +295,11 @@ public class WatchDraw {
         }
     }
 
-    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard) {
+    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
         TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
     }
 
-    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview) {
+    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
         if(shape == Face.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
@@ -349,7 +364,7 @@ public class WatchDraw {
 
 
 
-    public static void FacesFace(Bitmap image, Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset) {
+    public static void FacesFace(Bitmap image, Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
         if(shape == Face.Shape.SQUARE)
@@ -500,5 +515,14 @@ public class WatchDraw {
 
         // Set the paint for that size.
         paint.setTextSize(desiredTextSize);
+    }
+
+
+
+    protected static String UK_DATE = "d/MM/yy";
+    protected static String US_DATE = "MM/d/yy";
+    private static String datestring(Date date, String dateFormat){
+        SimpleDateFormat format = new SimpleDateFormat(dateFormat);
+        return format.format(date);
     }
 }

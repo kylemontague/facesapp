@@ -26,9 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.Font;
-import slurpp.faces.MobileListener;
+import slurpp.faces.services.MobileListener;
 import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.ProgressAdapter;
@@ -47,7 +48,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private static final String TAG = "CAMERA";
 
 
-    private boolean ONBOARDING = true; //todo load from preferences.
+    private boolean shouldOnBoard = true;
     private View mOnBoardView;
     private GridView swatchContainer;
 
@@ -81,25 +82,28 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         int faceID = getIntent().getExtras().getInt(CustomiseActivity.EXTRA_WATCH_FACE,0);
         currentFace = WatchDraw.FACE.fromOrdinal(faceID);
         mImage = BlurBuilder.blur(this, mTmpImage, .95f, 2.0f);
+
+        shouldOnBoard = Constants.shouldOnBoard(getApplicationContext());
+
         setup();
 
-        if(ONBOARDING) {
+
+
+        if(shouldOnBoard) {
             dragObserver = new DataSetObserver() {
                 @Override
                 public void onChanged() {
                     super.onChanged();
-                    if (ONBOARDING) {
+                    if (shouldOnBoard) {
                         mOnBoardView.setVisibility(View.INVISIBLE);
                         faceButton.setVisibility(View.VISIBLE);
-                        ONBOARDING = false;
+                        shouldOnBoard = false;
                         swatchAdapter.unregisterDataSetObserver(dragObserver);
                     }
                 }
             };
         }
 
-        //todo change this to get the id from the preferences
-        //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
         setCurrentPreviewWatch(currentFace);
         updateInterface(mImage);
         faceValues = new ArrayList<>();
@@ -166,7 +170,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         }
 
 
-        if(ONBOARDING) {
+        if(shouldOnBoard) {
             mOnBoardView = findViewById(R.id.info_overlay);
             mOnBoardView.setVisibility(View.VISIBLE);
             faceButton.setVisibility(View.INVISIBLE);
@@ -318,7 +322,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
 
     private void startPreview(){
-        //todo need to ass the file path to the serialised setup.
+        //todo need to pass the file path to the serialised setup.
         mobileListener.startPreview(this, "");
     }
 

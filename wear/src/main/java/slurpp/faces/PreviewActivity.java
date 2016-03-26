@@ -8,6 +8,7 @@ import android.os.PowerManager;
 import android.widget.RelativeLayout;
 
 import mclemont.faces.R;
+import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.utils.WatchFragment;
 
@@ -27,6 +28,7 @@ public class PreviewActivity extends Activity {
     private Handler previewHandler;
     private boolean showPreview = true;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,7 +42,10 @@ public class PreviewActivity extends Activity {
         //get parameters from the bundle.
         int face = WatchDraw.FACE.OUA_TIME.ordinal();
         if(extras!=null)
-            face = extras.getInt(getString(R.string.PREVIEW_CURRENT_FACE),WatchDraw.FACE.OUA_TIME.ordinal());
+            face = extras.getInt(getString(R.string.PREVIEW_CURRENT_FACE),WatchDraw.FACE.FILL_TIME  .ordinal());
+        else{
+            face = Constants.currentFace(this);
+        }
 
         watchPreview = (RelativeLayout)findViewById(R.id.watch);
         watchFragment = new WatchFragment();

@@ -1,5 +1,6 @@
 package slurpp.faces.activities;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -8,25 +9,29 @@ import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
 
 import java.util.ArrayList;
 
-import slurpp.faces_lib.CustomFace;
-import slurpp.faces_lib.Global;
-import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.Font;
-import slurpp.faces.MobileListener;
 import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.WatchPageAdapter;
 import slurpp.faces.objects.DepthPageTransformer;
+import slurpp.faces.services.MobileListener;
+import slurpp.faces_lib.Constants;
+import slurpp.faces_lib.CustomFace;
+import slurpp.faces_lib.Global;
+import slurpp.faces_lib.WatchDraw;
 
 
 public class Home extends FragmentActivity {
 
-    private final boolean ONBOARDING = true; //todo load on boarding from preferences.
+    private boolean shouldOnBoard = true;
+    private boolean isActive = false;
+    private boolean isRound = true;
 
 
 
@@ -61,6 +66,10 @@ public class Home extends FragmentActivity {
     protected void onCreate(Bundle saved){
         super.onCreate(saved);
         setContentView(R.layout.activity_selection);
+
+
+
+
         setup();
 
         previewRunnable = new Runnable() {
@@ -88,6 +97,32 @@ public class Home extends FragmentActivity {
     @Override
     public void onResume(){
         super.onResume();
+
+        Bundle extras = getIntent().getExtras();
+        if(extras!=null) {
+            shouldOnBoard = extras.getBoolean(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD, false);
+            isActive = extras.getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(),false);
+            isRound = extras.getBoolean(Global.DataMap.WEAR_SHAPE.name(),true);
+        }else{
+            isActive = Constants.isActive(this);
+            isRound = Constants.isRound(this);
+        }
+
+
+        if(!isActive){
+            //todo swap this dialog for a nicer alert overlay.
+            new AlertDialog.Builder(this).setTitle(getString(R.string.title_activate_faces_dialog)).setMessage(R.string.message_activate_faces)
+                    .setPositiveButton(R.string.dialog_activate_ok_pick_face, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    //todo set a runnable to run in 10 seconds and check if the face is now active.
+                    //prompt the user to select the watchface.
+                    MobileListener.shared(getApplicationContext()).sendMessage(getApplicationContext(), Global.Messages.GET_WATCH.toString(), "");
+                }
+            }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
+        }
+
+
         if(!showPreview) {
             showPreview = true;
             previewHandler.postDelayed(previewRunnable, 0);
@@ -220,7 +255,7 @@ public class Home extends FragmentActivity {
 
     public void takePhoto(){
         Intent i;
-        if(ONBOARDING){
+        if(shouldOnBoard){
             i = new Intent(this,onboard_camera.class);
             i.putExtra(CustomiseActivity.EXTRA_WATCH_FACE, currentFace.ordinal());
         }else {

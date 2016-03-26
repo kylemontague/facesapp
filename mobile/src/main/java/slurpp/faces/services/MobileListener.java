@@ -1,10 +1,9 @@
-package slurpp.faces;
+package slurpp.faces.services;
 
 import android.content.Context;
-import android.content.SharedPreferences;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -26,6 +25,9 @@ import com.google.android.gms.wearable.WearableListenerService;
 import java.io.File;
 import java.util.List;
 
+import slurpp.faces.R;
+import slurpp.faces.activities.Home;
+import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.Global;
 
 
@@ -37,6 +39,14 @@ public class MobileListener extends WearableListenerService implements GoogleApi
     private static final String TAG = "MOBILE LISTENER";
     private GoogleApiClient mGoogleApiClient;
 
+
+
+    private static MobileListener sharedInstance;
+    public static MobileListener shared(Context context){
+        if(sharedInstance == null)
+            sharedInstance = new MobileListener(context);
+        return sharedInstance;
+    }
 
 
     public MobileListener(){
@@ -51,11 +61,11 @@ public class MobileListener extends WearableListenerService implements GoogleApi
     public void onMessageReceived(MessageEvent messageEvent){
         final String message = new String(messageEvent.getData());
         //Log.v("WATCH_MESSAGE",message+" path:"+messageEvent.getPath());
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(MobileListener.this);
         if(messageEvent.getPath().equals(getString(R.string.PREF_CURRENT_FACE))) {
-            if (sp != null) {
-                sp.edit().putString(messageEvent.getPath(), message).apply();
-            }
+                Constants.getEditor(this).putString(messageEvent.getPath(), message).apply();
+        }else if(messageEvent.getPath().equals(Global.Messages.LAUNCH_CUSTOMISE_ACTIVITY)){
+            //todo this might not work.
+            startCustomiseActivity();
         }else{
             super.onMessageReceived(messageEvent);
         }
@@ -188,11 +198,17 @@ public class MobileListener extends WearableListenerService implements GoogleApi
     public void updateWearSettings(DataMap map){
         boolean isActive = map.getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), false);
         boolean isRound = map.getBoolean(Global.DataMap.WEAR_SHAPE.name(),true);
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        sp.edit().putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), isActive);
-        sp.edit().putBoolean(Global.DataMap.WEAR_SHAPE.name(), isRound);
-        sp.edit().commit();
+        Constants.getEditor(this).putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), isActive);
+        Constants.getEditor(this).putBoolean(Global.DataMap.WEAR_SHAPE.name(), isRound);
+        Constants.getEditor(this).apply();
     }
 
+    public void startCustomiseActivity(){
+        Intent intent = new Intent(getApplicationContext(), Home.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.putExtra(Global.DataMap.WEAR_IS_ACTIVE.name(),true);
+        intent.putExtra(Global.DataMap.WEAR_SHAPE.name(),Constants.isRound(this));
+        startActivity(intent);
+    }
 
 }

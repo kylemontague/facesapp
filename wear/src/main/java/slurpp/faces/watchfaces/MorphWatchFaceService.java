@@ -4,16 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
@@ -23,6 +20,7 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import slurpp.faces_lib.BusinessFaceConfig;
+import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.Face;
 import slurpp.faces_lib.FillFaceConfig;
 import slurpp.faces_lib.Global;
@@ -52,8 +50,6 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
     /* implement service callback methods */
     private class Engine extends CanvasWatchFaceService.Engine {
 
-        SharedPreferences sp;
-
         private static final int MSG_UPDATE_TIME = 0;
         private static final long INTERACTIVE_UPDATE_RATE_MS = 1000;
 
@@ -64,8 +60,22 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         boolean mLowBitAmbient;
         private boolean mBurnInProtection;
         private boolean mAmbient =false;
+        private boolean mDatetime = false;
         WatchDraw.FACE watchType;
         private Rect mPeekCardBounds = new Rect(0,0,0,0);
+
+        private boolean mTapShowDate = false;
+
+
+        Handler dateTimeoutHandler = new Handler();
+        long dateTimeout = 5000;
+        Runnable dateTimeoutRunnable = new Runnable() {
+            @Override
+            public void run() {
+                mDatetime = !mDatetime;
+                invalidate();
+            }
+        };
 
 
         /* Watch Features */
@@ -110,10 +120,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                 shape = Face.Shape.ROUND;
             }
 
-            sp.edit().putBoolean(Global.DataMap.WEAR_SHAPE.name(),mIsRound);
-            sp.edit().commit();
-
-            //Log.d("PREF_TEST", "WINDOWINSETS" + sp.getBoolean(Global.DataMap.WEAR_SHAPE.name(), mIsRound));
+            Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_SHAPE.name(),mIsRound).commit();
         }
 
         private void updateTimer() {
@@ -142,17 +149,18 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
-            sp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            sp.edit().putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), true).commit();
+            Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), true).commit();
 
-            Log.d("PREF_TEST","CREATE "+sp.getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(),false));
+            mTapShowDate = Constants.getPreferences(getApplicationContext()).getBoolean(Constants.PREF_BOOLEAN_TAP_SHOW_DATE,true);
+
+
             /* initialize your watch face */
 
 //             /* load the background image */
 //            Resources resources = OUATWatchFaceService.this.getResources();
 
             //TODO here defines the colour and layout properties of the face (ADD SWITCH)
-            setWatchFaceType(WatchDraw.FACE.BUSINESS_TIME);
+            setWatchFaceType(WatchDraw.FACE.FILL_TIME);
 
 
             /* allocate an object to hold the time */
@@ -179,8 +187,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onDestroy(){
             super.onDestroy();
-            sp.edit().putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), false).commit();
-            Log.d("PREF_TEST", "DESTROY" + sp.getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), true));
+            Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), false).commit();
         }
 
         @Override
@@ -218,8 +225,17 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onTapCommand(int tapType, int x, int y, long eventTime) {
             //Log.d("TAP_WATCH","type:"+tapType+" location:["+x+","+y+"] timestamp:"+eventTime);
-            if(tapType == 2) {
-                onAmbientModeChanged((mAmbient)?false:true);
+            if(tapType == 2L) {
+                if(mTapShowDate){
+                    dateTimeoutRunnable.run();
+                    if(mDatetime)
+                        dateTimeoutHandler.postDelayed(dateTimeoutRunnable, dateTimeout);
+                    else
+                        dateTimeoutHandler.removeCallbacks(dateTimeoutRunnable);
+
+                }else {
+                    onAmbientModeChanged((mAmbient) ? false : true);
+                }
             }
         }
 
@@ -228,18 +244,18 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
             mCalendar.setTime(new Date());
             switch (watchType){
                 case BUSINESS_TIME:
-                    WatchDraw.BusinessTime(canvas,bounds,watchConfig,mCalendar,mAmbient,shape, null, mChinSize);
+                    WatchDraw.BusinessTime(canvas,bounds,watchConfig,mCalendar,mAmbient,shape, null, mChinSize, mDatetime);
                     break;
                 case FILL_TIME:
-                    WatchDraw.FillTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds);
+                    WatchDraw.FillTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds, mDatetime);
                     break;
                 case OUA_TIME:
-                    WatchDraw.OUATime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds);
+                    WatchDraw.OUATime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds, mDatetime);
                     break;
                 case TWO_TIME:
-                    WatchDraw.TwoTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds);
+                    WatchDraw.TwoTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds, mDatetime);
                 default:
-                    //WatchDraw.FillTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds);
+                    //WatchDraw.FillTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds, mTapShowDate);
                     break;
             }
         }

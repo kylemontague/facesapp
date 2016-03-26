@@ -2,18 +2,17 @@ package slurpp.faces.activities;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.drawable.AnimationDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import slurpp.faces_lib.Global;
 import slurpp.faces.Font;
-import slurpp.faces.MobileListener;
+import slurpp.faces.services.MobileListener;
+import slurpp.faces_lib.Constants;
+import slurpp.faces_lib.Global;
 
 import static slurpp.faces.R.animator;
 import static slurpp.faces.R.drawable;
@@ -28,13 +27,28 @@ public class SplashActivity extends Activity{
     ImageView straps;
     TextView madeby;
     AnimationDrawable Anim;
+
+    boolean shouldOnBoard = true;
+
 //    PathView svgView;
     //todo need to update the background watch straps to be square also.
     boolean isRound = true;
+    boolean isActive = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(layout.splash);
+        isRound = Constants.isRound(getApplicationContext());
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                shouldOnBoard = Constants.shouldOnBoard(SplashActivity.this);
+                isActive = Constants.isActive(SplashActivity.this);
+                isRound = Constants.isRound(SplashActivity.this);
+            }
+        });
+
         //iv1 = (ImageView) findViewById(id.watch);
         straps = (ImageView)findViewById(id.watch_background);
         madeby = (TextView)findViewById(id.madeby_text);
@@ -85,12 +99,13 @@ public class SplashActivity extends Activity{
 
     public void hasLoaded(){
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean active = sp.getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), false);
-        boolean round = sp.getBoolean(Global.DataMap.WEAR_SHAPE.name(),false);
 
-        Log.d("WEAR SETTINGS","Active:"+active+", Round:"+round);
-        Intent i = new Intent(this,Home.class);
+
+
+        Intent i = new Intent(SplashActivity.this,Home.class);
+        i.putExtra(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD,shouldOnBoard);
+        i.putExtra(Global.DataMap.WEAR_SHAPE.name(),isRound);
+        i.putExtra(Global.DataMap.WEAR_IS_ACTIVE.name(),isActive);
         startActivity(i);
         overridePendingTransition(animator.fade_in, animator.fade_out);
     }

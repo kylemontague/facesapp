@@ -24,7 +24,10 @@ public class Global {
     public enum Messages{
         IS_FACES_ACTIVE,
         SET_WATCH_FACE,
-        GET_WATCH
+        GET_WATCH,
+        OPEN_FACE_SELECTION,
+        LAUNCH_CUSTOMISE_ACTIVITY,
+        VIBRATE_WATCH
     }
 
     public enum DataMap{

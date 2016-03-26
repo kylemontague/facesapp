@@ -61,20 +61,20 @@ public class PreviewCanvas extends View {
         Rect card = new Rect(0,0,0,0);
         switch (mWatchFace){
             case BUSINESS_TIME:
-                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, clipBounds);
+                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, clipBounds,false);
                 break;
             case FILL_TIME:
-                WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds);
+                WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,false);
                 break;
 //            case FACES_FACE:
 //                Bitmap image = BitmapFactory.decodeResource(getResources(),(mShape == Face.Shape.ROUND)?R.drawable.rounded_49:R.drawable.square_49);
 //                WatchDraw.FacesFace(image, canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0);
 //                break;
             case OUA_TIME:
-                WatchDraw.OUATime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds);
+                WatchDraw.OUATime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,false);
                 break;
             case TWO_TIME:
-                WatchDraw.TwoTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps,0, card, clipBounds);
+                WatchDraw.TwoTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps,0, card, clipBounds,false);
                 break;
             default:
                 break;

@@ -1,5 +1,7 @@
 package slurpp.faces.watchfaces;
 
+import android.app.WallpaperManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -7,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -36,9 +39,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import mclemont.faces.R;
+import slurpp.faces.PreviewActivity;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.Prefs;
-import slurpp.faces.PreviewActivity;
 
 
 /**
@@ -90,6 +93,10 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
             preview(message);
         }else if (messageEvent.getPath().contains(Global.Messages.GET_WATCH.toString())) {
             sendWearSettings();
+        }else if (messageEvent.getPath().contains(Global.Messages.OPEN_FACE_SELECTION.toString())) {
+            startFaceSelection();
+        }else if (messageEvent.getPath().contains(Global.Messages.OPEN_FACE_SELECTION.toString())) {
+            vibrate();
         } else {
             super.onMessageReceived(messageEvent);
         }
@@ -289,5 +296,19 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
     }
 
 
+    protected void startFaceSelection(){
+        vibrate();
+        Intent intent = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+        intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, new ComponentName(getPackageName(), MorphWatchFaceService.class.getCanonicalName()));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+
+    protected void vibrate(){
+        Vibrator vibrator = (Vibrator) this.getSystemService(VIBRATOR_SERVICE);
+        if(vibrator.hasVibrator())
+            vibrator.vibrate(new long[]{0,200,100,200},-1);
+    }
 
 }

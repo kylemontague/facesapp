@@ -61,5 +61,9 @@
     <string name="title_activity_onboard_camera">onboard_camera</string>
     <string name="onboard_msg_take_a_photo">Take a photo to create a colour palette</string>
     <string name="onboard_msg_drag_to_change">Drag to change colours</string>
+    <string name="message_activate_faces">You haven\'t activated Faces on your watch yet. Do you want to do that now?</string>
+    <string name="dialog_activate_ok_pick_face">Open on Wear</string>
+    <string name="dialog_activate_cancel_continute">Not yet</string>
+    <string name="title_activate_faces_dialog">Time to meet Faces</string>
 
 </resources>
