@@ -1,0 +1,36 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="slurpp.faces.activities.onboard_cameraFragment"
+    android:background="@drawable/overlay_gradient">
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true">
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_info_camera_white"
+            android:layout_marginTop="30dp"
+            android:id="@+id/info_image"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="30dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="20dp"
+            android:text="@string/onboard_msg_take_a_photo"
+            android:textSize="@dimen/body_text_size"
+            android:textIsSelectable="false"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center"
+            android:textAllCaps="true"
+            android:textColor="@color/green"
+            android:textAlignment="center"
+            android:id="@+id/info_text"/>
+    </LinearLayout>
+
+</RelativeLayout>

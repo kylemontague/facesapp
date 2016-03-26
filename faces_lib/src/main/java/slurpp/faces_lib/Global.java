@@ -1,4 +1,4 @@
-package montague.faces_lib;
+package slurpp.faces_lib;
 
 import android.app.ActivityManager;
 import android.content.Context;

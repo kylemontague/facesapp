@@ -10,13 +10,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
-import montague.faces_lib.BusinessFaceConfig;
-import montague.faces_lib.Face;
-import montague.faces_lib.FillFaceConfig;
-import montague.faces_lib.OUATFace;
-import montague.faces_lib.PreviewCanvas;
-import montague.faces_lib.WatchDraw;
-import montague.faces_lib.WordsmithFace;
+import slurpp.faces_lib.BusinessFaceConfig;
+import slurpp.faces_lib.Face;
+import slurpp.faces_lib.FillFaceConfig;
+import slurpp.faces_lib.OUATFace;
+import slurpp.faces_lib.PreviewCanvas;
+import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.WordsmithFace;
 import slurpp.faces.R;
 
 

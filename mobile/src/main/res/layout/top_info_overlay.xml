@@ -18,11 +18,9 @@
             android:textAlignment="center"
             android:id="@+id/info_text"/>
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="@dimen/info_icon_size"
+            android:layout_height="@dimen/info_icon_size"
             android:layout_gravity="center_horizontal"
-            android:minHeight="20dp"
-            android:minWidth="20dp"
             android:layout_marginBottom="0dp"
             android:visibility="gone"
             android:id="@+id/info_image"/>

@@ -2,6 +2,7 @@ package slurpp.faces.controls;
 
 import android.content.ClipData;
 import android.content.Context;
+import android.database.DataSetObserver;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
@@ -23,7 +24,7 @@ import slurpp.faces.utils.ColourConverter;
 import static android.support.v7.graphics.Palette.Swatch;
 
 /**
- * Created by kylemontague on 15/12/14.
+ * Created by Kyle Montague on 15/12/14.
  */
 public class SwatchAdapter extends BaseAdapter {
 
@@ -35,6 +36,8 @@ public class SwatchAdapter extends BaseAdapter {
     private ArrayList<Swatch> allColours;
     private ArrayList<Integer> markers;
 
+    private ArrayList<DataSetObserver> observers;
+
     private int currentMarker =-1;
     private SwatchView markerView=null;
 
@@ -44,6 +47,7 @@ public class SwatchAdapter extends BaseAdapter {
         allColours = new ArrayList<>();
         markers = new ArrayList<>();
         setSwatches(values);
+        observers = new ArrayList<>();
     }
 
 
@@ -81,6 +85,7 @@ public class SwatchAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View gridItem = (convertView == null)?inflater.inflate(R.layout.swatchgridview, null):convertView;
         SwatchView swatch = (SwatchView) gridItem.findViewById(R.id.grid_swatch);
@@ -92,6 +97,20 @@ public class SwatchAdapter extends BaseAdapter {
             swatch.setStrokeResource(R.color.white);
         swatch.setTag(R.string.Swatch_ID_ViewTag,position);
         return gridItem;
+    }
+
+
+    @Override
+    public void registerDataSetObserver(DataSetObserver observer){
+        super.registerDataSetObserver(observer);
+        observers.add(observer);
+
+    }
+
+    @Override
+    public void unregisterDataSetObserver(DataSetObserver observer){
+        super.unregisterDataSetObserver(observer);
+        observers.remove(observer);
     }
 
     public int getColour(int position){
@@ -115,7 +134,7 @@ public class SwatchAdapter extends BaseAdapter {
 
 
     public void addMarker(int position){
-        markers.add(Integer.valueOf(position));
+        markers.add(position);
 
         for(Integer m:markers)
             Log.d("Markers","Swatch:"+m.toString());
@@ -221,6 +240,7 @@ public class SwatchAdapter extends BaseAdapter {
                         view.invalidate();
                         v.invalidate();
                         currentMarker = -1;
+                        notifyDataSetChanged();
                     }
 
                     break;

@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import mclemont.faces.R;
-import montague.faces_lib.Global;
-import montague.faces_lib.Prefs;
+import slurpp.faces_lib.Global;
+import slurpp.faces_lib.Prefs;
 import slurpp.faces.PreviewActivity;
 
 

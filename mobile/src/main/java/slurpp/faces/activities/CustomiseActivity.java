@@ -1,6 +1,7 @@
 package slurpp.faces.activities;
 
 import android.content.Context;
+import android.database.DataSetObserver;
 import android.graphics.Bitmap;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
@@ -18,8 +19,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.Button;
 import android.widget.GridView;
-import android.widget.HorizontalScrollView;
-import android.widget.LinearLayout;
 
 import com.squareup.seismic.ShakeDetector;
 
@@ -27,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import montague.faces_lib.WatchDraw;
+import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.Font;
 import slurpp.faces.MobileListener;
 import slurpp.faces.R;
@@ -48,14 +47,11 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private static final String TAG = "CAMERA";
 
 
-
-    private InfoFragment mInfoOverlay;
-    private View mOverlayView;
+    private boolean ONBOARDING = true; //todo load from preferences.
+    private View mOnBoardView;
     private GridView swatchContainer;
-    private HorizontalScrollView progressbarContainer;
-    private LinearLayout progressbar;
+
     private Button faceButton;
-    private View imageView;
 
 
     private SwatchAdapter swatchAdapter;
@@ -73,6 +69,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private MobileListener mobileListener;
 
 
+    private DataSetObserver dragObserver;
+
 
 
     @Override
@@ -85,7 +83,20 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         mImage = BlurBuilder.blur(this, mTmpImage, .95f, 2.0f);
         setup();
 
-
+        if(ONBOARDING) {
+            dragObserver = new DataSetObserver() {
+                @Override
+                public void onChanged() {
+                    super.onChanged();
+                    if (ONBOARDING) {
+                        mOnBoardView.setVisibility(View.INVISIBLE);
+                        faceButton.setVisibility(View.VISIBLE);
+                        ONBOARDING = false;
+                        swatchAdapter.unregisterDataSetObserver(dragObserver);
+                    }
+                }
+            };
+        }
 
         //todo change this to get the id from the preferences
         //SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
@@ -133,31 +144,42 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         swatchContainer = (GridView) findViewById(R.id.swatchContainer);
         swatchContainer.setVisibility(View.VISIBLE);
 
+
+
         ColorMatrix matrix = new ColorMatrix();
         matrix.setSaturation(0f);
         ColorMatrixColorFilter filter = new ColorMatrixColorFilter(matrix);
-        imageView = findViewById(R.id.blur_image);
+        View imageView = findViewById(R.id.blur_image);
         Drawable img = new BitmapDrawable(getResources(), mImage);
         img.setAlpha(150);
         img.setColorFilter(filter);
         imageView.setBackground(img);
 
-
-
-
-        mOverlayView = findViewById(R.id.info_overlay);
+        View mOverlayView = findViewById(R.id.top_info_overlay);
         if(mOverlayView != null){
-            mInfoOverlay = new InfoFragment();
-            //todo update to the correct image.
-            mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_pick_colours,-1, InfoFragment.type.TOP));
-            getSupportFragmentManager().beginTransaction().add(R.id.info_overlay,mInfoOverlay).commit();
-            View v = findViewById(R.id.info_overlay);
-            v.bringToFront();
+            InfoFragment mInfoOverlay = new InfoFragment();
+            mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_pick_colours, -1, InfoFragment.type.TOP));
+            getSupportFragmentManager().beginTransaction().add(R.id.top_info_overlay, mInfoOverlay).commit();
+//            View v = findViewById(R.id.info_overlay);
+//            v.bringToFront();
+            mOverlayView.bringToFront();
         }
 
-        progressbarContainer = (HorizontalScrollView) findViewById(R.id.progressbarContainer);
-        progressbarContainer.setVisibility(View.VISIBLE);
-        progressbar = (LinearLayout) findViewById(R.id.progressbar);
+
+        if(ONBOARDING) {
+            mOnBoardView = findViewById(R.id.info_overlay);
+            mOnBoardView.setVisibility(View.VISIBLE);
+            faceButton.setVisibility(View.INVISIBLE);
+            if (mOverlayView != null) {
+                InfoFragment mOnBoardOverlay = new InfoFragment();
+                //todo update to the correct image.
+                mOnBoardOverlay.setArguments(InfoFragment.argumentBuilder(R.string.onboard_msg_drag_to_change, R.drawable.ic_info_circletick, InfoFragment.type.BOTTOM));//todo change to circle icon
+                getSupportFragmentManager().beginTransaction().add(R.id.info_overlay, mOnBoardOverlay).commit();
+                View v = findViewById(R.id.info_overlay);
+                v.bringToFront();
+            }
+        }
+
 
 
 
@@ -227,6 +249,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             swatchAdapter = new SwatchAdapter(this,swatches);
             swatchContainer.setVisibility(View.VISIBLE);
             swatchContainer.setAdapter(swatchAdapter);
+            swatchAdapter.registerDataSetObserver(dragObserver);
             LayoutAnimationController lac = new LayoutAnimationController(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.abc_fade_in), 0.4f); //0.5f == time between appearance of listview items.
             swatchContainer.setLayoutAnimation(lac);
 //            swatchContainer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -255,12 +278,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             swatchContainer.setVisibility(View.INVISIBLE);
         }
 
-        //todo need to pass the configuration steps for this particular watch
-        if(progressAdapter == null)
-            progressAdapter = new ProgressAdapter(this.getApplicationContext());
-        for(int x=0;x<progressAdapter.getCount();x++){
-            progressbar.addView(progressAdapter.getView(x,null,progressbar));
-        }
         randomSelection(preferences.length);
     }
 

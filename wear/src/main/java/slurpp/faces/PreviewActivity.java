@@ -8,7 +8,7 @@ import android.os.PowerManager;
 import android.widget.RelativeLayout;
 
 import mclemont.faces.R;
-import montague.faces_lib.WatchDraw;
+import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.utils.WatchFragment;
 
 /**

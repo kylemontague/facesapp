@@ -11,7 +11,7 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import montague.faces_lib.Global;
+import slurpp.faces_lib.Global;
 import slurpp.faces.Font;
 import slurpp.faces.MobileListener;
 

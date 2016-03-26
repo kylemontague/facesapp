@@ -12,7 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import slurpp.faces.R;
-import montague.faces_lib.Font;
+import slurpp.faces_lib.Font;
 
 /**
  * Created by kylemontague on 20/06/15.
@@ -41,9 +41,9 @@ public class InfoFragment extends Fragment {
 
     public static Bundle argumentBuilder(int textRes,int imageRes, type overlayType){
         Bundle b = new Bundle();
-        b.putInt(InfoFragment.ARG_TEXT,textRes);
-        b.putInt(InfoFragment.ARG_IMAGE,imageRes);
-        b.putInt(InfoFragment.ARG_TYPE, overlayType.ordinal());
+        b.putInt(ARG_TEXT,textRes);
+        b.putInt(ARG_IMAGE,imageRes);
+        b.putInt(ARG_TYPE, overlayType.ordinal());
         return b;
     }
 

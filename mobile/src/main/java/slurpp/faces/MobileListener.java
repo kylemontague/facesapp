@@ -26,7 +26,7 @@ import com.google.android.gms.wearable.WearableListenerService;
 import java.io.File;
 import java.util.List;
 
-import montague.faces_lib.Global;
+import slurpp.faces_lib.Global;
 
 
 /**

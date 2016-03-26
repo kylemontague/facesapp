@@ -1,16 +1,17 @@
-package montague.faces_lib;
+package slurpp.faces_lib;
 
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
+
 
 /**
  * Created by kylemontague on 19/12/14.
  */
-public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferenceChangeListener {
+public class BusinessFaceConfig implements Face, SharedPreferences.OnSharedPreferenceChangeListener {
+
 
 
     private Context mContext;
@@ -22,38 +23,42 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
     private Paint mBackgroundPaint;
     private Paint mAccentPaint;
 
-    private Prefs mP;
     private static String name = null;
-    private double mTextScale = 1.0;
 
-    public FacesFaceConfig(Context context){
+    private int[] colours = null;
+    int BACKGROUND_INDEX = 0;
+    int HOUR_INDEX = 1;
+    int MINUTE_INDEX = 2;
+    int SECOND_INDEX = 3;
+    int ACCENT_INDEX = -1;
+    int MERIDIAN_INDEX = -1;
+
+
+    public BusinessFaceConfig(Context context){
         mContext=context;
-        mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
-        name = mContext.getResources().getString(R.string.Faces_FaceName);
+        getFaceName();
     }
 
-    public FacesFaceConfig(Context context, double textScale){
-        mTextScale = textScale;
-        mContext=context;
-        mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
-        name = mContext.getResources().getString(R.string.Faces_FaceName);
+    public BusinessFaceConfig(Context context, int[] colours){
+        this.mContext=context;
+        this.colours = colours;
+        getFaceName();
     }
+
 
     @Override
     public void setColours(int[] values) {
-
+        colours = values;
     }
 
     @Override
     public int xOffset(Shape faceShape) {
-        return (int)mTextScale*((faceShape == Shape.ROUND)?-80:-80);
+        return ((faceShape == Shape.ROUND)?-80:-80);
     }
 
     @Override
     public int yOffset(Shape faceShape) {
-        return (int)mTextScale*((faceShape == Shape.ROUND)?20:20);
+        return ((faceShape == Shape.ROUND)?30:30);
     }
 
     @Override
@@ -65,13 +70,13 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
     @Override
     public String getFaceName() {
         if(name == null)
-            name = mContext.getString(R.string.Faces_FaceName);
+            name = mContext.getString(R.string.Business_FaceName);
         return name;
     }
 
     @Override
     public Mode mode() {
-        return Mode.DIGITAL;
+        return Mode.ANALOG;
     }
 
     @Override
@@ -84,8 +89,9 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
         if(mHourPaint == null) {
             mHourPaint = new Paint();
             mHourPaint.setColor(hoursTextColour(faceState));
-            mHourPaint.setStrokeWidth(1.0f);
-            mHourPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mHourPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.business_hour_stroke));
+            mHourPaint.setAntiAlias(true);
+            mHourPaint.setStyle((faceState!=State.AMBIENT)? Paint.Style.FILL_AND_STROKE: Paint.Style.STROKE);
             mHourPaint.setTypeface(hoursType(faceState));
             mHourPaint.setStrokeCap(Paint.Cap.ROUND);
             mHourPaint.setTextSize(hoursTextSize());
@@ -98,8 +104,8 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
         if(mMinutePaint == null) {
             mMinutePaint = new Paint();
             mMinutePaint.setColor(minutesTextColour(faceState));
-            mMinutePaint.setStrokeWidth(1.0f);
-            mMinutePaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mMinutePaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.business_min_stroke));
+            mMinutePaint.setAntiAlias(true);
             mMinutePaint.setTypeface(minutesType(faceState));
             mMinutePaint.setStrokeCap(Paint.Cap.ROUND);
             mMinutePaint.setTextSize(minutesTextSize());
@@ -112,8 +118,8 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
         if(mSecondPaint == null) {
             mSecondPaint = new Paint();
             mSecondPaint.setColor(secondsTextColour(faceState));
-            mSecondPaint.setStrokeWidth(2.0f);
-            mSecondPaint.setAntiAlias(faceState == State.AMBIENT ? false : true);
+            mSecondPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.business_sec_stroke));
+            mSecondPaint.setAntiAlias(true);
             mSecondPaint.setStyle(Paint.Style.STROKE);
             mSecondPaint.setTypeface(secondsType(faceState));
             mSecondPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -132,7 +138,7 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
         if(mBackgroundPaint == null) {
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(backgroundColour(faceState));
-            mBackgroundPaint.setStrokeWidth(1.0f);
+            mBackgroundPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thin_stroke));
             mBackgroundPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
         }
         return mBackgroundPaint;
@@ -143,8 +149,8 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
         if(mAccentPaint == null) {
             mAccentPaint = new Paint();
             mAccentPaint.setColor(accentColour(faceState));
-            mAccentPaint.setStrokeWidth(2.0f);
-            mAccentPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mAccentPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.business_holo_stroke));
+            mAccentPaint.setAntiAlias(true);
             mAccentPaint.setTypeface(secondsType(faceState));
             mAccentPaint.setStrokeCap(Paint.Cap.ROUND);
             mAccentPaint.setTextSize(secondsTextSize());
@@ -154,87 +160,113 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
 
     @Override
     public Typeface dateType(State faceState) {
-        return Font.get(mContext,Font.QUICKSAND_BOLD);
+        return Font.get(mContext,Font.PROXI_LIGHT);
     }
 
     @Override
     public Typeface hoursType(State faceState) {
-        return (faceState == State.ACTIVE)?Font.get(mContext,Font.PROXI_SEMIBOLD):Font.get(mContext,Font.QUICKSAND_BOLD);
+        return (faceState == State.ACTIVE)?Font.get(mContext,Font.PROXI_SEMIBOLD):Font.get(mContext,Font.PROXI_LIGHT);
     }
 
     @Override
     public Typeface minutesType(State faceState) {
-        return Font.get(mContext,Font.QUICKSAND_BOLD);
+        return Font.get(mContext,Font.PROXI_LIGHT);
     }
 
     @Override
     public Typeface secondsType(State faceState) {
-        return Font.get(mContext,Font.QUICKSAND_BOLD);
+        return Font.get(mContext,Font.PROXI_LIGHT);
     }
 
     @Override
     public Typeface meridianType(State faceState) {
-        return (faceState == State.ACTIVE)?Font.get(mContext,Font.QUICKSAND_BOLD):Font.get(mContext,Font.QUICKSAND_BOLD);
+        return (faceState == State.ACTIVE)?Font.get(mContext,Font.PROXI_SEMIBOLD):Font.get(mContext,Font.PROXI_LIGHT);
     }
 
     @Override
     public int dateTextSize() {
-        return (int)mTextScale*30;
+        return 30;
     }
 
     @Override
     public int hoursTextSize() {
-        return (int)mTextScale*70;
+        return 80;
     }
 
     @Override
     public int minutesTextSize() {
-        return (int)mTextScale*70;
+        return 80;
     }
 
     @Override
     public int secondsTextSize() {
-        return (int)mTextScale*53;
+        return 53;
     }
 
     @Override
     public int meridianTextSize() {
-        return (int)mTextScale*30;
+        return 30;
     }
 
     @Override
     public int dateTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(SECOND_INDEX)) ? getColour(SECOND_INDEX) : mContext.getResources().getColor(R.color.business_default_second);
     }
 
     @Override
     public int hoursTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_HOUR_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(HOUR_INDEX)) ? getColour(HOUR_INDEX) : mContext.getResources().getColor(R.color.business_default_hour);
     }
 
     @Override
     public int minutesTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_MINUTE_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(MINUTE_INDEX)) ? getColour(MINUTE_INDEX) : mContext.getResources().getColor(R.color.business_default_minute);
     }
 
     @Override
     public int secondsTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(SECOND_INDEX)) ? getColour(SECOND_INDEX) : mContext.getResources().getColor(R.color.business_default_second);
     }
 
     @Override
     public int meridianTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(MERIDIAN_INDEX)) ? getColour(MERIDIAN_INDEX) : mContext.getResources().getColor(R.color.business_default_background);
     }
 
     @Override
     public int backgroundColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_BACKGROUND_COLOUR), mContext.getResources().getColor(R.color.white));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(BACKGROUND_INDEX)) ? getColour(BACKGROUND_INDEX) : mContext.getResources().getColor(R.color.business_default_background);
     }
 
     @Override
     public int accentColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_ACCENT_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(ACCENT_INDEX)) ? getColour(ACCENT_INDEX) : mContext.getResources().getColor(R.color.light);
+    }
+
+
+    private boolean hasColour(int index){
+        return (colours != null && index < colours.length && index >= 0)?true:false;
+    }
+    private int getColour(int index){
+        if(colours != null && index < colours.length && index >= 0){
+            //request colour
+            return colours[index];
+        }
+        return -1;
     }
 
     @Override
@@ -244,19 +276,15 @@ public class FacesFaceConfig implements Face, SharedPreferences.OnSharedPreferen
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-
         if(key.toUpperCase().contains(name)){
-           if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
+            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
                 mBackgroundPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_ACCENT_COLOUR))){
-               mAccentPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
-               mHourPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_MINUTE_COLOUR))){
-               mMinutePaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_SECOND_COLOUR))){
-               mSecondPaint = null;
-           }
+            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
+                mHourPaint = null;
+                mAccentPaint = null;
+                mMinutePaint = null;
+                mSecondPaint = null;
+            }
         }
     }
 

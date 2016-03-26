@@ -11,13 +11,13 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import mclemont.faces.R;
-import montague.faces_lib.BusinessFaceConfig;
-import montague.faces_lib.Face;
-import montague.faces_lib.FillFaceConfig;
-import montague.faces_lib.OUATFace;
-import montague.faces_lib.PreviewCanvas;
-import montague.faces_lib.WatchDraw;
-import montague.faces_lib.WordsmithFace;
+import slurpp.faces_lib.BusinessFaceConfig;
+import slurpp.faces_lib.Face;
+import slurpp.faces_lib.FillFaceConfig;
+import slurpp.faces_lib.OUATFace;
+import slurpp.faces_lib.PreviewCanvas;
+import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.WordsmithFace;
 import slurpp.faces.PreviewActivity;
 
 /**
@@ -71,19 +71,19 @@ public class WatchFragment extends Fragment {
     }
 
     public String getName(){
-        int name = montague.faces_lib.R.string.unknown_face_title;
+        int name = slurpp.faces_lib.R.string.unknown_face_title;
         switch (mFace){
             case OUA_TIME:
-                name = montague.faces_lib.R.string.wordsmith_face;
+                name = slurpp.faces_lib.R.string.wordsmith_face;
                 break;
             case FILL_TIME:
-                name =  montague.faces_lib.R.string.fill_face_title;
+                name =  slurpp.faces_lib.R.string.fill_face_title;
                 break;
             case BUSINESS_TIME:
-                name =  montague.faces_lib.R.string.business_face_title;
+                name =  slurpp.faces_lib.R.string.business_face_title;
                 break;
 //            case FACES_FACE:
-//                name =  montague.faces_lib.R.string.faces_face_title;
+//                name =  slurpp.faces_lib.R.string.faces_face_title;
 //                break;
         }
         return getResources().getString(name);

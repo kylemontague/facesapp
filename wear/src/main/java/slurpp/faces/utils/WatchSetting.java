@@ -5,7 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import montague.faces_lib.Face;
+import slurpp.faces_lib.Face;
 
 
 /**

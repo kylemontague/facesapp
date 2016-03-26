@@ -22,13 +22,13 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import montague.faces_lib.BusinessFaceConfig;
-import montague.faces_lib.Face;
-import montague.faces_lib.FillFaceConfig;
-import montague.faces_lib.Global;
-import montague.faces_lib.OUATFace;
-import montague.faces_lib.WatchDraw;
-import montague.faces_lib.WordsmithFace;
+import slurpp.faces_lib.BusinessFaceConfig;
+import slurpp.faces_lib.Face;
+import slurpp.faces_lib.FillFaceConfig;
+import slurpp.faces_lib.Global;
+import slurpp.faces_lib.OUATFace;
+import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.WordsmithFace;
 
 /**
  * Created by kyle montague on 19/12/14.

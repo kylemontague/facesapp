@@ -13,9 +13,9 @@ import android.widget.Button;
 
 import java.util.ArrayList;
 
-import montague.faces_lib.CustomFace;
-import montague.faces_lib.Global;
-import montague.faces_lib.WatchDraw;
+import slurpp.faces_lib.CustomFace;
+import slurpp.faces_lib.Global;
+import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.Font;
 import slurpp.faces.MobileListener;
 import slurpp.faces.R;
@@ -25,6 +25,10 @@ import slurpp.faces.objects.DepthPageTransformer;
 
 
 public class Home extends FragmentActivity {
+
+    private final boolean ONBOARDING = true; //todo load on boarding from preferences.
+
+
 
     private static final int CAMERA_IMAGE_CAPTURE = 1337;
     private Button takePhoto;
@@ -199,8 +203,7 @@ public class Home extends FragmentActivity {
             mInfoOverlay = new InfoFragment();
             mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_swipe_to_select,R.drawable.ic_info_arrowleft, InfoFragment.type.BOTTOM));
             getSupportFragmentManager().beginTransaction().add(R.id.info_overlay,mInfoOverlay).commit();
-            View v = findViewById(R.id.info_overlay);
-            v.bringToFront();
+            mOverlayView.bringToFront();
         }
 
         mTopOverlayView = findViewById(R.id.top_info_overlay);
@@ -216,7 +219,13 @@ public class Home extends FragmentActivity {
 
 
     public void takePhoto(){
-        Intent i=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        Intent i;
+        if(ONBOARDING){
+            i = new Intent(this,onboard_camera.class);
+            i.putExtra(CustomiseActivity.EXTRA_WATCH_FACE, currentFace.ordinal());
+        }else {
+            i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        }
         startActivityForResult(i, CAMERA_IMAGE_CAPTURE);
         overridePendingTransition(R.animator.fade_in, R.animator.zoom_in);
     }
@@ -244,7 +253,7 @@ public class Home extends FragmentActivity {
 //    }
 
 
-    int[] colours = new int[]{montague.faces_lib.R.color.black, montague.faces_lib.R.color.green, montague.faces_lib.R.color.white, montague.faces_lib.R.color.white, montague.faces_lib.R.color.white};
+    int[] colours = new int[]{slurpp.faces_lib.R.color.black, slurpp.faces_lib.R.color.green, slurpp.faces_lib.R.color.white, slurpp.faces_lib.R.color.white, slurpp.faces_lib.R.color.white};
     private void createFaces(){
         ArrayList<CustomFace> faces = new ArrayList<>();
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME,colours,"Test Watch 1"));

@@ -8,7 +8,7 @@ import android.support.v4.app.FragmentPagerAdapter;
 
 import java.util.ArrayList;
 
-import montague.faces_lib.WatchDraw;
+import slurpp.faces_lib.WatchDraw;
 
 /**
  * Created by kylemontague on 18/06/15.

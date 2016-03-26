@@ -11,7 +11,7 @@ import android.view.View;
 import slurpp.faces.R;
 
 /**
- * Created by kylemontague on 19/06/15.
+ * Created by Kyle Montague on 19/06/15.
  */
 public class SwatchView extends View {
 

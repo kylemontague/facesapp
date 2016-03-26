@@ -1,4 +1,4 @@
-package montague.faces_lib;
+package slurpp.faces_lib;
 import java.text.DecimalFormat;
 /**
  * Created by kylemontague on 19/12/14.
