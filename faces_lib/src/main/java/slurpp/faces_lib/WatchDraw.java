@@ -21,7 +21,7 @@ import java.util.GregorianCalendar;
 public class WatchDraw {
 
     public enum FACE {
-//        FACES_FACE,
+        //        FACES_FACE,
         OUA_TIME,
         FILL_TIME,
         BUSINESS_TIME,
@@ -88,25 +88,25 @@ public class WatchDraw {
         return new Rect((int)(bounds.left+l), bounds.top,(int)(bounds.right-l),(int)(bounds.bottom-t));
     }
 
-    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean showDate) {
-        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false, showDate);
+    public static void BusinessTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
+        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard,false, showDate);
     }
 
-    public static void BusinessTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean isPreview, boolean showDate) {
+    public static void BusinessTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
-        if(shape == Face.Shape.SQUARE) {
+        if(shape == IFace.Shape.SQUARE) {
             if(isPreview)
                 bounds = scaleRect(bounds,.9f, .99f);
-            canvas.drawRect(bounds, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+            canvas.drawRect(bounds, watchConfig.backgroundPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
         }
         else
-            canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+            canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
 
-        Paint mHourPaint = watchConfig.hoursPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
-        Paint mMinutePaint =watchConfig.minutesPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
-        Paint mSecondPaint = watchConfig.secondsPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
-        Paint mAccentPaint = watchConfig.accentPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
+        Paint mHourPaint = watchConfig.hoursPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
+        Paint mMinutePaint =watchConfig.minutesPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
+        Paint mSecondPaint = watchConfig.secondsPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
+        Paint mAccentPaint = watchConfig.accentPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
 
         int width = bounds.width();
         int height = bounds.height();
@@ -117,62 +117,66 @@ public class WatchDraw {
         float centerX = bounds.centerX();
         float centerY = bounds.centerY();
 
-        //Compute rotations and lengths for the clock hands.
+        if(!showDate){
+            //Compute rotations and lengths for the clock hands.
 
-        float secRot = mTime.get(Calendar.SECOND) / 30f * (float) Math.PI;
-        int minutes = mTime.get(Calendar.MINUTE);
-        float minRot = minutes / 30f * (float) Math.PI;
-        float hrRot = ((mTime.get(Calendar.HOUR) + (minutes / 60f)) / 6f ) * (float) Math.PI;
+            float secRot = mTime.get(Calendar.SECOND) / 30f * (float) Math.PI;
+            int minutes = mTime.get(Calendar.MINUTE);
+            float minRot = minutes / 30f * (float) Math.PI;
+            float hrRot = ((mTime.get(Calendar.HOUR) + (minutes / 60f)) / 6f ) * (float) Math.PI;
 
-        float r = width/2;
-        float secLength = r*.9f;
-        float minLength = r*.7f;
-        float hrLength = r*.5f;
+            float r = width/2;
+            float secLength = r*.9f;
+            float minLength = r*.7f;
+            float hrLength = r*.5f;
 
-        // Only draw the second hand in interactive mode.
-        if (!mAmbient) {
-            float secX = (float) Math.sin(secRot) * secLength;
-            float secY = (float) -Math.cos(secRot) * secLength;
-            canvas.drawLine(centerX, centerY, centerX + secX, centerY +
-                    secY, mSecondPaint);
+            // Only draw the second hand in interactive mode.
+            if (!mAmbient) {
+                float secX = (float) Math.sin(secRot) * secLength;
+                float secY = (float) -Math.cos(secRot) * secLength;
+                canvas.drawLine(centerX, centerY, centerX + secX, centerY +
+                        secY, mSecondPaint);
+            }
+
+            //Draw the minute and hour hands.
+            float minX = (float) Math.sin(minRot) * minLength;
+            float minY = (float) -Math.cos(minRot) * minLength;
+            canvas.drawLine(centerX, centerY, centerX + minX, centerY + minY, mMinutePaint);
+            float hrX = (float) Math.sin(hrRot) * hrLength;
+            float hrY = (float) -Math.cos(hrRot) * hrLength;
+            canvas.drawLine(centerX, centerY, centerX + hrX, centerY + hrY, mHourPaint);
+            canvas.drawCircle(centerX,centerY,mAccentPaint.getStrokeWidth()*.6f,mHourPaint);
+
+            if(mAmbient){
+                canvas.drawLine(centerX, centerY, centerX + hrX, centerY + hrY, mAccentPaint);
+                canvas.drawCircle(centerX,centerY,mAccentPaint.getStrokeWidth(),mAccentPaint);
+            }
+
+
         }
-
-        //Draw the minute and hour hands.
-        float minX = (float) Math.sin(minRot) * minLength;
-        float minY = (float) -Math.cos(minRot) * minLength;
-        canvas.drawLine(centerX, centerY, centerX + minX, centerY + minY, mMinutePaint);
-        float hrX = (float) Math.sin(hrRot) * hrLength;
-        float hrY = (float) -Math.cos(hrRot) * hrLength;
-        canvas.drawLine(centerX, centerY, centerX + hrX, centerY + hrY, mHourPaint);
-        canvas.drawCircle(centerX,centerY,mAccentPaint.getStrokeWidth()*.6f,mHourPaint);
-
-        if(mAmbient){
-            canvas.drawLine(centerX, centerY, centerX + hrX, centerY + hrY, mAccentPaint);
-            canvas.drawCircle(centerX,centerY,mAccentPaint.getStrokeWidth(),mAccentPaint);
+        else{
+            drawDate(canvas,new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom),mMinutePaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
         }
 
     }
 
 
-    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
+    public static void FillTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
         FillTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,showDate);
     }
 
-    public static void FillTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void FillTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
 
-        int accentColor = watchConfig.accentColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
-        int bgColor = watchConfig.backgroundColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
+        int accentColor = watchConfig.accentColour(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
+        int bgColor = watchConfig.backgroundColour(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
         //todo fix the start and stop positions of the seconds tick.
-        if(shape == Face.Shape.SQUARE && isPreview)
+        if(shape == IFace.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
 
         RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
 
 
-
-
-
-        Paint base = watchConfig.hoursPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
+        Paint base = watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
         setTextSizeForWidth(base, (bounds.width() * .85f), "00:00");
 
         Paint txtPaint;
@@ -187,12 +191,12 @@ public class WatchDraw {
                 txtPaint = makeTonePaint(bF, accentColor, bgColor, split, base);
             }
 
-            canvas.drawBitmap(back, bounds, bF, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+            canvas.drawBitmap(back, bounds, bF, watchConfig.backgroundPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
         }else{
-            if(shape == Face.Shape.SQUARE)
-                canvas.drawRect(bounds,watchConfig.backgroundPaint(Face.State.AMBIENT));
+            if(shape == IFace.Shape.SQUARE)
+                canvas.drawRect(bounds,watchConfig.backgroundPaint(IFace.State.AMBIENT));
             else
-                canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(Face.State.AMBIENT));
+                canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(IFace.State.AMBIENT));
             txtPaint = base;
             txtPaint.setStyle(Paint.Style.STROKE);
         }
@@ -206,37 +210,37 @@ public class WatchDraw {
             timeString = hours + ":" + ((mTime.get(Calendar.MINUTE) < 10) ? "0" + mTime.get(Calendar.MINUTE) : mTime.get(Calendar.MINUTE));
             txtWidth = txtPaint.measureText(timeString);
             txtPaint.getTextBounds("00:00", 0, "00:00".length(), b);
+
+            if(peekCard.top > 0) {
+                bF.set(bF.left, bF.top, bF.right, peekCard.top);
+                canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), bF.centerY()+b.height(), txtPaint);
+            }else {
+                canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), (bF.centerY() + (b.height() / 2)), txtPaint);
+            }
+
         }else{
-            timeString = WatchDraw.datestring(mTime.getTime(),UK_DATE); //todo should change this based on locale (US format)
-            txtPaint.setTextSize(txtPaint.getTextSize()/1.5f);
-            txtWidth = txtPaint.measureText(timeString);
-            txtPaint.getTextBounds(timeString, 0, timeString.length(), b);
+            drawDate(canvas,bF,txtPaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
         }
 
-        if(peekCard.top > 0) {
-            bF.set(bF.left, bF.top, bF.right, peekCard.top);
-            canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), bF.centerY()+b.height(), txtPaint);
-        }else {
-            canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), (bF.centerY() + (b.height() / 2)), txtPaint);
-        }
+
 
 
     }
 
-    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset , boolean showDate) {
+    public static void PrideTime(Canvas canvas, Rect bounds, IFace watchConfig, Time mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset , boolean showDate) {
         PrideTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false,showDate);
     }
 
-    public static void PrideTime(Canvas canvas, Rect bounds, Face watchConfig, Time mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset,  boolean isPreview, boolean showDate) {
+    public static void PrideTime(Canvas canvas, Rect bounds, IFace watchConfig, Time mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, boolean isPreview, boolean showDate) {
 
-        if(shape == Face.Shape.SQUARE && isPreview)
+        if(shape == IFace.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
 
         //purple, blue, green, yellow, orange, red
         int colours[]= new int[]{0xFF750787, 0xFF004dff, 0xff008026, 0xffffed00, 0xffff8c00, 0xffe40303};
 
-        int accentColor = watchConfig.accentColour(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
-        int bgColor = watchConfig.backgroundColour(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE);
+        int accentColor = watchConfig.accentColour(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
+        int bgColor = watchConfig.backgroundColour(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
         RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
         RectF vertBF= new RectF(bounds.centerX(),bounds.top,bounds.centerX(),bounds.bottom);
 
@@ -246,30 +250,30 @@ public class WatchDraw {
 
         //Paint txtPaint = makeTonePaint(bF,bgColor,accentColor,split,watchConfig.hoursPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
         Bitmap back = makeToneGrad(bF,colours, shape);
-        canvas.drawBitmap(back,bounds,bF,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
+        canvas.drawBitmap(back,bounds,bF,watchConfig.backgroundPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
         String timeString = (mTime.hour%12)+":"+((mTime.minute<10)?"0"+mTime.minute:mTime.minute);
-        canvas.drawText(timeString, bF.centerX() + watchConfig.xOffset(shape), bounds.centerY() + watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+        canvas.drawText(timeString, bF.centerX() + watchConfig.xOffset(shape), bounds.centerY() + watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
 
 
     }
 
 
-    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
+    public static void OUATime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
         OUATime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false, showDate);
     }
 
-    public static void OUATime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void OUATime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
 
 
-        if(shape == Face.Shape.SQUARE) {
+        if(shape == IFace.Shape.SQUARE) {
             if(isPreview)
                 bounds = scaleRect(bounds,.9f, .99f);
-            canvas.drawRect(bounds, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+            canvas.drawRect(bounds, watchConfig.backgroundPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
         }
         else
-            canvas.drawCircle(bounds.centerX(),bounds.centerY(),bounds.width()/2,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
+            canvas.drawCircle(bounds.centerX(),bounds.centerY(),bounds.width()/2,watchConfig.backgroundPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
 
 
         int width = bounds.width();
@@ -283,30 +287,30 @@ public class WatchDraw {
             int radius = (int)((width/2)*.9f);
             int angle = mTime.get(Calendar.SECOND) * 6;
             RectF rectF = new RectF(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-            canvas.drawArc(rectF, -90, angle, false, watchConfig.secondsPaint(mAmbient? Face.State.AMBIENT:Face.State.ACTIVE));
+            canvas.drawArc(rectF, -90, angle, false, watchConfig.secondsPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
         }
 
         String[] values = getHoursMins(mTime.get(Calendar.HOUR_OF_DAY)%12,mTime.get(Calendar.MINUTE));
         if(values.length > 1) {
-            canvas.drawText(values[0], centerX + watchConfig.xOffset(shape), centerY +watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient? Face.State.AMBIENT:Face.State.ACTIVE));
+            canvas.drawText(values[0], centerX + watchConfig.xOffset(shape), centerY +watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
             String[] minValues = values[1].split("\n");
             for(int x=0; x<minValues.length;x++)
-                canvas.drawText(minValues[x], centerX + watchConfig.xOffset(shape), centerY+(x*(height/6)), watchConfig.minutesPaint(mAmbient? Face.State.AMBIENT:Face.State.ACTIVE));
+                canvas.drawText(minValues[x], centerX + watchConfig.xOffset(shape), centerY+(x*(height/6)), watchConfig.minutesPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
         }
     }
 
-    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
+    public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
         TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
     }
 
-    public static void TwoTime(Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
-        if(shape == Face.Shape.SQUARE && isPreview)
+        if(shape == IFace.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
 
         RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
-        Bitmap bgBit = makeLinearGrad(bF,watchConfig.backgroundColour(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE), watchConfig.accentColour(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE), shape);
-        canvas.drawBitmap(bgBit, bounds, bounds, watchConfig.backgroundPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE));
+        Bitmap bgBit = makeLinearGrad(bF,watchConfig.backgroundColour(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE), watchConfig.accentColour(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE), shape);
+        canvas.drawBitmap(bgBit, bounds, bounds, watchConfig.backgroundPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
 
         int width = bounds.width();
         int height = bounds.height()-chinInset;
@@ -327,11 +331,11 @@ public class WatchDraw {
         float yPos = centerY;
         String mintues = getMins(mTime.get(Calendar.MINUTE)).replace("-\n","");
 
-        Paint hourPaint =  watchConfig.hoursPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
+        Paint hourPaint =  watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
 
         float hourWidth = hourPaint.measureText(hourStr);
 
-        Paint minPaint = watchConfig.minutesPaint(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
+        Paint minPaint = watchConfig.minutesPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
         float minWidth = minPaint.measureText(mintues);
         if (mAmbient) {
             Path textPath = new Path();
@@ -356,7 +360,7 @@ public class WatchDraw {
         canvas.drawLine(centerX-Math.max(hourWidth, minWidth)/2,yPos+shift,centerX+Math.max(hourWidth, minWidth)/2,yPos+shift,hourPaint);
         yPos+=(hourPaint.descent()-hourPaint.ascent())/2+10;
 
-        canvas.drawText(mintues, centerX - (minWidth/2), yPos, watchConfig.minutesPaint(mAmbient? Face.State.AMBIENT:Face.State.ACTIVE));
+        canvas.drawText(mintues, centerX - (minWidth/2), yPos, watchConfig.minutesPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
         yPos+=(minPaint.descent()-minPaint.ascent())/2;
         canvas.drawLine(centerX-Math.max(hourWidth, minWidth)/2,yPos,centerX+Math.max(hourWidth, minWidth)/2,yPos,hourPaint);
 
@@ -364,13 +368,13 @@ public class WatchDraw {
 
 
 
-    public static void FacesFace(Bitmap image, Canvas canvas, Rect bounds, Face watchConfig, GregorianCalendar mTime, Boolean mAmbient, Face.Shape shape, Bitmap background, int chinInset, boolean showDate) {
+    public static void FacesFace(Bitmap image, Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, boolean showDate) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
-        if(shape == Face.Shape.SQUARE)
-            canvas.drawRect(bounds,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
+        if(shape == IFace.Shape.SQUARE)
+            canvas.drawRect(bounds,watchConfig.backgroundPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
         else
-            canvas.drawCircle(bounds.centerX(),bounds.centerY(),bounds.width()/2,watchConfig.backgroundPaint(mAmbient?Face.State.AMBIENT:Face.State.ACTIVE));
+            canvas.drawCircle(bounds.centerX(),bounds.centerY(),bounds.width()/2,watchConfig.backgroundPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
         int angle = -10;
         canvas.drawBitmap(image,new Rect(0,0,image.getWidth(),image.getHeight()),new Rect(0,0,bounds.right+3,bounds.bottom+3),null);
 //        String timeString = "Faces";//(mTime.hour%12)+":"+((mTime.minute<10)?"0"+mTime.minute:mTime.minute);
@@ -412,21 +416,21 @@ public class WatchDraw {
         return min;
     }
 
-    private static Bitmap makeLinearGrad(RectF rectF, int startColour, int endColour, Face.Shape shape){
+    private static Bitmap makeLinearGrad(RectF rectF, int startColour, int endColour, IFace.Shape shape){
         LinearGradient gradient = new LinearGradient(rectF.left,rectF.bottom,rectF.right,rectF.top,startColour,endColour, Shader.TileMode.CLAMP);
         Paint p = new Paint();
         p.setDither(true);
         p.setShader(gradient);
         Bitmap bitmap = Bitmap.createBitmap((int)(rectF.width()),(int)(rectF.height()), Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bitmap);
-        if(shape == Face.Shape.SQUARE)
+        if(shape == IFace.Shape.SQUARE)
             c.drawRect(rectF,p);
         else
             c.drawCircle(rectF.centerX(),rectF.centerY(),rectF.width()/2,p);
         return bitmap;
     }
 
-    private static Bitmap makeToneGrad(RectF rectF, int startColour, int endColour, float point, Face.Shape shape){
+    private static Bitmap makeToneGrad(RectF rectF, int startColour, int endColour, float point, IFace.Shape shape){
         int[] colours = new int[]{startColour,startColour,endColour,endColour};
         float[] positions = new float[]{0f,point,point,1f};
         LinearGradient gradient = new LinearGradient(rectF.left,rectF.bottom,rectF.right,rectF.top,colours,positions, Shader.TileMode.CLAMP);
@@ -436,14 +440,14 @@ public class WatchDraw {
         p.setStyle(Paint.Style.FILL);
         Bitmap bitmap = Bitmap.createBitmap((int)(rectF.width()),(int)(rectF.height()), Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bitmap);
-        if(shape == Face.Shape.SQUARE)
+        if(shape == IFace.Shape.SQUARE)
             c.drawRect(rectF,p);
         else
             c.drawCircle(rectF.centerX(),rectF.centerY(),rectF.width()/2,p);
         return bitmap;
     }
 
-    private static Bitmap makeToneGrad(RectF rectF, int[] colours, Face.Shape shape){
+    private static Bitmap makeToneGrad(RectF rectF, int[] colours, IFace.Shape shape){
         int[] finalColours = new int[colours.length*2];
         float[] positions = new float[finalColours.length];
 
@@ -467,7 +471,7 @@ public class WatchDraw {
         p.setStyle(Paint.Style.FILL);
         Bitmap bitmap = Bitmap.createBitmap((int)(rectF.width()),(int)(rectF.height()), Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bitmap);
-        if(shape == Face.Shape.SQUARE)
+        if(shape == IFace.Shape.SQUARE)
             c.drawRect(rectF,p);
         else
             c.drawCircle(rectF.centerX(),rectF.centerY(),rectF.width()/2,p);
@@ -524,5 +528,20 @@ public class WatchDraw {
     private static String datestring(Date date, String dateFormat){
         SimpleDateFormat format = new SimpleDateFormat(dateFormat);
         return format.format(date);
+    }
+
+    private static void drawDate(Canvas canvas, RectF bounds, Paint paint, Date date, String dateformat, int peekCardTop){
+        String string = WatchDraw.datestring(date,dateformat);
+        paint.setTextSize(paint.getTextSize()/1.5f);
+        float txtWidth = paint.measureText(string);
+        Rect b = new Rect();
+        paint.getTextBounds(string, 0, string.length(), b);
+
+        if(peekCardTop > 0) {
+            bounds.set(bounds.left, bounds.top, bounds.right, peekCardTop);
+            canvas.drawText(string, bounds.centerX() - (txtWidth / 2), bounds.centerY()+b.height(), paint);
+        }else {
+            canvas.drawText(string, bounds.centerX() - (txtWidth / 2), (bounds.centerY() + (b.height() / 2)), paint);
+        }
     }
 }

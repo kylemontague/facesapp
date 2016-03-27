@@ -9,6 +9,8 @@ import android.os.Handler;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.activeandroid.ActiveAndroid;
+
 import slurpp.faces.Font;
 import slurpp.faces.services.MobileListener;
 import slurpp.faces_lib.Constants;
@@ -43,6 +45,7 @@ public class SplashActivity extends Activity{
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
+                ActiveAndroid.initialize(SplashActivity.this);
                 shouldOnBoard = Constants.shouldOnBoard(SplashActivity.this);
                 isActive = Constants.isActive(SplashActivity.this);
                 isRound = Constants.isRound(SplashActivity.this);

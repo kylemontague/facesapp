@@ -13,8 +13,8 @@ import java.util.GregorianCalendar;
  */
 public class PreviewCanvas extends View {
 
-    private Face mConfig;
-    private Face.Shape mShape;
+    private IFace mConfig;
+    private IFace.Shape mShape;
     WatchDraw.FACE mWatchFace;
     GregorianCalendar mCal;
     Bitmap straps;
@@ -26,11 +26,11 @@ public class PreviewCanvas extends View {
         mCal = new GregorianCalendar();
     }
 
-    public PreviewCanvas(Context context, WatchDraw.FACE watch_face, Face watch_config, Face.Shape shape) {
+    public PreviewCanvas(Context context, WatchDraw.FACE watch_face, IFace watch_config, IFace.Shape shape) {
         this(context, watch_face, watch_config, shape, false);
     }
 
-    public PreviewCanvas(Context context, WatchDraw.FACE watch_face, Face watch_config, Face.Shape shape, boolean shouldClipBounds) {
+    public PreviewCanvas(Context context, WatchDraw.FACE watch_face, IFace watch_config, IFace.Shape shape, boolean shouldClipBounds) {
         super(context);
         mWatchFace = watch_face;
         mConfig = watch_config;
@@ -45,7 +45,7 @@ public class PreviewCanvas extends View {
 
 
 
-    public void update(WatchDraw.FACE face, Face config){
+    public void update(WatchDraw.FACE face, IFace config){
         mWatchFace = face;
         mConfig = config;
     }
@@ -61,7 +61,7 @@ public class PreviewCanvas extends View {
         Rect card = new Rect(0,0,0,0);
         switch (mWatchFace){
             case BUSINESS_TIME:
-                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, clipBounds,false);
+                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, card, clipBounds,false);
                 break;
             case FILL_TIME:
                 WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,false);

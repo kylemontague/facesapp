@@ -19,9 +19,9 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import slurpp.faces_lib.BusinessFaceConfig;
+import slurpp.faces_lib.BusinessIFaceConfig;
 import slurpp.faces_lib.Constants;
-import slurpp.faces_lib.Face;
+import slurpp.faces_lib.IFace;
 import slurpp.faces_lib.FillFaceConfig;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.OUATFace;
@@ -79,8 +79,8 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 
 
         /* Watch Features */
-        Face watchConfig;
-        Face.Shape shape = Face.Shape.SQUARE;
+        IFace watchConfig;
+        IFace.Shape shape = IFace.Shape.SQUARE;
 
         boolean mRegisteredTimeZoneReceiver=false;
 
@@ -117,7 +117,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
             mChinSize = insets.getSystemWindowInsetBottom();
 
             if(mIsRound){
-                shape = Face.Shape.ROUND;
+                shape = IFace.Shape.ROUND;
             }
 
             Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_SHAPE.name(),mIsRound).commit();
@@ -212,7 +212,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
             boolean wasInAmbientMode = isInAmbientMode();
             super.onAmbientModeChanged(inAmbientMode);
             mAmbient = inAmbientMode;
-            watchConfig.changedState(mAmbient ? Face.State.AMBIENT : Face.State.ACTIVE);
+            watchConfig.changedState(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
             if (inAmbientMode != wasInAmbientMode) {
                 if (mLowBitAmbient) {
                     boolean antiAlias = !inAmbientMode;
@@ -244,7 +244,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
             mCalendar.setTime(new Date());
             switch (watchType){
                 case BUSINESS_TIME:
-                    WatchDraw.BusinessTime(canvas,bounds,watchConfig,mCalendar,mAmbient,shape, null, mChinSize, mDatetime);
+                    WatchDraw.BusinessTime(canvas,bounds,watchConfig,mCalendar,mAmbient,shape, null, mChinSize, mPeekCardBounds,mDatetime);
                     break;
                 case FILL_TIME:
                     WatchDraw.FillTime(canvas, bounds, watchConfig, mCalendar, mAmbient, shape, null, mChinSize, mPeekCardBounds, mDatetime);
@@ -307,7 +307,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
             watchType = face;
             switch (watchType){
                 case BUSINESS_TIME:
-                    watchConfig = new BusinessFaceConfig(getApplicationContext());
+                    watchConfig = new BusinessIFaceConfig(getApplicationContext());
                     break;
                 case FILL_TIME:
                     watchConfig = new FillFaceConfig(getApplicationContext());

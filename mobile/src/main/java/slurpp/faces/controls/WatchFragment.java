@@ -10,8 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
-import slurpp.faces_lib.BusinessFaceConfig;
-import slurpp.faces_lib.Face;
+import slurpp.faces_lib.BusinessIFaceConfig;
+import slurpp.faces_lib.IFace;
 import slurpp.faces_lib.FillFaceConfig;
 import slurpp.faces_lib.OUATFace;
 import slurpp.faces_lib.PreviewCanvas;
@@ -48,18 +48,18 @@ public class WatchFragment extends Fragment {
         watchPreview = (RelativeLayout) rootView.findViewById(R.id.watch);
         Context c= getActivity().getApplicationContext();
         //TODO CHANGE TO THE CURRENT FACE SHAPE
-        Face.Shape s = Face.Shape.SQUARE;
+        IFace.Shape s = IFace.Shape.SQUARE;
         PreviewCanvas previewCanvas = new PreviewCanvas(c,mFace,getConfig(c,mFace), s, true);
         previewCanvas.setAmbientMode(ambientMode);
         watchPreview.addView(previewCanvas);
 
         watchStraps = (ImageView) rootView.findViewById(R.id.watch_background);
         //TODO CHANGE TO THE NEW STRAPS
-        watchStraps.setImageResource(s== Face.Shape.ROUND?R.drawable.watch_strap:R.drawable.watch_strap_square);
+        watchStraps.setImageResource(s== IFace.Shape.ROUND?R.drawable.watch_strap:R.drawable.watch_strap_square);
         return rootView;
     }
 
-    private Face getConfig(Context c, WatchDraw.FACE id){
+    private IFace getConfig(Context c, WatchDraw.FACE id){
         switch(id) {
             case OUA_TIME:
                 return new OUATFace(c);
@@ -68,7 +68,7 @@ public class WatchFragment extends Fragment {
             case FILL_TIME:
                 return new FillFaceConfig(c);
             case BUSINESS_TIME:
-                return new BusinessFaceConfig(c);
+                return new BusinessIFaceConfig(c);
         }
         return null;
     }

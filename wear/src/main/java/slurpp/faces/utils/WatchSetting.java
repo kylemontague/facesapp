@@ -5,7 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import slurpp.faces_lib.Face;
+import slurpp.faces_lib.IFace;
 
 
 /**
@@ -17,13 +17,13 @@ public class WatchSetting implements Serializable{
 
     int mID;
     String mName;
-    Face mFace;
+    IFace mIFace;
     long mTimestamp;
 
-    public WatchSetting(int id, String name, long timestamp, Face face) {
+    public WatchSetting(int id, String name, long timestamp, IFace IFace) {
         mID = id;
         mName = name;
-        mFace = face;
+        mIFace = IFace;
         mTimestamp = timestamp;
     }
 

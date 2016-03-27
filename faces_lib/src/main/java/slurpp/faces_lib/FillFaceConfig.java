@@ -10,7 +10,7 @@ import android.preference.PreferenceManager;
 /**
  * Created by kylemontague on 19/12/14.
  */
-public class FillFaceConfig implements Face, SharedPreferences.OnSharedPreferenceChangeListener {
+public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferenceChangeListener {
 
 
     private Context mContext;

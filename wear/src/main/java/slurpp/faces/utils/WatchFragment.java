@@ -11,8 +11,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import mclemont.faces.R;
-import slurpp.faces_lib.BusinessFaceConfig;
-import slurpp.faces_lib.Face;
+import slurpp.faces_lib.BusinessIFaceConfig;
+import slurpp.faces_lib.IFace;
 import slurpp.faces_lib.FillFaceConfig;
 import slurpp.faces_lib.OUATFace;
 import slurpp.faces_lib.PreviewCanvas;
@@ -46,7 +46,7 @@ public class WatchFragment extends Fragment {
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_preview, container, false);
         watchPreview = (RelativeLayout) rootView.findViewById(R.id.watch);
         Context c= getActivity().getApplicationContext();
-        Face.Shape s = Face.Shape.ROUND;
+        IFace.Shape s = IFace.Shape.ROUND;
         PreviewCanvas previewCanvas = new PreviewCanvas(c,mFace,getConfig(c,mFace), s);
         watchPreview.addView(previewCanvas);
 
@@ -54,7 +54,7 @@ public class WatchFragment extends Fragment {
         return rootView;
     }
 
-    private Face getConfig(Context c, WatchDraw.FACE id){
+    private IFace getConfig(Context c, WatchDraw.FACE id){
         switch(id) {
             case TWO_TIME:
                 return new WordsmithFace(c);
@@ -63,7 +63,7 @@ public class WatchFragment extends Fragment {
             case FILL_TIME:
                 return new FillFaceConfig(c);
             case BUSINESS_TIME:
-                return new BusinessFaceConfig(c);
+                return new BusinessIFaceConfig(c);
 //            case FACES_FACE:
 //                return new FacesFaceConfig(c);
         }

@@ -13,6 +13,9 @@ import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
 
+import com.github.amlcurran.showcaseview.ShowcaseView;
+import com.github.amlcurran.showcaseview.targets.ViewTarget;
+
 import java.util.ArrayList;
 
 import slurpp.faces.Font;
@@ -30,7 +33,7 @@ import slurpp.faces_lib.WatchDraw;
 public class Home extends FragmentActivity {
 
     private boolean shouldOnBoard = true;
-    private boolean isActive = false;
+    private boolean isActive = true;
     private boolean isRound = true;
 
 
@@ -66,10 +69,6 @@ public class Home extends FragmentActivity {
     protected void onCreate(Bundle saved){
         super.onCreate(saved);
         setContentView(R.layout.activity_selection);
-
-
-
-
         setup();
 
         previewRunnable = new Runnable() {
@@ -85,11 +84,6 @@ public class Home extends FragmentActivity {
         previewHandler = new Handler();
         previewHandler.postDelayed(previewRunnable,0);
 
-
-
-
-
-        createFaces();
 
     }
 
@@ -199,7 +193,7 @@ public class Home extends FragmentActivity {
                     firstLoad = false;
                     takePhoto.setVisibility(View.VISIBLE);
                     mOverlayView.setVisibility(View.INVISIBLE);
-
+                    onboardFirstPhoto();
                 }
                 faceIndex = position;
                 mTopInfoOverlay.setTextString((String) mPagerAdapter.getPageTitle(position));
@@ -249,8 +243,23 @@ public class Home extends FragmentActivity {
             View v = findViewById(R.id.top_info_overlay);
             v.bringToFront();
         }
+
+
     }
 
+
+
+
+    public void onboardFirstPhoto(){
+        ShowcaseView sv = new ShowcaseView.Builder(this)
+                .setTarget(new ViewTarget(takePhoto))
+                .setContentTitle("Like what you see?")
+                .setContentText("hit select to start customising this face")
+                .hideOnTouchOutside()
+                .singleShot(42L)
+                .build();
+        sv.hideButton();
+    }
 
 
     public void takePhoto(){

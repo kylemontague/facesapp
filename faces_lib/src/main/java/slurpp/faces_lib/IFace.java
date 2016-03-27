@@ -7,7 +7,7 @@ import android.graphics.Typeface;
 /**
  * Created by Kyle Montague on 19/12/14.
  */
-public interface Face {
+public interface IFace {
 
     enum Mode {
         ANALOG,

@@ -10,7 +10,7 @@ import android.graphics.Typeface;
 /**
  * Created by kylemontague on 19/12/14.
  */
-public class BusinessFaceConfig implements Face, SharedPreferences.OnSharedPreferenceChangeListener {
+public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPreferenceChangeListener {
 
 
 
@@ -34,12 +34,12 @@ public class BusinessFaceConfig implements Face, SharedPreferences.OnSharedPrefe
     int MERIDIAN_INDEX = -1;
 
 
-    public BusinessFaceConfig(Context context){
+    public BusinessIFaceConfig(Context context){
         mContext=context;
         getFaceName();
     }
 
-    public BusinessFaceConfig(Context context, int[] colours){
+    public BusinessIFaceConfig(Context context, int[] colours){
         this.mContext=context;
         this.colours = colours;
         getFaceName();

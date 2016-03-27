@@ -11,7 +11,7 @@ import android.preference.PreferenceManager;
 /**
  * Created by kylemontague on 19/12/14.
  */
-public class OUATFace implements Face, SharedPreferences.OnSharedPreferenceChangeListener {
+public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChangeListener {
 
 
     private Context mContext;

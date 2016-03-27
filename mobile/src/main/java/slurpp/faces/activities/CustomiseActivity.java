@@ -1,6 +1,7 @@
 package slurpp.faces.activities;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.DataSetObserver;
 import android.graphics.Bitmap;
 import android.graphics.ColorMatrix;
@@ -19,6 +20,7 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.LayoutAnimationController;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.squareup.seismic.ShakeDetector;
 
@@ -26,15 +28,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import slurpp.faces_lib.Constants;
-import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.Font;
-import slurpp.faces.services.MobileListener;
 import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.ProgressAdapter;
 import slurpp.faces.controls.SwatchAdapter;
+import slurpp.faces.services.MobileListener;
 import slurpp.faces.utils.BlurBuilder;
+import slurpp.faces_lib.Constants;
+import slurpp.faces_lib.Global;
+import slurpp.faces_lib.WatchDraw;
 
 
 public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener{
@@ -49,6 +52,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
 
     private boolean shouldOnBoard = true;
+    private boolean isActive = false;
+
     private View mOnBoardView;
     private GridView swatchContainer;
 
@@ -68,9 +73,10 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private ArrayList<String> faceValues;
 
     private MobileListener mobileListener;
-
-
     private DataSetObserver dragObserver;
+
+    private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
+
 
 
 
@@ -79,12 +85,23 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activty_customise);
         Bitmap mTmpImage = (Bitmap)getIntent().getExtras().get(CustomiseActivity.EXTRA_BITMAP_IMAGE);
-        int faceID = getIntent().getExtras().getInt(CustomiseActivity.EXTRA_WATCH_FACE,0);
+        final int faceID = getIntent().getExtras().getInt(CustomiseActivity.EXTRA_WATCH_FACE,0);
         currentFace = WatchDraw.FACE.fromOrdinal(faceID);
         mImage = BlurBuilder.blur(this, mTmpImage, .95f, 2.0f);
 
         shouldOnBoard = Constants.shouldOnBoard(getApplicationContext());
+        isActive = Constants.isActive(getApplicationContext());
 
+        // listen for faces watchface on wear device. update ui if dropped out
+        preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+                if(key == Global.DataMap.WEAR_IS_ACTIVE.name()){
+                    isActive = prefs.getBoolean(key,false);
+                    Toast.makeText(CustomiseActivity.this,"WEAR ACTIVE:"+isActive,Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
+        Constants.getPreferences(this).registerOnSharedPreferenceChangeListener(preferenceChangeListener);
         setup();
 
 
