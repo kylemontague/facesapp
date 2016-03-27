@@ -532,16 +532,17 @@ public class WatchDraw {
 
     private static void drawDate(Canvas canvas, RectF bounds, Paint paint, Date date, String dateformat, int peekCardTop){
         String string = WatchDraw.datestring(date,dateformat);
-        paint.setTextSize(paint.getTextSize()/1.5f);
-        float txtWidth = paint.measureText(string);
+        Paint tmp = new Paint(paint);
+        tmp.setTextSize(paint.getTextSize()/1.5f);
+        float txtWidth = tmp.measureText(string);
         Rect b = new Rect();
-        paint.getTextBounds(string, 0, string.length(), b);
+        tmp.getTextBounds(string, 0, string.length(), b);
 
         if(peekCardTop > 0) {
             bounds.set(bounds.left, bounds.top, bounds.right, peekCardTop);
-            canvas.drawText(string, bounds.centerX() - (txtWidth / 2), bounds.centerY()+b.height(), paint);
+            canvas.drawText(string, bounds.centerX() - (txtWidth / 2), bounds.centerY()+b.height(), tmp);
         }else {
-            canvas.drawText(string, bounds.centerX() - (txtWidth / 2), (bounds.centerY() + (b.height() / 2)), paint);
+            canvas.drawText(string, bounds.centerX() - (txtWidth / 2), (bounds.centerY() + (b.height() / 2)), tmp);
         }
     }
 }
