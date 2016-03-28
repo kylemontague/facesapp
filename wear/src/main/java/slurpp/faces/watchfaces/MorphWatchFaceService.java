@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
@@ -121,6 +122,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
             }
 
             Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_SHAPE.name(),mIsRound).commit();
+
         }
 
         private void updateTimer() {
@@ -149,9 +151,8 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
-            Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), true).commit();
 
-            mTapShowDate = Constants.getPreferences(getApplicationContext()).getBoolean(Constants.PREF_BOOLEAN_TAP_SHOW_DATE,true);
+            mTapShowDate = Constants.getPreferences(MorphWatchFaceService.this).getBoolean(Constants.PREF_BOOLEAN_TAP_SHOW_DATE,true);
 
 
             /* initialize your watch face */
@@ -160,7 +161,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 //            Resources resources = OUATWatchFaceService.this.getResources();
 
             //TODO here defines the colour and layout properties of the face (ADD SWITCH)
-            setWatchFaceType(WatchDraw.FACE.FILL_TIME);
+            setWatchFaceType(WatchDraw.FACE.TWO_TIME);
 
 
             /* allocate an object to hold the time */
@@ -179,7 +180,12 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                     .setAcceptsTapEvents(true)
                     .build());
 
-            listener = new FaceListener(getApplicationContext(), watchConfig.getFaceName());
+            listener = new FaceListener(MorphWatchFaceService.this, watchConfig.getFaceName());
+            try {
+                listener.sendWearSettings();
+            }catch (Exception e){
+                Log.d("COMMS",e.toString());
+            }
 
         }
 
@@ -187,7 +193,11 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onDestroy(){
             super.onDestroy();
-            Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), false).commit();
+            try {
+                listener.sendWearSettings();
+            }catch (Exception e){
+                Log.d("COMMS",e.toString());
+            }
         }
 
         @Override

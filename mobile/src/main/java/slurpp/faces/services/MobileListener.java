@@ -63,7 +63,7 @@ public class MobileListener extends WearableListenerService implements GoogleApi
         //Log.v("WATCH_MESSAGE",message+" path:"+messageEvent.getPath());
         if(messageEvent.getPath().equals(getString(R.string.PREF_CURRENT_FACE))) {
                 Constants.getEditor(this).putString(messageEvent.getPath(), message).apply();
-        }else if(messageEvent.getPath().equals(Global.Messages.LAUNCH_CUSTOMISE_ACTIVITY)){
+        }else if(messageEvent.getPath().equals(Global.Messages.LAUNCH_CUSTOMISE_ACTIVITY.name())) {
             //todo this might not work.
             startCustomiseActivity();
         }else{
@@ -141,6 +141,9 @@ public class MobileListener extends WearableListenerService implements GoogleApi
         Wearable.DataApi.putDataItem(mGoogleApiClient, putRequest.asPutDataRequest());
     }
 
+    public void launchWearPreview(Context context){
+        this.sendMessage(context,Global.Messages.LAUNCH_WEAR_PREVIEW.name(),"");
+    }
 
     public void startPreview(Context context, String filepath){
         if(mGoogleApiClient==null)
@@ -200,7 +203,7 @@ public class MobileListener extends WearableListenerService implements GoogleApi
         boolean isRound = map.getBoolean(Global.DataMap.WEAR_SHAPE.name(),true);
         Constants.getEditor(this).putBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(), isActive);
         Constants.getEditor(this).putBoolean(Global.DataMap.WEAR_SHAPE.name(), isRound);
-        Constants.getEditor(this).apply();
+        Constants.getEditor(this).commit();
     }
 
     public void startCustomiseActivity(){

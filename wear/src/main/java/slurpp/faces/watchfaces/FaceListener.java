@@ -95,8 +95,10 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
             sendWearSettings();
         }else if (messageEvent.getPath().contains(Global.Messages.OPEN_FACE_SELECTION.toString())) {
             startFaceSelection();
-        }else if (messageEvent.getPath().contains(Global.Messages.OPEN_FACE_SELECTION.toString())) {
+        }else if (messageEvent.getPath().contains(Global.Messages.VIBRATE_WATCH.toString())) {
             vibrate();
+        }else if (messageEvent.getPath().contains(Global.Messages.LAUNCH_WEAR_PREVIEW.toString())) {
+            startFacePreview();
         } else {
             super.onMessageReceived(messageEvent);
         }
@@ -275,7 +277,7 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
         Log.d("MORPH","CHECKING IF CLIENT IS NULL");
 
         if(mGoogleApiClient==null)
-            mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
+            mGoogleApiClient = new GoogleApiClient.Builder((mContext!=null)?mContext:FaceListener.this)
                     .addApi(Wearable.API)
                     .addConnectionCallbacks(this)
                     .addOnConnectionFailedListener(this)
@@ -284,7 +286,7 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
         Log.d("MORPH","SENDING WEAR SETTINGS");
         mGoogleApiClient.connect();
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences((mContext!=null)?mContext:FaceListener.this);
         boolean isRound = sp.getBoolean(Global.DataMap.WEAR_SHAPE.name(),true);
 
         final PutDataMapRequest putRequest = PutDataMapRequest.create(Global.DATA_MAP_WEAR_DEVICE);
@@ -293,6 +295,8 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
         map.putBoolean(Global.DataMap.WEAR_SHAPE.name(),isRound);
         map.putLong(Global.DataMap.TIMESTAMP.name(),System.currentTimeMillis());
         Wearable.DataApi.putDataItem(mGoogleApiClient, putRequest.asPutDataRequest());
+        Log.d("MORPH","SENT Settings");
+
     }
 
 
@@ -301,9 +305,16 @@ public class FaceListener extends WearableListenerService implements GoogleApiCl
         Intent intent = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
         intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, new ComponentName(getPackageName(), MorphWatchFaceService.class.getCanonicalName()));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
         startActivity(intent);
     }
 
+    protected void startFacePreview(){
+        vibrate();
+        Intent intent = new Intent(FaceListener.this,PreviewActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
 
     protected void vibrate(){
         Vibrator vibrator = (Vibrator) this.getSystemService(VIBRATOR_SERVICE);

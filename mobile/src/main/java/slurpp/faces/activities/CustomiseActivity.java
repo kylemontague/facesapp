@@ -134,6 +134,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         sd.start(sensorManager);
 
 
+        //todo should fire on the wear device.
+        mobileListener.launchWearPreview(this);
     }
 
     @Override

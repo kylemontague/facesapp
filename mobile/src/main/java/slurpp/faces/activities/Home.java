@@ -13,9 +13,6 @@ import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
 
-import com.github.amlcurran.showcaseview.ShowcaseView;
-import com.github.amlcurran.showcaseview.targets.ViewTarget;
-
 import java.util.ArrayList;
 
 import slurpp.faces.Font;
@@ -28,6 +25,7 @@ import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.WatchDraw;
+import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 
 
 public class Home extends FragmentActivity {
@@ -111,7 +109,7 @@ public class Home extends FragmentActivity {
                 public void onClick(DialogInterface dialog, int which) {
                     //todo set a runnable to run in 10 seconds and check if the face is now active.
                     //prompt the user to select the watchface.
-                    MobileListener.shared(getApplicationContext()).sendMessage(getApplicationContext(), Global.Messages.GET_WATCH.toString(), "");
+                    MobileListener.shared(getApplicationContext()).sendMessage(getApplicationContext(), Global.Messages.OPEN_FACE_SELECTION.toString(), "");
                 }
             }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
         }
@@ -251,14 +249,16 @@ public class Home extends FragmentActivity {
 
 
     public void onboardFirstPhoto(){
-        ShowcaseView sv = new ShowcaseView.Builder(this)
-                .setTarget(new ViewTarget(takePhoto))
-                .setContentTitle("Like what you see?")
+        MaterialShowcaseView sv = new MaterialShowcaseView.Builder(this)
+                .setTarget(takePhoto)
+                .setTitleText("Like what you see?")
                 .setContentText("hit select to start customising this face")
-                .hideOnTouchOutside()
-                .singleShot(42L)
+                .setDismissOnTouch(true)
+                .singleUse("43")
+                .setFadeDuration(500)
                 .build();
-        sv.hideButton();
+        sv.fadeIn();
+        sv.show(this);
     }
 
 

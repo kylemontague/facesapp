@@ -27,6 +27,7 @@ public class Global {
         GET_WATCH,
         OPEN_FACE_SELECTION,
         LAUNCH_CUSTOMISE_ACTIVITY,
+        LAUNCH_WEAR_PREVIEW,
         VIBRATE_WATCH
     }
 

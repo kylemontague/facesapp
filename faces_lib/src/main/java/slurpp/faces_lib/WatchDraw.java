@@ -155,7 +155,7 @@ public class WatchDraw {
 
         }
         else{
-            drawDate(canvas,new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom),mMinutePaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
+            drawDate(canvas,bounds,mMinutePaint,mTime.getTime(),SHORT_DATE,peekCard.top);//todo should change this based on locale (US format)
         }
 
     }
@@ -219,7 +219,7 @@ public class WatchDraw {
             }
 
         }else{
-            drawDate(canvas,bF,txtPaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
+            drawDate(canvas,bounds,txtPaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
         }
 
 
@@ -281,26 +281,40 @@ public class WatchDraw {
 
         float centerX =bounds.centerX();
         float centerY = bounds.centerY();
+        String[] values;
+        if(!showDate) {
+            //draw second counter
+            if (!mAmbient) {
+                int radius = (int) ((width / 2) * .9f);
+                int angle = mTime.get(Calendar.SECOND) * 6;
+                RectF rectF = new RectF(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
+                canvas.drawArc(rectF, -90, angle, false, watchConfig.secondsPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
+            }
 
-        //draw second counter
-        if (!mAmbient) {
-            int radius = (int)((width/2)*.9f);
-            int angle = mTime.get(Calendar.SECOND) * 6;
-            RectF rectF = new RectF(centerX - radius, centerY - radius, centerX + radius, centerY + radius);
-            canvas.drawArc(rectF, -90, angle, false, watchConfig.secondsPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
+
+
+            values=getHoursMins(mTime.get(Calendar.HOUR_OF_DAY) % 12, mTime.get(Calendar.MINUTE));
+
+        }else{
+            String day = NumbersToWords.convert(mTime.get(Calendar.DAY_OF_MONTH));
+            day = day.substring(1).replace(" ", "\n");
+            values = new String[]{datestring(mTime.getTime(),MONTH_ONLY).toLowerCase(),day};
         }
 
-        String[] values = getHoursMins(mTime.get(Calendar.HOUR_OF_DAY)%12,mTime.get(Calendar.MINUTE));
-        if(values.length > 1) {
-            canvas.drawText(values[0], centerX + watchConfig.xOffset(shape), centerY +watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
+        if (values.length > 1) {
+            canvas.drawText(values[0], centerX + watchConfig.xOffset(shape), centerY + watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
             String[] minValues = values[1].split("\n");
-            for(int x=0; x<minValues.length;x++)
-                canvas.drawText(minValues[x], centerX + watchConfig.xOffset(shape), centerY+(x*(height/6)), watchConfig.minutesPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE));
+            for (int x = 0; x < minValues.length; x++)
+                canvas.drawText(minValues[x], centerX + watchConfig.xOffset(shape), centerY + (x * (height / 6)), watchConfig.minutesPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
         }
+
+//        }else{
+//            drawDate(canvas,bounds,watchConfig.accentPaint(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE),mTime.getTime(),UK_DATE,peekCard.top);
+//        }
     }
 
     public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
-        TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false);
+        TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,showDate);
     }
 
     public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
@@ -320,16 +334,24 @@ public class WatchDraw {
         float centerX = bounds.centerX();
         float centerY = bounds.centerY();
 
-        int hours = mTime.get(Calendar.HOUR_OF_DAY)%12;
-        if(hours == 0)
-            hours = 12;
-        String hourStr = "";
-        if(hours < 10)
-            hourStr+="0";
-        hourStr+=hours;
+        String hourStr ="";
+        String mintues = "";
+        if(!showDate) {
+            int hours = mTime.get(Calendar.HOUR_OF_DAY) % 12;
+            if (hours == 0)
+                hours = 12;
+            hourStr = "";
+            if (hours < 10)
+                hourStr += "0";
+            hourStr += hours;
+            mintues = getMins(mTime.get(Calendar.MINUTE)).replace("-\n", "");
+        }else{
+            hourStr = datestring(mTime.getTime(),DAY_ONLY);
+            mintues = datestring(mTime.getTime(),MONTH_ONLY);
+        }
 
         float yPos = centerY;
-        String mintues = getMins(mTime.get(Calendar.MINUTE)).replace("-\n","");
+
 
         Paint hourPaint =  watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
 
@@ -523,14 +545,20 @@ public class WatchDraw {
 
 
 
-    protected static String UK_DATE = "d/MM/yy";
-    protected static String US_DATE = "MM/d/yy";
+    protected static String UK_DATE = "dd/MM/yy";
+    protected static String US_DATE = "MM/dd/yy";
+
+    protected static String SHORT_DATE = "dd MMM";
+    protected static String MONTH_ONLY = "MMMM";
+    protected static String DAY_ONLY = "dd";
+    protected static String YEAR_ONLY = "yyyy";
+
     private static String datestring(Date date, String dateFormat){
         SimpleDateFormat format = new SimpleDateFormat(dateFormat);
         return format.format(date);
     }
 
-    private static void drawDate(Canvas canvas, RectF bounds, Paint paint, Date date, String dateformat, int peekCardTop){
+    private static void drawDate(Canvas canvas, Rect bounds, Paint paint, Date date, String dateformat, int peekCardTop){
         String string = WatchDraw.datestring(date,dateformat);
         Paint tmp = new Paint(paint);
         tmp.setTextSize(paint.getTextSize()/1.5f);

@@ -5,12 +5,14 @@ import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import mclemont.faces.R;
+import slurpp.faces.utils.WatchFragment;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces.utils.WatchFragment;
 
 /**
  * Created by kylemontague on 13/06/15.
@@ -68,6 +70,11 @@ public class PreviewActivity extends Activity {
         };
 
         previewHandler = new Handler();
+
+        Window window = this.getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
+        window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
     }
 
 
