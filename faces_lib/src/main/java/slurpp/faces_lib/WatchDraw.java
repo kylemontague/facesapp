@@ -326,13 +326,9 @@ public class WatchDraw {
         Bitmap bgBit = makeLinearGrad(bF,watchConfig.backgroundColour(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE), watchConfig.accentColour(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE), shape);
         canvas.drawBitmap(bgBit, bounds, bounds, watchConfig.backgroundPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
 
-        int width = bounds.width();
-        int height = bounds.height()-chinInset;
-        if(peekCard.top > 0)
-            height = peekCard.top;
 
         float centerX = bounds.centerX();
-        float centerY = bounds.centerY();
+        float centerY = WatchDraw.centerY(bounds,peekCard,chinInset);
 
         String hourStr ="";
         String mintues = "";
@@ -347,7 +343,7 @@ public class WatchDraw {
             mintues = getMins(mTime.get(Calendar.MINUTE)).replace("-\n", "");
         }else{
             hourStr = datestring(mTime.getTime(),DAY_ONLY);
-            mintues = datestring(mTime.getTime(),MONTH_ONLY);
+            mintues = datestring(mTime.getTime(),MONTH_ONLY).toLowerCase();
         }
 
         float yPos = centerY;
@@ -572,5 +568,19 @@ public class WatchDraw {
         }else {
             canvas.drawText(string, bounds.centerX() - (txtWidth / 2), (bounds.centerY() + (b.height() / 2)), tmp);
         }
+    }
+
+    private static int centerY(Rect bounds, Rect peekCard, int chinInset){
+        int height = bounds.height()-chinInset;
+        if(peekCard.top > 0)
+            height = peekCard.top;
+        return height/2;
+    }
+
+    private static int height(Rect bounds, Rect peekCard, int chinInset){
+        int height = bounds.height()-chinInset;
+        if(peekCard.top > 0)
+            height = peekCard.top;
+        return height;
     }
 }
