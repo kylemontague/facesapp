@@ -14,6 +14,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Created by Kyle Montague on 18/06/15.
@@ -116,5 +118,14 @@ public class Global {
             }
         }
         return false;
+    }
+
+
+    public static String FULL_DATE = "EEE, dd MMM yyyy";
+    public static String SHORT_DATE = "dd.MM.yy";
+
+    public static String dateString(long timestamp, String format){
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(format);
+        return simpleDateFormat.format(new Date(timestamp));
     }
 }

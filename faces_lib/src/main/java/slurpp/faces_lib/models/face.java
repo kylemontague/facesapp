@@ -8,20 +8,16 @@ import com.activeandroid.query.Select;
 import java.util.ArrayList;
 import java.util.List;
 
-import slurpp.faces_lib.IFace;
+import slurpp.faces_lib.Global;
 
 /**
  * Created by kylemontague on 27/03/16.
  */
-@Table(name = "Face", id="_id")
+@Table(name = "face", id="_id")
 public class Face extends Model {
 
     @Column(name = "name")
     public String name;
-
-    //todo can't store this, needs to be serialised
-    @Column(name = "configuration")
-    public IFace configuration;
 
     @Column(name = "created")
     public long created;
@@ -29,12 +25,25 @@ public class Face extends Model {
     @Column(name = "worn")
     public long worn;
 
-    @Column(name = "baseFace", index = true)
+    @Column(name = "base", index = true)
     public int base;
 
     @Column(name = "colors")
     public ArrayList<Integer> colors;
 
+
+    public String getName(){
+        if(name == null)
+            return Global.dateString(worn,Global.FULL_DATE);
+        return name;
+    }
+
+    public Face(long created, int base, ArrayList<Integer> colors){
+        this.created = created;
+        this.base = base;
+        this.colors = colors;
+        this.worn = created;
+    }
 
     public int[] getColors(){
         int[] result = new int[colors.size()];
@@ -42,15 +51,15 @@ public class Face extends Model {
         return result;
     }
 
-    public List<Face> allFaces(){
+    public static List<Face> allFaces(){
         return new Select().from(Face.class).orderBy("created DSC").execute();
     }
 
-    public Face latestFace(){
+    public static Face latestFace(){
         return new Select().from(Face.class).orderBy("lastWorn DSC").executeSingle();
     }
 
-    public List<Face> latestFaces(){
+    public static List<Face> latestFaces(){
         return new Select().from(Face.class).orderBy("lastWorn DSC").groupBy("baseFace").execute();
     }
 }

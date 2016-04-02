@@ -25,7 +25,6 @@ import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.WatchDraw;
-import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView;
 
 
 public class Home extends FragmentActivity {
@@ -83,6 +82,12 @@ public class Home extends FragmentActivity {
         previewHandler.postDelayed(previewRunnable,0);
 
 
+//        Face f = Face.latestFace();
+//        if(f == null){
+//            Toast.makeText(getApplicationContext(),"nothing in the db",Toast.LENGTH_SHORT).show();
+//        }else{
+//            Toast.makeText(getApplication(),"Got the face:"+f.getName(),Toast.LENGTH_LONG).show();
+//        }
     }
 
 
@@ -191,7 +196,6 @@ public class Home extends FragmentActivity {
                     firstLoad = false;
                     takePhoto.setVisibility(View.VISIBLE);
                     mOverlayView.setVisibility(View.INVISIBLE);
-                    onboardFirstPhoto();
                 }
                 faceIndex = position;
                 mTopInfoOverlay.setTextString((String) mPagerAdapter.getPageTitle(position));
@@ -248,18 +252,18 @@ public class Home extends FragmentActivity {
 
 
 
-    public void onboardFirstPhoto(){
-        MaterialShowcaseView sv = new MaterialShowcaseView.Builder(this)
-                .setTarget(takePhoto)
-                .setTitleText("Like what you see?")
-                .setContentText("hit select to start customising this face")
-                .setDismissOnTouch(true)
-                .singleUse("43")
-                .setFadeDuration(500)
-                .build();
-        sv.fadeIn();
-        sv.show(this);
-    }
+//    public void onboardFirstPhoto(){
+//        MaterialShowcaseView sv = new MaterialShowcaseView.Builder(this)
+//                .setTarget(takePhoto)
+//                .setTitleText("Like what you see?")
+//                .setContentText("hit select to start customising this face")
+//                .setDismissOnTouch(true)
+//                .singleUse("43")
+//                .setFadeDuration(500)
+//                .build();
+//        sv.fadeIn();
+//        sv.show(this);
+//    }
 
 
     public void takePhoto(){
