@@ -6,19 +6,18 @@ import android.graphics.drawable.AnimationDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.activeandroid.ActiveAndroid;
-import com.activeandroid.Configuration;
+import com.google.android.gms.wearable.DataMap;
 
 import slurpp.faces.Font;
-import slurpp.faces.services.MobileListener;
+import slurpp.faces.services.MobileWearIO;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.Global;
-import slurpp.faces_lib.models.Face;
-import slurpp.faces_lib.models.ListTypeSerializer;
+import slurpp.faces_lib.WearIO;
+import slurpp.faces_lib.models.WearSettings;
 
 import static slurpp.faces.R.animator;
 import static slurpp.faces.R.drawable;
@@ -34,69 +33,81 @@ public class SplashActivity extends Activity{
     ImageView straps;
     TextView madeby;
     AnimationDrawable Anim;
-    MobileListener mobileListener;
+
+    boolean googleApi = true;
 
     boolean shouldOnBoard = true;
     //todo need to update the background watch straps to be square also.
     boolean isRound = true;
     boolean isActive = false;
-
-
-    long startTime = System.currentTimeMillis();
+    MobileWearIO wearIO;
+    WearIO.MessageListener splashListener;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(layout.splash);
 //        initialiseDB();
 
-        mobileListener = new MobileListener(getApplicationContext());
-        Log.v(TAG,"Pre-Async"+(System.currentTimeMillis()-startTime));
+        wearIO = MobileWearIO.shared();
+        wearIO.init(this, new WearIO.OnErrorListener() {
+            @Override
+            public void onError(Throwable throwable) {
+                googleApi = false;
+            }
+        });
+        splashListener = new WearIO.MessageListener() {
+            @Override
+            public boolean waitingForKey(String key) {
+                return (key.equals(Global.DATA_MAP_WEAR_DEVICE));
+            }
+
+            @Override
+            public void received(String path, String message) {
+                Toast.makeText(getApplicationContext(),"Message: "+message,Toast.LENGTH_LONG).show();
+
+            }
+
+            @Override
+            public void updated(String path, DataMap map) {
+                WearSettings settings = map.get(Global.DataMap.WEAR_SETTINGS.name());
+                isActive = settings.isActive;
+                isRound = settings.isRound;
+            }
+        };
+        wearIO.requestSettings(splashListener);
+
+
         AsyncTask.execute(new Runnable() {
             @Override
             public void run() {
                 shouldOnBoard = Constants.shouldOnBoard(SplashActivity.this);
                 isActive = Constants.isActive(SplashActivity.this);
                 isRound = Constants.isRound(SplashActivity.this);
-                mobileListener.sendMessage(getApplicationContext(), Global.Messages.GET_WATCH.toString(), "");
-                Log.v(TAG,"Post-Async"+(System.currentTimeMillis()-startTime));
+                //mobileListener.sendMessage(getApplicationContext(), Global.Messages.GET_WATCH.toString(), "");
             }
         });
-        Log.v(TAG,"After-Async"+(System.currentTimeMillis()-startTime));
         straps = (ImageView)findViewById(id.watch_background);
         madeby = (TextView)findViewById(id.madeby_text);
         madeby.setTypeface(Font.get(getApplicationContext(), Font.QUICKSAND_BOLD));
-        Log.v(TAG,"End-OnCreate"+(System.currentTimeMillis()-startTime));
     }
 
-    private void initialiseDB() {
-        //ActiveAndroid init.
-        Configuration.Builder configurationBuilder = new Configuration.Builder(this);
-        configurationBuilder.setDatabaseName("faces.db");
-        configurationBuilder.setDatabaseVersion(1);
-        configurationBuilder.addModelClass(Face.class);
-        configurationBuilder.addTypeSerializer(ListTypeSerializer.class);
-        ActiveAndroid.initialize(configurationBuilder.create());
-    }
 
     @Override
     protected void onResume(){
         super.onResume();
-        Log.v(TAG,"Start-OnCreate"+(System.currentTimeMillis()-startTime));
         try {
             int draw = drawable.loader_rounded2;
             if(!isRound) {
                 draw = drawable.loader_squared2;
                 //straps.setImageResource(drawable.watch_strap_square);
             }
-            Log.v(TAG,"Start-Animate"+(System.currentTimeMillis()-startTime));
 
             Anim = (AnimationDrawable)getResources().getDrawable(draw);
             if(Anim!=null) {
                 Anim.setOneShot(false);
                 straps.setImageDrawable(Anim);
                 Anim.start();
-                Log.v(TAG,"End-Animate"+(System.currentTimeMillis()-startTime));
             }
             final Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
@@ -110,20 +121,23 @@ public class SplashActivity extends Activity{
 
         }
 
-        Log.v(TAG,"End-OnCreate"+(System.currentTimeMillis()-startTime));
 
 
     }
 
     public void hasLoaded(){
-        Intent i = new Intent(SplashActivity.this,Home.class);
-        i.putExtra(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD,shouldOnBoard);
-        i.putExtra(Global.DataMap.WEAR_SHAPE.name(),isRound);
-        i.putExtra(Global.DataMap.WEAR_IS_ACTIVE.name(),isActive);
-        startActivity(i);
-        overridePendingTransition(animator.fade_in, animator.fade_out);
+        //if(googleApi) {
+            wearIO.unregisterListener(splashListener);
+            Intent i = new Intent(SplashActivity.this, Home.class);
+            i.putExtra(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD, shouldOnBoard);
+            i.putExtra(Global.DataMap.WEAR_SHAPE.name(), isRound);
+            i.putExtra(Global.DataMap.WEAR_IS_ACTIVE.name(), isActive);
+            startActivity(i);
+            overridePendingTransition(animator.fade_in, animator.fade_out);
+//        }else{
+//            Dialog d = new Dialog(this);
+//            d.setTitle("Unable to communicate with Wear device");
+//            d.show();
+//        }
     }
-
-
-
 }

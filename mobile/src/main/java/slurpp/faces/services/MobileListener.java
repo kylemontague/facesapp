@@ -48,11 +48,6 @@ public class MobileListener extends WearableListenerService implements GoogleApi
         return sharedInstance;
     }
 
-
-    public MobileListener(){
-
-    }
-
     public MobileListener(Context context){
         setup(context);
     }
@@ -88,7 +83,6 @@ public class MobileListener extends WearableListenerService implements GoogleApi
             setup(context);
         else
             mGoogleApiClient.connect();
-
 
             new Thread(new Runnable() {
                 @Override

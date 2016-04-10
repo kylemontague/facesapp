@@ -36,7 +36,8 @@ public class Global {
     public enum DataMap{
         WEAR_IS_ACTIVE,
         WEAR_SHAPE,
-        TIMESTAMP, ASSET_FACE
+        TIMESTAMP, ASSET_FACE,
+        WEAR_SETTINGS
     }
 
     public enum Preferences{

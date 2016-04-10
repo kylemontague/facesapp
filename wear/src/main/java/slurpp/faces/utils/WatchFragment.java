@@ -10,7 +10,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
-import mclemont.faces.R;
+import slurpp.faces.R;
 import slurpp.faces_lib.BusinessIFaceConfig;
 import slurpp.faces_lib.IFace;
 import slurpp.faces_lib.FillFaceConfig;

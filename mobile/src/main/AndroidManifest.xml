@@ -57,7 +57,13 @@
             android:noHistory="true"
             android:screenOrientation="portrait" />
 
-        <service android:name=".services.MobileListener" >
+        <!--<service android:name=".services.MobileListener" >-->
+            <!--<intent-filter>-->
+                <!--<action android:name="com.google.android.gms.wearable.BIND_LISTENER" />-->
+            <!--</intent-filter>-->
+        <!--</service>-->
+
+        <service android:name="slurpp.faces.services.MobileWearIO">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
             </intent-filter>

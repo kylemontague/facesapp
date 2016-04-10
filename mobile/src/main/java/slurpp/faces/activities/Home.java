@@ -12,6 +12,9 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
+
+import com.google.android.gms.wearable.DataMap;
 
 import java.util.ArrayList;
 
@@ -20,14 +23,15 @@ import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.WatchPageAdapter;
 import slurpp.faces.objects.DepthPageTransformer;
-import slurpp.faces.services.MobileListener;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.WearIO;
+import slurpp.faces_lib.models.WearSettings;
 
 
-public class Home extends FragmentActivity {
+public class Home extends FragmentActivity implements WearIO.MessageListener {
 
     private boolean shouldOnBoard = true;
     private boolean isActive = true;
@@ -56,11 +60,9 @@ public class Home extends FragmentActivity {
     private Handler previewHandler;
     private Runnable previewRunnable;
 
-    private Handler communicationHandler;
-    private Runnable communicationRunnable;
 
     private boolean showPreview = true;
-    private MobileListener mobileListener;
+    private WearIO wearIO;
 
     @Override
     protected void onCreate(Bundle saved){
@@ -81,13 +83,18 @@ public class Home extends FragmentActivity {
         previewHandler = new Handler();
         previewHandler.postDelayed(previewRunnable,0);
 
+        if(!isActive){
+            new AlertDialog.Builder(this).setTitle(getString(R.string.title_activate_faces_dialog)).setMessage(R.string.message_activate_faces)
+                    .setPositiveButton(R.string.dialog_activate_ok_pick_face, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if(wearIO.sendMessage(Global.Messages.OPEN_FACE_SELECTION.toString(), ""))
+                                wearIO.registerListener(Home.this);
 
-//        Face f = Face.latestFace();
-//        if(f == null){
-//            Toast.makeText(getApplicationContext(),"nothing in the db",Toast.LENGTH_SHORT).show();
-//        }else{
-//            Toast.makeText(getApplication(),"Got the face:"+f.getName(),Toast.LENGTH_LONG).show();
-//        }
+
+                        }
+                    }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
+        }
     }
 
 
@@ -105,36 +112,10 @@ public class Home extends FragmentActivity {
             isRound = Constants.isRound(this);
         }
 
-
-        if(!isActive){
-            //todo swap this dialog for a nicer alert overlay.
-            new AlertDialog.Builder(this).setTitle(getString(R.string.title_activate_faces_dialog)).setMessage(R.string.message_activate_faces)
-                    .setPositiveButton(R.string.dialog_activate_ok_pick_face, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    //todo set a runnable to run in 10 seconds and check if the face is now active.
-                    //prompt the user to select the watchface.
-                    MobileListener.shared(getApplicationContext()).sendMessage(getApplicationContext(), Global.Messages.OPEN_FACE_SELECTION.toString(), "");
-                }
-            }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
-        }
-
-
         if(!showPreview) {
             showPreview = true;
             previewHandler.postDelayed(previewRunnable, 0);
         }
-
-//        communicationRunnable = new Runnable() {
-//            @Override
-//            public void run() {
-//                mobileListener.sendMessage(getApplicationContext(),Global.Messages.IS_FACES_ACTIVE.toString(), "");
-//
-//            }
-//        };
-//
-//        communicationHandler = new Handler();
-//        communicationHandler.postDelayed(communicationRunnable, 1000);
     }
 
     @Override
@@ -149,7 +130,14 @@ public class Home extends FragmentActivity {
 
 
     private void setup(){
-        mobileListener = new MobileListener(getApplicationContext());
+        wearIO = WearIO.shared();
+        wearIO.init(getApplicationContext(), new WearIO.OnErrorListener() {
+            @Override
+            public void onError(Throwable throwable) {
+                Toast.makeText(getApplicationContext(),"Lost connection with wear device",Toast.LENGTH_SHORT).show();
+            }
+        });
+
 
         currentFace = WatchDraw.FACE.OUA_TIME;
 
@@ -250,22 +238,6 @@ public class Home extends FragmentActivity {
     }
 
 
-
-
-//    public void onboardFirstPhoto(){
-//        MaterialShowcaseView sv = new MaterialShowcaseView.Builder(this)
-//                .setTarget(takePhoto)
-//                .setTitleText("Like what you see?")
-//                .setContentText("hit select to start customising this face")
-//                .setDismissOnTouch(true)
-//                .singleUse("43")
-//                .setFadeDuration(500)
-//                .build();
-//        sv.fadeIn();
-//        sv.show(this);
-//    }
-
-
     public void takePhoto(){
         Intent i;
         if(shouldOnBoard){
@@ -313,4 +285,24 @@ public class Home extends FragmentActivity {
         Uri file = Global.textFile(getApplicationContext(), "watches", faces);
     }
 
+
+
+    @Override
+    public boolean waitingForKey(String key) {
+        return (key.equals(Global.Messages.OPEN_FACE_SELECTION.name()));
+    }
+
+    @Override
+    public void received(String path, String message) {
+
+    }
+
+    @Override
+    public void updated(String path, DataMap map) {
+        Toast.makeText(getApplicationContext(),"UPDATED DATA",Toast.LENGTH_LONG).show();
+        WearSettings settings = map.get(Global.DataMap.WEAR_SETTINGS.name());
+        isActive = settings.isActive;
+        isRound = settings.isRound;
+        //todo update the preview if they are wrong.
+    }
 }

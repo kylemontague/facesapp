@@ -33,11 +33,11 @@ import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.ProgressAdapter;
 import slurpp.faces.controls.SwatchAdapter;
-import slurpp.faces.services.MobileListener;
 import slurpp.faces.utils.BlurBuilder;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.WearIO;
 
 
 public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener{
@@ -72,7 +72,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private WatchDraw.FACE currentFace;
     private ArrayList<String> faceValues;
 
-    private MobileListener mobileListener;
+    private WearIO wearIO;
     private DataSetObserver dragObserver;
 
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
@@ -126,16 +126,21 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         faceValues = new ArrayList<>();
         faceValues.add("" + currentFace.ordinal());
 
-        mobileListener = new MobileListener(getApplicationContext());
-
+        wearIO = WearIO.shared();
+        wearIO.init(this, new WearIO.OnErrorListener() {
+            @Override
+            public void onError(Throwable throwable) {
+                //todo handle error
+            }
+        });
+        wearIO.sendMessage(Global.Messages.LAUNCH_WEAR_PREVIEW.toString(),"");
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         ShakeDetector sd = new ShakeDetector(this);
         sd.start(sensorManager);
 
 
-        //todo should fire on the wear device.
-        mobileListener.launchWearPreview(this);
+
     }
 
     @Override
@@ -145,7 +150,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         startPreview();
     }
 
-    private void setup(){
+    private void setup() {
         faceButton = (Button) findViewById(R.id.TakePhoto);
         faceButton.setTypeface(Font.get(this, Font.QUICKSAND_BOLD));
         faceButton.setText(R.string.save);
@@ -153,20 +158,14 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         faceButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-//                int mIndex = (int)swatchAdapter.getMarkers().get(0);
-//                swatchAdapter.subsetColours((Palette.Swatch)swatchAdapter.getItem(mIndex));
-//                updateSwatches();
-
-
-                //saveFace();
+                //todo update the watch face on the wear device (DATAMAP)
+                //todo close the wear preview.
             }
         });
 
 
         swatchContainer = (GridView) findViewById(R.id.swatchContainer);
         swatchContainer.setVisibility(View.VISIBLE);
-
 
 
         ColorMatrix matrix = new ColorMatrix();
@@ -179,17 +178,15 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         imageView.setBackground(img);
 
         View mOverlayView = findViewById(R.id.top_info_overlay);
-        if(mOverlayView != null){
+        if (mOverlayView != null) {
             InfoFragment mInfoOverlay = new InfoFragment();
             mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_pick_colours, -1, InfoFragment.type.TOP));
             getSupportFragmentManager().beginTransaction().add(R.id.top_info_overlay, mInfoOverlay).commit();
-//            View v = findViewById(R.id.info_overlay);
-//            v.bringToFront();
             mOverlayView.bringToFront();
         }
 
 
-        if(shouldOnBoard) {
+        if (shouldOnBoard) {
             mOnBoardView = findViewById(R.id.info_overlay);
             mOnBoardView.setVisibility(View.VISIBLE);
             faceButton.setVisibility(View.INVISIBLE);
@@ -202,50 +199,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
                 v.bringToFront();
             }
         }
-
-
-
-
-
-        //  Needed for communication between watch and device.
     }
-
-//    private void setColour() {
-//        //todo set the colour in the configuration file.
-//        Palette.Swatch item = (Palette.Swatch)progressAdapter.getItem(preferenceIndex);
-//        progressAdapter.setSwatch(preferenceIndex, (Palette.Swatch) swatchAdapter.getItem(selectedSwatch));
-//        faceValues.add(colourFromRGB(selectedSwatch));
-//
-//        progressbar.removeAllViews();
-//        for(int x=0;x<progressAdapter.getCount();x++){
-//            progressbar.addView(progressAdapter.getView(x,null,progressbar));
-//        }
-//
-//        updateSwatches();
-//        faceButton.setVisibility(View.INVISIBLE);
-//
-//        if(preferenceIndex >= progressAdapter.getCount()){
-//            //finished
-//            faceButton.setText(R.string.save);
-//            faceButton.setVisibility(View.VISIBLE);
-//            faceButton.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    saveFace();
-//                }
-//            });
-//            mInfoOverlay.setText(R.string.info_colours_selected);
-//        }
-//    }
-
-//    private void updateProgressBar(int rgb){
-//        Log.d("PROGRESS_UPDATE", "" + rgb);
-//        View gridItem = progressbar.getChildAt(progressAdapter.getCurrentIndex());
-//        SwatchView view = (SwatchView) gridItem.findViewById(R.id.grid_swatch);
-//        view.setFillColor(rgb);
-//        view.invalidate();
-//        view.refreshDrawableState();
-//    }
 
 
     public void saveFace(){
@@ -321,18 +275,10 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         return String.format("#%06X", 0xFFFFFF & rgb);
     }
 
-    private void updateWatchface(final String key, final String message){
-        mobileListener.sendMessage(getApplicationContext(), key, message);
-    }
-
-
     private void updateWatchFace(String name, int[] keys, String[] values) {
-        Log.d("SAVE","Saving Watch:"+name+", "+keys.toString()+", "+values.toString());
-        mobileListener.saveFace(getApplicationContext(), name, keys, values);
+        //todo dont forget the name
+        //wearIO.update(Global.DATA_MAP_CURRENT_FACE,keys,values);
     }
-
-
-
 
     public void setCurrentPreviewWatch(WatchDraw.FACE face) {
         preferences = WatchDraw.FACE.getPreviewPreferences(face);
@@ -342,7 +288,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
     private void startPreview(){
         //todo need to pass the file path to the serialised setup.
-        mobileListener.startPreview(this, "");
+//        mobileListener.startPreview(this, "");
     }
 
 
@@ -372,8 +318,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
 
     }
-
-
 
     Vibrator vibrator = null;
     @Override

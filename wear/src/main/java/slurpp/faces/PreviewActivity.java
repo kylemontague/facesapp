@@ -9,7 +9,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
-import mclemont.faces.R;
 import slurpp.faces.utils.WatchFragment;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.WatchDraw;
