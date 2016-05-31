@@ -10,6 +10,7 @@ import android.os.Vibrator;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Wearable;
 
 import java.io.File;
@@ -38,8 +39,10 @@ public class FaceWearIO extends WearIO {
         public void received(String path, String message) {
             if(path.equals(Global.Messages.OPEN_FACE_SELECTION.name())){
                 startFaceSelection();
-            }else if(path.equals(Global.Messages.LAUNCH_WEAR_PREVIEW.name())){
+            }else if(path.equals(Global.Messages.LAUNCH_WEAR_PREVIEW.name())) {
                 startFacePreview();
+            }else if(path.equals(Global.Messages.CLOSE_WEAR_PREVIEW.name())){
+                stopFacePreview();
             }else if(path.equals(Global.Messages.VIBRATE_WATCH.name())){
                 vibrate();
             }else if(path.equals(Global.Messages.GET_WATCH.name())){
@@ -49,17 +52,23 @@ public class FaceWearIO extends WearIO {
 
         @Override
         public void updated(String path, DataMap map) {
-            if (path.equals(Global.DATA_MAP_CURRENT_FACE)) {
+            if (path.equals("/"+Global.DataMaps.CURRENT_FACE_SETTINGS.name())) {
                 updateCurrentFace(map);
-            }else if(path.equals(Global.DATA_MAP_PREVIEW_FACE)){
+            }else if(path.equals("/"+Global.DataMaps.PREVIEW_FACE_SETTINGS.name())){
                 updatePreview(map);
             }
         }
     };
 
+
+
+    private static FaceWearIO sharedInstance;
     public static FaceWearIO shared() {
-        return (FaceWearIO)WearIO.shared();
+        if(sharedInstance == null)
+            sharedInstance = new FaceWearIO();
+        return sharedInstance;
     }
+
 
     @Override
     public void init(Context context, OnErrorListener onErrorListener) {
@@ -67,12 +76,20 @@ public class FaceWearIO extends WearIO {
         this.registerListener(sharedListener);
     }
 
+
+    @Override
+    public void onMessageReceived(MessageEvent messageEvent) {
+        super.onMessageReceived(messageEvent);
+
+        sharedListener.received(messageEvent.getPath(),new String(messageEvent.getData()));
+    }
+
     public boolean updateSettings(WearSettings settings){
-        return updateWithListener(null,Global.DataMap.WEAR_SETTINGS.name(),settings);
+        return updateWithListener(null, "/"+Global.DataMaps.WEAR_SETTINGS.name(),settings);
     }
 
     public boolean launchCustomisation(WearIO.MessageListener listener){
-        return sendWithListener(listener,"","");//todo update parameters
+        return sendWithListener(listener,Global.Messages.LAUNCH_CUSTOMISE_ACTIVITY.name(),"");
     }
 
     protected void startFaceSelection(){
@@ -91,6 +108,11 @@ public class FaceWearIO extends WearIO {
         startActivity(intent);
     }
 
+
+    private void stopFacePreview() {
+        sendBroadcast(new Intent(Global.Messages.CLOSE_WEAR_PREVIEW.name()));
+    }
+
     protected void vibrate(){
         Vibrator vibrator = (Vibrator) this.getSystemService(VIBRATOR_SERVICE);
         if(vibrator.hasVibrator())
@@ -98,7 +120,7 @@ public class FaceWearIO extends WearIO {
     }
 
     private void updateCurrentFace(DataMap map) {
-        Asset asset = map.getAsset(Global.DataMap.ASSET_FACE.name());
+        Asset asset = map.getAsset(Global.OLD_DataMap.ASSET_FACE.name());
         String faceFile = saveAsset(asset, "Current_Face");
         if(faceFile == null)
             return;
@@ -108,7 +130,7 @@ public class FaceWearIO extends WearIO {
 
     private void updatePreview(DataMap map) {
         //todo preview face has been updated
-        Asset asset = map.getAsset(Global.DataMap.ASSET_FACE.name());
+        Asset asset = map.getAsset(Global.OLD_DataMap.ASSET_FACE.name());
         String faceFile = saveAsset(asset, "Preview_Face");
         if(faceFile == null)
             return;
@@ -157,4 +179,9 @@ public class FaceWearIO extends WearIO {
         return null;
     }
 
+
+
+    public boolean sentWearInfo(WearIO.MessageListener messageListener){
+        return false;
+    }
 }

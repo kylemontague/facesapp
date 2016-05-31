@@ -2,6 +2,10 @@ package slurpp.faces;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
@@ -11,6 +15,7 @@ import android.widget.RelativeLayout;
 
 import slurpp.faces.utils.WatchFragment;
 import slurpp.faces_lib.Constants;
+import slurpp.faces_lib.Global;
 import slurpp.faces_lib.WatchDraw;
 
 /**
@@ -29,6 +34,12 @@ public class PreviewActivity extends Activity {
     private Handler previewHandler;
     private boolean showPreview = true;
 
+    private final BroadcastReceiver onCloseReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            finish();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +92,8 @@ public class PreviewActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
+        registerReceiver(onCloseReceiver, new IntentFilter(Global.Messages.CLOSE_WEAR_PREVIEW.name()));
+
 
         if (wakeLock!=null && !wakeLock.isHeld()) {
             wakeLock.acquire();
@@ -101,6 +114,9 @@ public class PreviewActivity extends Activity {
     @Override
     protected void onDestroy(){
         super.onDestroy();
+
+        unregisterReceiver(onCloseReceiver);
+
         if(wakeLock!=null && wakeLock.isHeld())
             wakeLock.release();
     }

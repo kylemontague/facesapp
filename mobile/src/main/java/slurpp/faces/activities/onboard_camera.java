@@ -3,12 +3,13 @@ package slurpp.faces.activities;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 
-import slurpp.faces_lib.WatchDraw;
 import slurpp.faces.R;
+import slurpp.faces_lib.WatchDraw;
 
 public class onboard_camera extends Activity {
 
@@ -31,9 +32,17 @@ public class onboard_camera extends Activity {
         }, 1500);
     }
 
-
+    Uri uri;
     public void takePhoto(){
+
         Intent i=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+//
+//        File file = new File(getApplicationContext().getCacheDir().getPath()+"/"+String.format(Locale.ENGLISH,"faces-%d.jpg",System.currentTimeMillis()));
+//        uri = Uri.fromFile(file);
+//        i.putExtra(MediaStore.EXTRA_OUTPUT,uri);
+
+
         i.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivityForResult(i, CAMERA_IMAGE_CAPTURE);
         overridePendingTransition(R.animator.fade_in, R.animator.fade_out);

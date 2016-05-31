@@ -40,11 +40,11 @@ public class Constants {
 
 
     public static boolean isActive(Context context){
-        return Constants.getPreferences(context).getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(),false);
+        return Constants.getPreferences(context).getBoolean(Global.OLD_DataMap.WEAR_IS_ACTIVE.name(),false);
     }
 
     public static boolean isRound(Context context){
-        return Constants.getPreferences(context).getBoolean(Global.DataMap.WEAR_SHAPE.name(),true);
+        return Constants.getPreferences(context).getBoolean(Global.OLD_DataMap.WEAR_SHAPE.name(),true);
     }
 
 }

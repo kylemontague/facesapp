@@ -15,11 +15,15 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
+import android.widget.Toast;
+
+import com.google.android.gms.wearable.DataMap;
 
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
+import slurpp.faces.FaceWearIO;
 import slurpp.faces_lib.BusinessIFaceConfig;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.IFace;
@@ -27,7 +31,9 @@ import slurpp.faces_lib.FillFaceConfig;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.OUATFace;
 import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.WearIO;
 import slurpp.faces_lib.WordsmithFace;
+import slurpp.faces_lib.models.WearSettings;
 
 /**
  * Created by kyle montague on 19/12/14.
@@ -85,7 +91,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 
         boolean mRegisteredTimeZoneReceiver=false;
 
-        FaceListener listener;
+        FaceWearIO listener;
 
         /* handler to update the time once a second in interactive mode */
         final Handler mUpdateTimeHandler = new Handler() {
@@ -121,7 +127,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                 shape = IFace.Shape.ROUND;
             }
 
-            Constants.getEditor(getApplicationContext()).putBoolean(Global.DataMap.WEAR_SHAPE.name(),mIsRound).commit();
+            Constants.getEditor(getApplicationContext()).putBoolean(Global.OLD_DataMap.WEAR_SHAPE.name(),mIsRound).commit();
 
         }
 
@@ -180,12 +186,35 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                     .setAcceptsTapEvents(true)
                     .build());
 
-            listener = new FaceListener(MorphWatchFaceService.this, watchConfig.getFaceName());
-            try {
-                listener.sendWearSettings();
-            }catch (Exception e){
-                Log.d("COMMS",e.toString());
-            }
+
+            listener = new FaceWearIO();
+            listener.init(MorphWatchFaceService.this, new WearIO.OnErrorListener() {
+                @Override
+                public void onError(Throwable throwable) {
+                    Toast.makeText(MorphWatchFaceService.this,"Failed to init",Toast.LENGTH_LONG).show();
+                }
+            });
+
+            listener.updateSettings(new WearSettings(true,false));//todo remove
+
+
+            listener.sentWearInfo(new WearIO.MessageListener() {
+                @Override
+                public boolean waitingForKey(String key) {
+                    return true;
+                }
+
+                @Override
+                public void received(String path, String message) {
+                    Log.d("WearIO",String.format("Path: %s Message: %s",path,message));
+                }
+
+                @Override
+                public void updated(String path, DataMap map) {
+                    Log.d("WearIO",String.format("Path: %s Map: %s",path,map.toString()));
+
+                }
+            });
 
         }
 
@@ -193,11 +222,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         @Override
         public void onDestroy(){
             super.onDestroy();
-            try {
-                listener.sendWearSettings();
-            }catch (Exception e){
-                Log.d("COMMS",e.toString());
-            }
+
         }
 
         @Override

@@ -24,20 +24,39 @@ public class Global {
 
 
     public enum Messages{
-        IS_FACES_ACTIVE,
-        SET_WATCH_FACE,
         GET_WATCH,
         OPEN_FACE_SELECTION,
         LAUNCH_CUSTOMISE_ACTIVITY,
         LAUNCH_WEAR_PREVIEW,
+        CLOSE_WEAR_PREVIEW,
         VIBRATE_WATCH
     }
 
-    public enum DataMap{
+
+    public enum DataMaps{
+        WEAR_SETTINGS,
+        CURRENT_FACE_SETTINGS,
+        PREVIEW_FACE_SETTINGS
+    }
+
+    public enum WEAR_KEYS{
+        IS_ACTIVE,
+        SHAPE
+    }
+
+    public enum FACE_KEYS{
+        BASE_FACE,
+        COLOURS,
+        TAP_MODE
+    }
+
+
+    public enum OLD_DataMap {
         WEAR_IS_ACTIVE,
         WEAR_SHAPE,
         TIMESTAMP, ASSET_FACE,
-        WEAR_SETTINGS
+        WEAR_SETTINGS,
+        FACE_SETTINGS
     }
 
     public enum Preferences{

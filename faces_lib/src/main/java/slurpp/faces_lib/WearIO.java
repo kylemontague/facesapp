@@ -21,7 +21,10 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+
+import slurpp.faces_lib.models.IMap;
 
 /**
  * Created by Kyle Montague on 09/04/16.
@@ -32,15 +35,11 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
     private Context context;
     private ArrayList<MessageListener> listeners;
 
-    public static WearIO sharedInstance;
     protected GoogleApiClient mGoogleApiClient;
     private OnErrorListener onErrorListener;
     private boolean initialised = false;
 
-    public static WearIO shared(){
-        if(sharedInstance == null)
-            sharedInstance = new WearIO();
-        return sharedInstance;
+    public WearIO() {
     }
 
 
@@ -55,6 +54,7 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
     }
 
     private void initGoogleApi(){
+
         mGoogleApiClient = new GoogleApiClient.Builder(this.context)
                 .addApi(Wearable.API)
                 .addConnectionCallbacks(this)
@@ -83,14 +83,13 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
         return false;
     }
 
-    public boolean updateWithListener(WearIO.MessageListener listener, String path, Object object){
-        if(this.update(path,null,null)){ //todo update parameters
+    public boolean updateWithListener(WearIO.MessageListener listener, String path, IMap object){
+        if(this.update(path,object.toMap())){
             this.registerListener(listener);
             return true;
         }
         return false;
     }
-
 
     public boolean sendMessage(final String key, final String message){
         if(!initialised)
@@ -107,7 +106,7 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
                 for (Node node : nodes.getNodes()) {
                     MessageApi.SendMessageResult result = Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(), key, message.getBytes()).await();
                     if (result.getStatus().isSuccess()) {
-                        Log.d("WearIO", "success!! sent to: " + node.getDisplayName());
+                        Log.d("WearIO", String.format("Msg: %s sent to: %s",key+" - "+message,node.getDisplayName()));
                     }
                 }
             }
@@ -120,9 +119,15 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
         super.onMessageReceived(messageEvent);
 
         final String message = new String(messageEvent.getData());
-        for(MessageListener listener: listeners){
-            if(listener.waitingForKey(messageEvent.getPath()))
-                listener.received(messageEvent.getPath(),message);
+
+        Log.d("WearIO", String.format("Received Path: %s Msg: %s",messageEvent.getPath(),message));
+
+
+        if(listeners !=null) {
+            for (MessageListener listener : listeners) {
+                if (listener.waitingForKey(messageEvent.getPath()))
+                    listener.received(messageEvent.getPath(), message);
+            }
         }
     }
 
@@ -145,6 +150,26 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
         return true;
     }
 
+
+    public boolean update(String path, final HashMap<String,String> hashMap) {
+        if(!initialised)
+            return false;
+
+        if(mGoogleApiClient == null)
+            initGoogleApi();
+
+        mGoogleApiClient.connect();
+
+        final PutDataMapRequest putRequest = PutDataMapRequest.create(path);
+        final DataMap map = putRequest.getDataMap();
+
+        for( String key : hashMap.keySet()){
+            map.putString(key, hashMap.get(key));
+        }
+        Wearable.DataApi.putDataItem(mGoogleApiClient, putRequest.asPutDataRequest());
+        return true;
+    }
+
     @Override
     public void onDataChanged(DataEventBuffer dataEvents) {
         super.onDataChanged(dataEvents);
@@ -160,6 +185,13 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
         }
     }
 
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        this.context = WearIO.this;
+        initGoogleApi();
+    }
 
     @Override
     public void onConnected(Bundle bundle) {

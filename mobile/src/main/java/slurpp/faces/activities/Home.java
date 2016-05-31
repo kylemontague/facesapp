@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -23,6 +24,7 @@ import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.WatchPageAdapter;
 import slurpp.faces.objects.DepthPageTransformer;
+import slurpp.faces.services.MobileWearIO;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.Global;
@@ -62,7 +64,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
     private boolean showPreview = true;
-    private WearIO wearIO;
+    private MobileWearIO wearIO;
 
     @Override
     protected void onCreate(Bundle saved){
@@ -88,10 +90,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
                     .setPositiveButton(R.string.dialog_activate_ok_pick_face, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            if(wearIO.sendMessage(Global.Messages.OPEN_FACE_SELECTION.toString(), ""))
-                                wearIO.registerListener(Home.this);
-
-
+                            wearIO.launchFaceSelection(Home.this);
                         }
                     }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
         }
@@ -105,8 +104,8 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         Bundle extras = getIntent().getExtras();
         if(extras!=null) {
             shouldOnBoard = extras.getBoolean(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD, false);
-            isActive = extras.getBoolean(Global.DataMap.WEAR_IS_ACTIVE.name(),false);
-            isRound = extras.getBoolean(Global.DataMap.WEAR_SHAPE.name(),true);
+            isActive = extras.getBoolean(Global.OLD_DataMap.WEAR_IS_ACTIVE.name(),false);
+            isRound = extras.getBoolean(Global.OLD_DataMap.WEAR_SHAPE.name(),true);
         }else{
             isActive = Constants.isActive(this);
             isRound = Constants.isRound(this);
@@ -130,14 +129,25 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
     private void setup(){
-        wearIO = WearIO.shared();
-        wearIO.init(getApplicationContext(), new WearIO.OnErrorListener() {
+        wearIO = MobileWearIO.shared();
+
+        wearIO.launchFaceSelection(new WearIO.MessageListener() {
             @Override
-            public void onError(Throwable throwable) {
-                Toast.makeText(getApplicationContext(),"Lost connection with wear device",Toast.LENGTH_SHORT).show();
+            public boolean waitingForKey(String key) {
+                return true;
+            }
+
+            @Override
+            public void received(String path, String message) {
+                Log.d("WearIO",String.format("Path: %s Message: %s",path,message));
+            }
+
+            @Override
+            public void updated(String path, DataMap map) {
+                Log.d("WearIO",String.format("Path: %s Map: %s",path,map.toString()));
+
             }
         });
-
 
         currentFace = WatchDraw.FACE.OUA_TIME;
 
@@ -147,6 +157,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         takePhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                MobileWearIO.shared().vibrateWear(null);
                 takePhoto();
             }
         });
@@ -300,7 +311,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
     @Override
     public void updated(String path, DataMap map) {
         Toast.makeText(getApplicationContext(),"UPDATED DATA",Toast.LENGTH_LONG).show();
-        WearSettings settings = map.get(Global.DataMap.WEAR_SETTINGS.name());
+        WearSettings settings = map.get(Global.OLD_DataMap.WEAR_SETTINGS.name());
         isActive = settings.isActive;
         isRound = settings.isRound;
         //todo update the preview if they are wrong.

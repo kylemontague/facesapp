@@ -14,10 +14,11 @@ import com.google.android.gms.wearable.DataMap;
 
 import slurpp.faces.Font;
 import slurpp.faces.services.MobileWearIO;
+import slurpp.faces_lib.WearIO;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.Global;
-import slurpp.faces_lib.WearIO;
 import slurpp.faces_lib.models.WearSettings;
+
 
 import static slurpp.faces.R.animator;
 import static slurpp.faces.R.drawable;
@@ -50,12 +51,6 @@ public class SplashActivity extends Activity{
 //        initialiseDB();
 
         wearIO = MobileWearIO.shared();
-        wearIO.init(this, new WearIO.OnErrorListener() {
-            @Override
-            public void onError(Throwable throwable) {
-                googleApi = false;
-            }
-        });
         splashListener = new WearIO.MessageListener() {
             @Override
             public boolean waitingForKey(String key) {
@@ -70,12 +65,13 @@ public class SplashActivity extends Activity{
 
             @Override
             public void updated(String path, DataMap map) {
-                WearSettings settings = map.get(Global.DataMap.WEAR_SETTINGS.name());
+                WearSettings settings = map.get(Global.OLD_DataMap.WEAR_SETTINGS.name());
                 isActive = settings.isActive;
                 isRound = settings.isRound;
             }
         };
-        wearIO.requestSettings(splashListener);
+        //fixme uncomment once fixed
+        //wearIO.requestSettings(splashListener);
 
 
         AsyncTask.execute(new Runnable() {
@@ -130,8 +126,8 @@ public class SplashActivity extends Activity{
             wearIO.unregisterListener(splashListener);
             Intent i = new Intent(SplashActivity.this, Home.class);
             i.putExtra(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD, shouldOnBoard);
-            i.putExtra(Global.DataMap.WEAR_SHAPE.name(), isRound);
-            i.putExtra(Global.DataMap.WEAR_IS_ACTIVE.name(), isActive);
+            i.putExtra(Global.OLD_DataMap.WEAR_SHAPE.name(), isRound);
+            i.putExtra(Global.OLD_DataMap.WEAR_IS_ACTIVE.name(), isActive);
             startActivity(i);
             overridePendingTransition(animator.fade_in, animator.fade_out);
 //        }else{

@@ -33,11 +33,11 @@ import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.ProgressAdapter;
 import slurpp.faces.controls.SwatchAdapter;
+import slurpp.faces.services.MobileWearIO;
 import slurpp.faces.utils.BlurBuilder;
 import slurpp.faces_lib.Constants;
 import slurpp.faces_lib.Global;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.WearIO;
 
 
 public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener{
@@ -72,7 +72,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private WatchDraw.FACE currentFace;
     private ArrayList<String> faceValues;
 
-    private WearIO wearIO;
+    private MobileWearIO wearIO;
     private DataSetObserver dragObserver;
 
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
@@ -95,7 +95,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         // listen for faces watchface on wear device. update ui if dropped out
         preferenceChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-                if(key == Global.DataMap.WEAR_IS_ACTIVE.name()){
+                if(key == Global.OLD_DataMap.WEAR_IS_ACTIVE.name()){
                     isActive = prefs.getBoolean(key,false);
                     Toast.makeText(CustomiseActivity.this,"WEAR ACTIVE:"+isActive,Toast.LENGTH_SHORT).show();
                 }
@@ -126,14 +126,9 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         faceValues = new ArrayList<>();
         faceValues.add("" + currentFace.ordinal());
 
-        wearIO = WearIO.shared();
-        wearIO.init(this, new WearIO.OnErrorListener() {
-            @Override
-            public void onError(Throwable throwable) {
-                //todo handle error
-            }
-        });
-        wearIO.sendMessage(Global.Messages.LAUNCH_WEAR_PREVIEW.toString(),"");
+        wearIO = MobileWearIO.shared();
+
+        wearIO.launchFacePreview(null); //todo add listener
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         ShakeDetector sd = new ShakeDetector(this);
