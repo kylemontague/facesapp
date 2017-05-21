@@ -1,15 +1,19 @@
 package slurpp.faces_lib;
 
-import java.io.Serializable;
+import com.google.gson.GsonBuilder;
 
 /**
  * Created by Kyle Montague on 31/07/15.
  */
-public class CustomFace implements Serializable{
+public class CustomFace{
 
     private long created;
     private long lastOn;
     private WatchDraw.FACE base;
+
+
+
+    private TapMode tapMode = TapMode.DATE;
 
     private static int TOTAL_COLOURS = 5;
     private int backgroundColor;
@@ -21,6 +25,11 @@ public class CustomFace implements Serializable{
     private String name;
     private boolean is24Hour;
 
+    enum TapMode{
+        DATE,
+        COLOR
+    }
+
 
     public CustomFace(long created, WatchDraw.FACE base, int[] colours, String name){
         this.created = created;
@@ -30,15 +39,60 @@ public class CustomFace implements Serializable{
     }
 
 
+    public String toJson(){
+        return new GsonBuilder().create().toJson(this);
+    }
+
+    public static CustomFace fromJson(String json){
+        return new GsonBuilder().create().fromJson(json,CustomFace.class);
+    }
+
+
+    public TapMode getTapMode() {
+        return tapMode;
+    }
+
+    public void setTapMode(TapMode tapMode) {
+        this.tapMode = tapMode;
+    }
+
     public void setColours(int[] colours){
-        if(colours!= null && colours.length == TOTAL_COLOURS){
+
+        if(colours == null)
+            return;
+
+        int[] mapping = WatchDraw.FACE.getPreviewPreferences(base);
+
+        if(colours.length == TOTAL_COLOURS){
             this.backgroundColor = colours[0];
             this.accentColor = colours[1];
             this.hourColor = colours[2];
             this.minuteColor = colours[3];
             this.secondColor = colours[4];
+        }else if(mapping.length == colours.length){
+            for(int x=0;x<colours.length;x++){
+                int id = mapping[x];
+
+                if (id == R.string.PREVIEW_BACKGROUND_COLOUR) {
+                    this.backgroundColor = colours[x];
+                }else if (id == R.string.PREVIEW_ACCENT_COLOUR) {
+                    this.accentColor = colours[x];
+                }else if (id == R.string.PREVIEW_HOUR_COLOUR) {
+                    this.hourColor = colours[x];
+                }else if (id == R.string.PREVIEW_MINUTE_COLOUR) {
+                    this.minuteColor = colours[x];
+                }else if (id == R.string.PREVIEW_SECOND_COLOUR) {
+                    this.secondColor = colours[x];
+                }
+            }
         }
+
+
+
+
     }
+
+
 
     @Override
     public String toString(){

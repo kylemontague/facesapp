@@ -4,23 +4,15 @@ import android.app.WallpaperManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Environment;
 import android.os.Vibrator;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageEvent;
-import com.google.android.gms.wearable.Wearable;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 import slurpp.faces.watchfaces.MorphWatchFaceService;
-import slurpp.faces_lib.Global;
-import slurpp.faces_lib.WearIO;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.utils.Global;
+import slurpp.faces_lib.utils.WearIO;
 import slurpp.faces_lib.models.WearSettings;
 
 /**
@@ -46,7 +38,7 @@ public class FaceWearIO extends WearIO {
             }else if(path.equals(Global.Messages.VIBRATE_WATCH.name())){
                 vibrate();
             }else if(path.equals(Global.Messages.GET_WATCH.name())){
-                updateSettings(new WearSettings(true,true));//todo need to get the actual values
+                updateSettings(WearSettings.load(FaceWearIO.this.getApplicationContext()));
             }
         }
 
@@ -80,12 +72,11 @@ public class FaceWearIO extends WearIO {
     @Override
     public void onMessageReceived(MessageEvent messageEvent) {
         super.onMessageReceived(messageEvent);
-
         sharedListener.received(messageEvent.getPath(),new String(messageEvent.getData()));
     }
 
     public boolean updateSettings(WearSettings settings){
-        return updateWithListener(null, "/"+Global.DataMaps.WEAR_SETTINGS.name(),settings);
+        return updateWithListener(null, "/"+Global.DataMaps.WEAR_SETTINGS.name(),settings.toJson());
     }
 
     public boolean launchCustomisation(WearIO.MessageListener listener){
@@ -120,24 +111,22 @@ public class FaceWearIO extends WearIO {
     }
 
     private void updateCurrentFace(DataMap map) {
-        Asset asset = map.getAsset(Global.OLD_DataMap.ASSET_FACE.name());
-        String faceFile = saveAsset(asset, "Current_Face");
-        if(faceFile == null)
-            return;
+
+        String json = map.getString("json",null);
+        if(json!=null){
+            Constants.getEditor(FaceWearIO.this).putString(Global.PREF_WATCH_FACE,json).commit();
+        }
+
         //todo current face has been updated
         //create the object and over write the existing watch face.
     }
 
     private void updatePreview(DataMap map) {
-        //todo preview face has been updated
-        Asset asset = map.getAsset(Global.OLD_DataMap.ASSET_FACE.name());
-        String faceFile = saveAsset(asset, "Preview_Face");
-        if(faceFile == null)
-            return;
 
         //fixme this should already be open, therefore the preview activity should also listen for these changes and update the draw.
         Intent i = new Intent(FaceWearIO.this, PreviewActivity.class);
-        i.putExtra(Global.Preferences.PREVIEW_FACE.name(),faceFile);
+        String json = map.getString("json",null);
+        i.putExtra(Global.PREF_WATCH_FACE,json);
         i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivity(i);
 
@@ -145,39 +134,7 @@ public class FaceWearIO extends WearIO {
 
 
 
-    //todo might just remove, or tidy up and move to WearIO
-    private String saveAsset(Asset asset, String name){
-        ConnectionResult result = mGoogleApiClient.blockingConnect(10000, TimeUnit.MILLISECONDS);
-        if (!result.isSuccess()) {return null;}
 
-        InputStream assetInputStream = Wearable.DataApi.getFdForAsset(mGoogleApiClient, asset).await().getInputStream();
-        mGoogleApiClient.disconnect();
-        if (assetInputStream == null) { return null; }
-
-        File sdcard = Environment.getExternalStorageDirectory();
-        File dir = new File(sdcard.getAbsolutePath() + "/Faces/");
-        if (!dir.exists()) { dir.mkdirs(); } // Create folder if needed
-
-        // Read data from the Asset and write it to a file on external storage
-        final File file = new File(dir, name+".txt");
-        try {
-            FileOutputStream fOut = new FileOutputStream(file);
-            int nRead;
-            byte[] data = new byte[16384];
-            while ((nRead = assetInputStream.read(data, 0, data.length)) != -1) {
-                fOut.write(data, 0, nRead);
-            }
-
-            fOut.flush();
-            fOut.close();
-
-            return file.getPath();
-        }
-        catch (Exception e)
-        {
-        }
-        return null;
-    }
 
 
 

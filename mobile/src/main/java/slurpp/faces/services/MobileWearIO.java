@@ -4,9 +4,8 @@ import android.content.Context;
 
 import com.google.android.gms.wearable.DataMap;
 
-import slurpp.faces_lib.Global;
-import slurpp.faces_lib.WearIO;
-import slurpp.faces_lib.models.IMap;
+import slurpp.faces_lib.utils.Global;
+import slurpp.faces_lib.utils.WearIO;
 
 /**
  * Created by kylemontague on 10/04/16.
@@ -110,8 +109,8 @@ public class MobileWearIO extends WearIO {
      * @param listener that will receive the callback response for the message
      * @return true if the message was able to be sent (no confirmation of being received), or false if the message couldn't be sent.
      */
-    public boolean updateFacePreview(WearIO.MessageListener listener, IMap face){
-        return updateWithListener(listener,"/"+Global.DataMaps.PREVIEW_FACE_SETTINGS.name(),face);
+    public boolean updateFacePreview(WearIO.MessageListener listener, String faceJson){
+        return updateWithListener(listener,"/"+Global.DataMaps.PREVIEW_FACE_SETTINGS.name(),faceJson);
     }
 
     /**
@@ -119,8 +118,8 @@ public class MobileWearIO extends WearIO {
      * @param listener that will receive the callback response for the message
      * @return true if the message was able to be sent (no confirmation of being received), or false if the message couldn't be sent.
      */
-    public boolean updateFace(WearIO.MessageListener listener, IMap face){
-        return updateWithListener(listener,"/"+Global.DataMaps.CURRENT_FACE_SETTINGS.name(),face);
+    public boolean updateFace(WearIO.MessageListener listener, String faceJson){
+        return updateWithListener(listener,"/"+Global.DataMaps.CURRENT_FACE_SETTINGS.name(),faceJson);
     }
 
 }

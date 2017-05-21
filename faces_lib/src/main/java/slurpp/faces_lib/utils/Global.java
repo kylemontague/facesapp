@@ -1,4 +1,4 @@
-package slurpp.faces_lib;
+package slurpp.faces_lib.utils;
 
 import android.app.ActivityManager;
 import android.content.Context;
@@ -16,6 +16,8 @@ import java.io.OptionalDataException;
 import java.io.StreamCorruptedException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import slurpp.faces_lib.R;
 
 /**
  * Created by Kyle Montague on 18/06/15.

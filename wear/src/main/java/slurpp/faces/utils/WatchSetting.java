@@ -5,7 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import slurpp.faces_lib.IFace;
+import slurpp.faces_lib.templates.IFace;
 
 
 /**

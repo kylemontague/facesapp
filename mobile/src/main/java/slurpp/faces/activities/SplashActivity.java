@@ -14,9 +14,9 @@ import com.google.android.gms.wearable.DataMap;
 
 import slurpp.faces.Font;
 import slurpp.faces.services.MobileWearIO;
-import slurpp.faces_lib.WearIO;
-import slurpp.faces_lib.Constants;
-import slurpp.faces_lib.Global;
+import slurpp.faces_lib.utils.WearIO;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.models.WearSettings;
 
 

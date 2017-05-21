@@ -8,6 +8,9 @@ import android.view.View;
 
 import java.util.GregorianCalendar;
 
+import slurpp.faces_lib.models.ModelFace;
+import slurpp.faces_lib.templates.IFace;
+
 /**
  * Created by Kyle Montague on 14/06/15.
  */
@@ -20,10 +23,26 @@ public class PreviewCanvas extends View {
     Bitmap straps;
     boolean ambientMode;
     boolean clipBounds = false;
+    ModelFace face;
 
     public PreviewCanvas(Context context){
         super(context);
         mCal = new GregorianCalendar();
+    }
+
+    public PreviewCanvas(Context context, CustomFace customFace){
+        super(context);
+        mWatchFace = customFace.getBase();
+        mCal = new GregorianCalendar();
+    }
+
+
+    public PreviewCanvas(Context context, ModelFace customFace){
+        super(context);
+        face = customFace;
+        mWatchFace = face.getBaseFace();
+        mCal = new GregorianCalendar();
+
     }
 
     public PreviewCanvas(Context context, WatchDraw.FACE watch_face, IFace watch_config, IFace.Shape shape) {

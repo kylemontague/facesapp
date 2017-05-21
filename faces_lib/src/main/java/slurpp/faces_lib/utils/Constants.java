@@ -1,4 +1,4 @@
-package slurpp.faces_lib;
+package slurpp.faces_lib.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;

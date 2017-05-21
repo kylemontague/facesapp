@@ -3,7 +3,6 @@ package slurpp.faces.activities;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -13,7 +12,7 @@ import slurpp.faces_lib.WatchDraw;
 
 public class onboard_camera extends Activity {
 
-    private static final int CAMERA_IMAGE_CAPTURE = 1337;
+    private static final int CAMERA_IMAGE_CAPTURE = 1399;
 
     int faceID;
 
@@ -25,25 +24,15 @@ public class onboard_camera extends Activity {
         faceID = extras.getInt(CustomiseActivity.EXTRA_WATCH_FACE, WatchDraw.FACE.TWO_TIME.ordinal());
         final Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
-
             public void run() {
                 takePhoto();
             }
         }, 1500);
     }
 
-    Uri uri;
     public void takePhoto(){
 
         Intent i=new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-//
-//        File file = new File(getApplicationContext().getCacheDir().getPath()+"/"+String.format(Locale.ENGLISH,"faces-%d.jpg",System.currentTimeMillis()));
-//        uri = Uri.fromFile(file);
-//        i.putExtra(MediaStore.EXTRA_OUTPUT,uri);
-
-
-        i.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivityForResult(i, CAMERA_IMAGE_CAPTURE);
         overridePendingTransition(R.animator.fade_in, R.animator.fade_out);
     }
@@ -54,15 +43,15 @@ public class onboard_camera extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case CAMERA_IMAGE_CAPTURE:
-                if(resultCode == 0)
+                if(resultCode == RESULT_CANCELED)
                     return;
                 Bundle extras = data.getExtras();
                 Bitmap image = (Bitmap) extras.get("data");
                 Intent customiseIntent = new Intent(this,CustomiseActivity.class);
                 customiseIntent.putExtra(CustomiseActivity.EXTRA_BITMAP_IMAGE,image);
                 customiseIntent.putExtra(CustomiseActivity.EXTRA_WATCH_FACE,faceID);
+                customiseIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(customiseIntent);
-
                 break;
         }
     }

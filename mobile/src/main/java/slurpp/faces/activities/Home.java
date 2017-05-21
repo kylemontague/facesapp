@@ -3,7 +3,6 @@ package slurpp.faces.activities;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -25,17 +24,17 @@ import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.WatchPageAdapter;
 import slurpp.faces.objects.DepthPageTransformer;
 import slurpp.faces.services.MobileWearIO;
-import slurpp.faces_lib.Constants;
+import slurpp.faces_lib.utils.Constants;
 import slurpp.faces_lib.CustomFace;
-import slurpp.faces_lib.Global;
+import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.WearIO;
+import slurpp.faces_lib.utils.WearIO;
 import slurpp.faces_lib.models.WearSettings;
 
 
 public class Home extends FragmentActivity implements WearIO.MessageListener {
 
-    private boolean shouldOnBoard = true;
+    private boolean shouldOnBoard = false;
     private boolean isActive = true;
     private boolean isRound = true;
 
@@ -94,6 +93,10 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
                         }
                     }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
         }
+
+
+
+
     }
 
 
@@ -251,13 +254,14 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
     public void takePhoto(){
         Intent i;
-        if(shouldOnBoard){
-            i = new Intent(this,onboard_camera.class);
-            i.putExtra(CustomiseActivity.EXTRA_WATCH_FACE, currentFace.ordinal());
-        }else {
+//        if(shouldOnBoard){
+//            i = new Intent(this,onboard_camera.class);
+//            i.putExtra(CustomiseActivity.EXTRA_WATCH_FACE, currentFace.ordinal());
+//            startActivityForResult(i,CAMERA_IMAGE_CAPTURE);
+//        }else {
             i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        }
-        startActivityForResult(i, CAMERA_IMAGE_CAPTURE);
+            startActivityForResult(i, CAMERA_IMAGE_CAPTURE);
+//        }
         overridePendingTransition(R.animator.fade_in, R.animator.zoom_in);
     }
 
@@ -288,12 +292,10 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
     private void createFaces(){
         ArrayList<CustomFace> faces = new ArrayList<>();
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME,colours,"Test Watch 1"));
-        //faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FACES_FACE,colours,"Test Watch 2"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.OUA_TIME,colours,"Test Watch 3"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FILL_TIME,colours,"Test Watch 4"));
         faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME, colours, "Test Watch 5"));
 
-        Uri file = Global.textFile(getApplicationContext(), "watches", faces);
     }
 
 

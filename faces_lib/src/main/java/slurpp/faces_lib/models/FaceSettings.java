@@ -1,16 +1,14 @@
 package slurpp.faces_lib.models;
 
-import java.util.HashMap;
+
+import com.google.gson.GsonBuilder;
 
 /**
- * Created by kylemontague on 30/05/16.
+ * Created by Kyle Montague on 30/05/16.
  */
-public class FaceSettings implements IMap{
+public class FaceSettings extends Object {
 
-    @Override
-    public HashMap<String, String> toMap() {
-        return null;
-    }
+
 
     enum TapMode{
         DATE,
@@ -32,7 +30,15 @@ public class FaceSettings implements IMap{
         setMode(mode);
     }
 
-    public FaceSettings(int base, int[]colours){
+    public String toJson(){
+        return new GsonBuilder().create().toJson(this);
+    }
+
+    public static FaceSettings fromJson(String json){
+        return new GsonBuilder().create().fromJson(json,FaceSettings.class);
+    }
+
+    public FaceSettings(int base, int[] colours){
         setBase(base);
         setColours(colours);
         setMode(TapMode.DATE);

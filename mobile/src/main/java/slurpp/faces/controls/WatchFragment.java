@@ -10,13 +10,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
-import slurpp.faces_lib.BusinessIFaceConfig;
-import slurpp.faces_lib.IFace;
-import slurpp.faces_lib.FillFaceConfig;
-import slurpp.faces_lib.OUATFace;
+import slurpp.faces_lib.templates.BusinessIFaceConfig;
+import slurpp.faces_lib.templates.IFace;
+import slurpp.faces_lib.templates.FillFaceConfig;
+import slurpp.faces_lib.templates.OUATFace;
 import slurpp.faces_lib.PreviewCanvas;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.WordsmithFace;
+import slurpp.faces_lib.templates.WordsmithFace;
 import slurpp.faces.R;
 
 

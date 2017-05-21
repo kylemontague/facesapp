@@ -1,4 +1,4 @@
-package slurpp.faces_lib;
+package slurpp.faces_lib.utils;
 
 import android.content.Context;
 import android.net.Uri;
@@ -21,10 +21,7 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-
-import slurpp.faces_lib.models.IMap;
 
 /**
  * Created by Kyle Montague on 09/04/16.
@@ -83,8 +80,8 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
         return false;
     }
 
-    public boolean updateWithListener(WearIO.MessageListener listener, String path, IMap object){
-        if(this.update(path,object.toMap())){
+    public boolean updateWithListener(WearIO.MessageListener listener, String path, String json){
+        if(this.update(path,json)){
             this.registerListener(listener);
             return true;
         }
@@ -151,7 +148,7 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
     }
 
 
-    public boolean update(String path, final HashMap<String,String> hashMap) {
+    public boolean update(String path, String json) {
         if(!initialised)
             return false;
 
@@ -163,9 +160,7 @@ public class WearIO extends WearableListenerService implements GoogleApiClient.C
         final PutDataMapRequest putRequest = PutDataMapRequest.create(path);
         final DataMap map = putRequest.getDataMap();
 
-        for( String key : hashMap.keySet()){
-            map.putString(key, hashMap.get(key));
-        }
+        map.putString("json",json);
         Wearable.DataApi.putDataItem(mGoogleApiClient, putRequest.asPutDataRequest());
         return true;
     }

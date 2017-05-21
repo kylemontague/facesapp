@@ -1,15 +1,16 @@
 package slurpp.faces;
 
-import android.app.Application;
 import android.util.Log;
 
+import com.orm.SugarApp;
+
 import slurpp.faces.services.MobileWearIO;
-import slurpp.faces_lib.WearIO;
+import slurpp.faces_lib.utils.WearIO;
 
 /**
  * Created by Kyle Montague on 30/05/16.
  */
-public class FacesApplication extends Application {
+public class FacesApplication extends SugarApp {
 
 
     @Override
@@ -21,8 +22,10 @@ public class FacesApplication extends Application {
                 Log.d("WearIO","Failed to initialise");
             }
         });
+    }
 
-
-
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
     }
 }

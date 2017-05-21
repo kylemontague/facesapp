@@ -1,4 +1,4 @@
-package slurpp.faces_lib;
+package slurpp.faces_lib.templates;
 
 
 import android.content.Context;
@@ -6,6 +6,10 @@ import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
+
+import slurpp.faces_lib.utils.Font;
+import slurpp.faces_lib.Prefs;
+import slurpp.faces_lib.R;
 
 /**
  * Created by kylemontague on 19/12/14.

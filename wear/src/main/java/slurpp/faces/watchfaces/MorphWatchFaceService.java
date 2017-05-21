@@ -24,15 +24,15 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import slurpp.faces.FaceWearIO;
-import slurpp.faces_lib.BusinessIFaceConfig;
-import slurpp.faces_lib.Constants;
-import slurpp.faces_lib.IFace;
-import slurpp.faces_lib.FillFaceConfig;
-import slurpp.faces_lib.Global;
-import slurpp.faces_lib.OUATFace;
+import slurpp.faces_lib.templates.BusinessIFaceConfig;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.templates.IFace;
+import slurpp.faces_lib.templates.FillFaceConfig;
+import slurpp.faces_lib.utils.Global;
+import slurpp.faces_lib.templates.OUATFace;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.WearIO;
-import slurpp.faces_lib.WordsmithFace;
+import slurpp.faces_lib.utils.WearIO;
+import slurpp.faces_lib.templates.WordsmithFace;
 import slurpp.faces_lib.models.WearSettings;
 
 /**

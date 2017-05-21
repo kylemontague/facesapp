@@ -14,8 +14,9 @@ import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 import slurpp.faces.utils.WatchFragment;
-import slurpp.faces_lib.Constants;
-import slurpp.faces_lib.Global;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.CustomFace;
+import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.WatchDraw;
 
 /**
@@ -32,6 +33,9 @@ public class PreviewActivity extends Activity {
     private RelativeLayout watchPreview;
     private Runnable previewRunnable;
     private Handler previewHandler;
+
+    private CustomFace faceSettings;
+
     private boolean showPreview = true;
 
     private final BroadcastReceiver onCloseReceiver = new BroadcastReceiver() {
@@ -53,11 +57,18 @@ public class PreviewActivity extends Activity {
         Bundle extras = getIntent().getExtras();
         //get parameters from the bundle.
         int face = WatchDraw.FACE.OUA_TIME.ordinal();
-        if(extras!=null)
-            face = extras.getInt(getString(R.string.PREVIEW_CURRENT_FACE),WatchDraw.FACE.FILL_TIME  .ordinal());
+        if(extras!=null) {
+            face = extras.getInt(getString(R.string.PREVIEW_CURRENT_FACE), WatchDraw.FACE.FILL_TIME.ordinal());
+            String json = extras.getString(Global.PREF_WATCH_FACE,null);
+            if(json!=null){
+                faceSettings = CustomFace.fromJson(json);
+                face = faceSettings.getBase().ordinal();
+            }
+        }
         else{
             face = Constants.currentFace(this);
         }
+
 
         watchPreview = (RelativeLayout)findViewById(R.id.watch);
         watchFragment = new WatchFragment();

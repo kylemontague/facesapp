@@ -22,9 +22,9 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import com.google.android.gms.wearable.DataMap;
 import com.squareup.seismic.ShakeDetector;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -35,12 +35,16 @@ import slurpp.faces.controls.ProgressAdapter;
 import slurpp.faces.controls.SwatchAdapter;
 import slurpp.faces.services.MobileWearIO;
 import slurpp.faces.utils.BlurBuilder;
-import slurpp.faces_lib.Constants;
-import slurpp.faces_lib.Global;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.CustomFace;
+import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.utils.WearIO;
+
+import static slurpp.faces_lib.utils.Global.Messages.LAUNCH_WEAR_PREVIEW;
 
 
-public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener{
+public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener, WearIO.MessageListener {
 
 
     public static String EXTRA_BITMAP_IMAGE= "EXTRA_BITMAP_IMAGE";
@@ -70,7 +74,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private int selectedSwatch = -1;
     private Bitmap mImage;
     private WatchDraw.FACE currentFace;
-    private ArrayList<String> faceValues;
 
     private MobileWearIO wearIO;
     private DataSetObserver dragObserver;
@@ -112,7 +115,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
                 public void onChanged() {
                     super.onChanged();
                     if (shouldOnBoard) {
-                        mOnBoardView.setVisibility(View.INVISIBLE);
+                        if(mOnBoardView!=null)
+                           mOnBoardView.setVisibility(View.INVISIBLE);
                         faceButton.setVisibility(View.VISIBLE);
                         shouldOnBoard = false;
                         swatchAdapter.unregisterDataSetObserver(dragObserver);
@@ -123,12 +127,11 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
         setCurrentPreviewWatch(currentFace);
         updateInterface(mImage);
-        faceValues = new ArrayList<>();
-        faceValues.add("" + currentFace.ordinal());
+
 
         wearIO = MobileWearIO.shared();
 
-        wearIO.launchFacePreview(null); //todo add listener
+        wearIO.launchFacePreview(this);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         ShakeDetector sd = new ShakeDetector(this);
@@ -155,6 +158,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             public void onClick(View v) {
                 //todo update the watch face on the wear device (DATAMAP)
                 //todo close the wear preview.
+
+                saveFace();
             }
         });
 
@@ -176,7 +181,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         if (mOverlayView != null) {
             InfoFragment mInfoOverlay = new InfoFragment();
             mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_pick_colours, -1, InfoFragment.type.TOP));
-            getSupportFragmentManager().beginTransaction().add(R.id.top_info_overlay, mInfoOverlay).commit();
+            getSupportFragmentManager().beginTransaction().replace(R.id.top_info_overlay, mInfoOverlay).commit();
             mOverlayView.bringToFront();
         }
 
@@ -188,8 +193,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             if (mOverlayView != null) {
                 InfoFragment mOnBoardOverlay = new InfoFragment();
                 //todo update to the correct image.
-                mOnBoardOverlay.setArguments(InfoFragment.argumentBuilder(R.string.onboard_msg_drag_to_change, R.drawable.ic_info_circletick, InfoFragment.type.BOTTOM));//todo change to circle icon
-                getSupportFragmentManager().beginTransaction().add(R.id.info_overlay, mOnBoardOverlay).commit();
+                mOnBoardOverlay.setArguments(InfoFragment.argumentBuilder(R.string.onboard_msg_drag_to_change, R.drawable.ic_info_circle, InfoFragment.type.BOTTOM));//todo change to circle icon
+                getSupportFragmentManager().beginTransaction().replace(R.id.info_overlay, mOnBoardOverlay).commit();
                 View v = findViewById(R.id.info_overlay);
                 v.bringToFront();
             }
@@ -198,20 +203,9 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
 
     public void saveFace(){
-       //todo store the json / xml face design.
-//
-//        WatchData wData = new WatchData(System.currentTimeMillis(),"name",mBaseFace);
-//        wData.addColour("BACKGROUND","#ffffff");
-//        wData.addColour("FOREGROUND","#00FF00");
-//        Log.d(TAG,wData.toJSON());
-
-        int[] prefIDs = WatchDraw.FACE.getPreferences(currentFace);
-        String[] prefValues = new String[faceValues.size()];
-        faceValues.toArray(prefValues);
-        //TODO update watch / wear device
-        //updateWatchFace(currentFace.toString(), prefIDs, prefValues);
-
-
+        //todo store the json / xml face design.
+        CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
+        MobileWearIO.shared().updateFace(this,customFace.toJson());
     }
 
     private void updateInterface(Bitmap image){
@@ -322,5 +316,30 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         vibrator.vibrate(200);
         swatchAdapter.clearMarkers();
         randomSelection(preferences.length);
+
+        if (shouldOnBoard) {
+            if(mOnBoardView!=null)
+                mOnBoardView.setVisibility(View.INVISIBLE);
+            faceButton.setVisibility(View.VISIBLE);
+            shouldOnBoard = false;
+            swatchAdapter.unregisterDataSetObserver(dragObserver);
+        }
+    }
+
+    @Override
+    public boolean waitingForKey(String key) {
+        if(key.equals(LAUNCH_WEAR_PREVIEW.name()))
+            return true;
+        return false;
+    }
+
+    @Override
+    public void received(String path, String message) {
+        Log.d("WEAR-MESSAGE",String.format("%s %s",path,message));
+    }
+
+    @Override
+    public void updated(String path, DataMap map) {
+        Log.d("WEAR-MESSAGE",String.format("%s %s",path,map.toString()));
     }
 }

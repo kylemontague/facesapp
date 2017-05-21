@@ -15,6 +15,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
+import slurpp.faces_lib.templates.IFace;
+import slurpp.faces_lib.utils.NumbersToWords;
+
 /**
  * Created by Kyle Montague on 13/06/15.
  */
@@ -70,6 +73,24 @@ public class WatchDraw {
         }
     }
 
+//    this.backgroundColor = colours[0];
+//    this.accentColor = colours[1];
+//    this.hourColor = colours[2];
+//    this.minuteColor = colours[3];
+//    this.secondColor = colours[4];
+
+//    public static int[] colorsForBase(FACE face, int[] colors){
+//        switch (face){
+//            case OUA_TIME:
+//                return new int[]{colors[0], Color.TRANSPARENT,colors[1],Color.TRANSPARENT,Color.TRANSPARENT};
+//            case FILL_TIME:
+//                return new int[]{colors[0], Color.TRANSPARENT,colors[1],Color.TRANSPARENT,Color.TRANSPARENT};
+//            case BUSINESS_TIME:
+//                return new int[]{colors[0], Color.TRANSPARENT,colors[1],Color.TRANSPARENT,Color.TRANSPARENT};
+//            case TWO_TIME:
+//                return new int[]{colors[0], colors[1], colors[2],Color.TRANSPARENT,Color.TRANSPARENT};
+//        }
+//    }
 
 
     private static Rect scaleRect(Rect bounds, float scale){

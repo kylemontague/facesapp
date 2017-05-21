@@ -1,4 +1,4 @@
-package slurpp.faces_lib;
+package slurpp.faces_lib.templates;
 
 import android.graphics.Paint;
 import android.graphics.Typeface;
@@ -24,7 +24,7 @@ public interface IFace {
         ACTIVE,
         AMBIENT
     }
-
+    
     void setColours(int[] values);
 
     int xOffset(Shape faceShape);

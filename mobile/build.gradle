@@ -1,19 +1,21 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
+    compileSdkVersion 25
+    buildToolsVersion '25.0.0'
     defaultConfig {
         applicationId 'slurpp.faces'
         minSdkVersion 18
         targetSdkVersion 23
         versionCode 3
         versionName "1.0.2"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
     }
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
     productFlavors {
@@ -23,9 +25,9 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     wearApp project(':wear')
-    compile 'com.android.support:palette-v7:23.0.+'
-    compile 'com.android.support:design:23.0.+'
-    compile 'com.android.support:appcompat-v7:23.0.+'
+    compile 'com.android.support:palette-v7:25.3.1'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.squareup:seismic:1.0.2'
     compile project(':faces_lib')
 }

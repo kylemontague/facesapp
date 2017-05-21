@@ -12,7 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import slurpp.faces.R;
-import slurpp.faces_lib.Font;
+import slurpp.faces_lib.utils.Font;
 
 /**
  * Created by kylemontague on 20/06/15.

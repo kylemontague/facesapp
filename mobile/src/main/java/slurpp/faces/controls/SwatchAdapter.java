@@ -255,6 +255,7 @@ public class SwatchAdapter extends BaseAdapter {
 
 
 
+
     private final class MarkerTouchListener implements View.OnTouchListener {
         public boolean onTouch(View view, MotionEvent motionEvent) {
             if(view.getTag(R.string.Swatch_ID_ViewTag)!=null) {
@@ -272,5 +273,13 @@ public class SwatchAdapter extends BaseAdapter {
             }
             return false;
         }
+    }
+
+    public int[] getColors(){
+        int[] colors = new int[markers.size()];
+        for(int x=0; x<markers.size();x++){
+            colors[x] = getColour(markers.get(x));
+        }
+        return colors;
     }
 }
