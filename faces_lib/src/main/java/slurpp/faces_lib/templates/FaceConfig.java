@@ -1,8 +1,13 @@
 package slurpp.faces_lib.templates;
 
-import android.graphics.Color;
+import android.graphics.Bitmap;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.support.annotation.ColorInt;
+
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Locale;
 
 import slurpp.faces_lib.models.ModelFace;
 
@@ -14,37 +19,62 @@ public class FaceConfig {
 
     ModelFace face;
 
-    enum State {
+    public enum State {
         ACTIVE,
         AMBIENT
     }
 
-    enum Shape {
+    public enum Shape {
         ROUND,
         SQUARE,
         UNKNOWN
     }
 
+
+    HashMap<String,Paint> paints;
+
+    GregorianCalendar calendar;
+    Bitmap background;
+    Shape shape = Shape.SQUARE;
+
     public FaceConfig(ModelFace face){
         this.face = face;
+        this.paints = new HashMap<>();
+        this.calendar = new GregorianCalendar();
     }
 
 
     public Paint getPaint(ModelFace.FaceColour colour, State state){
-        switch (colour){
-            case BACKGROUND:
-                break;
-            default:
-                break;
+        String name = String.format(Locale.ENGLISH,"%s_%s",colour.name(),state.name());
+        if(paints.get(name) ==null) {
+            Paint p = new Paint();
+
+//            mHourPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thin_stroke));
+//            mHourPaint.setStrokeCap(Paint.Cap.ROUND);
+//            mHourPaint.setTextSize(hoursTextSize());
+
+            p.setColor(getColor(colour,state));
+            p.setAntiAlias(state!=State.AMBIENT);
+            p.setTypeface(getTypeface(colour,state));
+            switch (colour) {
+                case BACKGROUND:
+                    break;
+                case HOUR:
+
+                    break;
+                default:
+                    break;
+            }
+            return null;
         }
-        return null;
+        return paints.get(name);
     }
 
-    private Color getColor(ModelFace.FaceColour colour, State state){
+    private @ColorInt int getColor(ModelFace.FaceColour colour, State state){
         switch (colour){
 
         }
-        return null;
+        return 0;
     }
 
 
@@ -52,11 +82,24 @@ public class FaceConfig {
         return null;
     }
 
-    public int xOffset(){
-        return 0;
+
+    public Bitmap getBackground() {
+        return background;
     }
 
-    public int yOffset(){
-        return 0;
+    public void setBackground(Bitmap background) {
+        this.background = background;
+    }
+
+    public Shape getShape() {
+        return shape;
+    }
+
+    public void setShape(Shape shape) {
+        this.shape = shape;
+    }
+
+    public GregorianCalendar getCalendar() {
+        return calendar;
     }
 }

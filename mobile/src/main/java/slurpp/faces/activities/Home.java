@@ -17,6 +17,7 @@ import android.widget.Toast;
 import com.google.android.gms.wearable.DataMap;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 import slurpp.faces.Font;
 import slurpp.faces.R;
@@ -30,6 +31,8 @@ import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.WatchDraw;
 import slurpp.faces_lib.utils.WearIO;
 import slurpp.faces_lib.models.WearSettings;
+
+import static slurpp.faces_lib.utils.Global.Messages.LAUNCH_WEAR_PREVIEW;
 
 
 public class Home extends FragmentActivity implements WearIO.MessageListener {
@@ -118,6 +121,29 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
             showPreview = true;
             previewHandler.postDelayed(previewRunnable, 0);
         }
+
+
+        //todo load watch preview.
+
+        MobileWearIO.shared().launchFacePreview(new WearIO.MessageListener() {
+            @Override
+            public boolean waitingForKey(String key) {
+                if(key.equals(LAUNCH_WEAR_PREVIEW.name()))
+                    return true;
+                return false;
+            }
+
+            @Override
+            public void received(String path, String message) {
+                Log.d("Listener",String.format(Locale.ENGLISH,"%s %s",path,message));
+
+            }
+
+            @Override
+            public void updated(String path, DataMap map) {
+
+            }
+        });
     }
 
     @Override
