@@ -15,6 +15,8 @@
     <string name="two_times_face_title">Two Times</string>
 
     <!--THESE ARE THE PREFERENCES RELATING TO THE WATCHES-->
+    <string name="PREF_IS_ROUND">PREF.IS_ROUND</string>
+
     <string name="PREF_CURRENT_FACE">PREF.CURRENT_FACE</string>
     <string name="PREF_BACKGROUND_COLOUR">PREF.BACKGROUND.COLOUR</string>
     <string name="PREF_HOUR_COLOUR">PREF.HOUR.COLOUR</string>

@@ -25,20 +25,11 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-    })
-
     compile 'com.google.android.gms:play-services-base:10.2.6'
     compile 'com.google.android.gms:play-services-wearable:10.2.6'
-
-
     compile group: 'com.google.code.gson', name: 'gson', version: '2.7'
+    compile 'io.realm:android-adapters:2.1.0'
 
-    compile 'com.github.jrejaud:WearSocket:1.0.8'
-
-
-
-
-    androidTestCompile 'junit:junit:4.12'
 }
+
+apply plugin: 'realm-android'

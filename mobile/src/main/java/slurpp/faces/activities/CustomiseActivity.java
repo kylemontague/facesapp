@@ -27,7 +27,6 @@ import android.widget.Toast;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Wearable;
@@ -36,6 +35,7 @@ import com.squareup.seismic.ShakeDetector;
 import java.util.List;
 import java.util.Random;
 
+import io.realm.Realm;
 import slurpp.faces.Font;
 import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
@@ -47,12 +47,10 @@ import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.WatchDraw;
 import slurpp.faces_lib.utils.Constants;
 import slurpp.faces_lib.utils.Global;
-import slurpp.faces_lib.utils.WearIO;
-
-import static slurpp.faces_lib.utils.Global.Messages.LAUNCH_WEAR_PREVIEW;
+import slurpp.faces_lib.v2.models.FaceSettings;
 
 
-public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener, WearIO.MessageListener {
+public class CustomiseActivity extends FragmentActivity implements ShakeDetector.Listener {
 
 
     public static String EXTRA_BITMAP_IMAGE= "EXTRA_BITMAP_IMAGE";
@@ -86,7 +84,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private DataSetObserver dragObserver;
 
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
-
+    private SensorManager sensorManager;
+    private ShakeDetector sd;
 
 
 
@@ -143,9 +142,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         //todo launch preview
         //launchFacePreview();
 
-        SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        ShakeDetector sd = new ShakeDetector(this);
-        sd.start(sensorManager);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sd = new ShakeDetector(this);
     }
 
 
@@ -169,6 +167,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         startPreview();
         swatchAdapter.registerDataSetObserver(dragObserver);
+        sd.start(sensorManager);
     }
 
 
@@ -177,6 +176,7 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     protected void onPause() {
         super.onPause();
         swatchAdapter.unregisterDataSetObserver(dragObserver);
+        sd.stop();
     }
 
     GoogleApiClient mGoogleApiClient;
@@ -267,11 +267,12 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
     public void saveFace(){
         //todo store the json / xml face design.
-        CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
+        final CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
         MobileWearableService.sendData(mGoogleApiClient, Global.DataMaps.CURRENT_FACE_SETTINGS.name(), customFace.toJson(), new ResultCallback<DataApi.DataItemResult>() {
             @Override
             public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
                 if(dataItemResult.getStatus().isSuccess()){
+                    FaceSettings.fromCustomFace(Realm.getDefaultInstance(),customFace);
                     finish();
                 }
             }
@@ -412,20 +413,4 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
     }
 
-    @Override
-    public boolean waitingForKey(String key) {
-        if(key.equals(LAUNCH_WEAR_PREVIEW.name()))
-            return true;
-        return false;
-    }
-
-    @Override
-    public void received(String path, String message) {
-        Log.d("WEAR-MESSAGE",String.format("%s %s",path,message));
-    }
-
-    @Override
-    public void updated(String path, DataMap map) {
-        Log.d("WEAR-MESSAGE",String.format("%s %s",path,map.toString()));
-    }
 }

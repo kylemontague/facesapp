@@ -10,6 +10,7 @@ import java.util.GregorianCalendar;
 
 import slurpp.faces_lib.models.ModelFace;
 import slurpp.faces_lib.templates.IFace;
+import slurpp.faces_lib.v2.models.FaceSettings;
 
 /**
  * Created by Kyle Montague on 14/06/15.
@@ -42,6 +43,17 @@ public class PreviewCanvas extends View {
         face = customFace;
         mWatchFace = face.getBaseFace();
         mCal = new GregorianCalendar();
+
+    }
+
+    public PreviewCanvas(Context context, FaceSettings settings, IFace.Shape shape){
+        super(context);
+        mWatchFace = settings.getBase();
+
+        mCal = new GregorianCalendar();
+        mShape = shape;
+        ambientMode = false;
+        clipBounds = false;
 
     }
 

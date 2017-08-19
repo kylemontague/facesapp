@@ -28,8 +28,8 @@ public class WearSettings extends Object {
     }
 
     public WearSettings() {
-        this.isActive=false;
-        this.isRound=false;
+        this.isActive=true;
+        this.isRound=true;
     }
 
     public HashMap<String, String> toMap() {
@@ -53,7 +53,7 @@ public class WearSettings extends Object {
         WearSettings settings = new WearSettings();
 
         settings.isRound = preferences.getBoolean(PREF_IS_ACTIVE,false);
-        settings.isActive = preferences.getBoolean(PREF_IS_ROUND,false);
+        settings.isActive = preferences.getBoolean(PREF_IS_ROUND,true);
         return settings;
     }
 

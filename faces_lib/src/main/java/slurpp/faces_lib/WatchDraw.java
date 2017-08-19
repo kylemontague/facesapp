@@ -23,6 +23,20 @@ import slurpp.faces_lib.utils.NumbersToWords;
  */
 public class WatchDraw {
 
+
+    public enum TAPMODE{
+        DATE,
+        COLOR,
+        STEPS;
+
+        private static TAPMODE[] allValues = values();
+        public static TAPMODE fromOrdinal(int n) {
+            return allValues[n];
+        }
+
+    }
+
+
     public enum FACE {
         //        FACES_FACE,
         OUA_TIME,
@@ -40,7 +54,7 @@ public class WatchDraw {
             //load the watch from the preferences
             switch (face) {
                 case OUA_TIME:
-                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR};
+                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_SECOND_COLOUR};
                 case FILL_TIME:
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR};
                 case BUSINESS_TIME:
@@ -58,17 +72,17 @@ public class WatchDraw {
             //load the watch from the preferences
             switch (face) {
                 case OUA_TIME:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
+                    return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_SECOND_COLOUR};
                 case TWO_TIME:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
+                    return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
                 case FILL_TIME:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR};
+                    return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR};
                 case BUSINESS_TIME:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_HOUR_COLOUR, R.string.PREVIEW_MINUTE_COLOUR, R.string.PREVIEW_SECOND_COLOUR};
+                    return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_MINUTE_COLOUR, R.string.PREF_SECOND_COLOUR};
 //                case FACES_FACE:
 //                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
                 default:
-                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
+                    return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
             }
         }
     }
@@ -368,7 +382,6 @@ public class WatchDraw {
         }
 
         float yPos = centerY;
-
 
         Paint hourPaint =  watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE);
 

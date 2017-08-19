@@ -185,7 +185,15 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                     final String message = new String(messageEvent.getData());
                     Log.d(TAG,"Got preview update:"+ message);
                     previewFace = CustomFace.fromJson(message);
-                    onTimeTick();
+
+                    if(previewFace !=null){
+                        watchType = previewFace.getBase();
+                        watchConfig.setColours(previewFace.getColors());
+                        watchConfig.invalidateColors();
+                    }
+
+                    invalidate();
+                    updateTimer();
                 }
             }
         };
@@ -264,15 +272,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onTimeTick() {
-            /* the time changed */
             super.onTimeTick();
-
-            if(previewFace !=null){
-                watchType = previewFace.getBase();
-                watchConfig.setColours(previewFace.getColors());
-                watchConfig.invalidateColors();
-            }
-
             invalidate();
         }
 
@@ -391,7 +391,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                     //watchConfig = new WordsmithFace(getApplicationContext());
                     break;
             }
-            watchConfig.setAsCurrentFace();
+//            watchConfig.setAsCurrentFace();
         }
 
 

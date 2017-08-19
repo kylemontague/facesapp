@@ -53,12 +53,6 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
     }
 
     @Override
-    public void setColours(int[] values) {
-        this.colours = values;
-
-    }
-
-    @Override
     public int xOffset(Shape faceShape) {
         return (int)mTextScale* ((faceShape == Shape.ROUND)?-80:-80);
     }
@@ -297,6 +291,13 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
     int BACKGROUND_INDEX = 0;
     int HOUR_INDEX = 2;
     int ACCENT_INDEX = 1;
+
+
+    @Override
+    public void setColours(int[] values) {
+        this.colours = values;
+        invalidateColors();
+    }
 
 
     private boolean hasColour(int index){

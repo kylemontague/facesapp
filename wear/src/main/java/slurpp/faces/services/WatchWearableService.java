@@ -375,11 +375,11 @@ public class WatchWearableService extends WearableListenerService implements Goo
 //        i.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_HISTORY);
 //        this.startActivity(i);
 
-        Log.d(TAG,message);
-        Intent i = new Intent(Global.Messages.UPDATE_WEAR_PREVIEW.name());
-        i.putExtra(Global.PREF_WATCH_FACE,message);
-        Log.d(TAG,"put watch:"+message);
-        this.sendBroadcast(i);
+//        Log.d(TAG,message);
+//        Intent i = new Intent(Global.Messages.UPDATE_WEAR_PREVIEW.name());
+//        i.putExtra(Global.PREF_WATCH_FACE,message);
+//        Log.d(TAG,"put watch:"+message);
+//        this.sendBroadcast(i);
     }
 
     protected void vibrate(){

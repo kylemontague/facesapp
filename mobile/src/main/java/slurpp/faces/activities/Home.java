@@ -7,9 +7,11 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
+import android.text.format.DateUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -17,13 +19,11 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Wearable;
 
-import java.util.ArrayList;
-
+import io.realm.Realm;
 import slurpp.faces.Font;
 import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
@@ -32,13 +32,12 @@ import slurpp.faces.objects.DepthPageTransformer;
 import slurpp.faces.services.MobileWearableService;
 import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.models.WearSettings;
 import slurpp.faces_lib.utils.Constants;
 import slurpp.faces_lib.utils.Global;
-import slurpp.faces_lib.utils.WearIO;
+import slurpp.faces_lib.v2.models.FaceSettings;
 
 
-public class Home extends FragmentActivity implements WearIO.MessageListener {
+public class Home extends FragmentActivity implements MessageApi.MessageListener {
 
     private static final String TAG = "Home";
     private boolean shouldOnBoard = false;
@@ -58,6 +57,9 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
     private View mTopOverlayView;
 
     private View currentPreview = null;
+
+
+    FaceSettings currentSettings;
 
 
 
@@ -101,7 +103,6 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         }
 
         start();
-
     }
 
 
@@ -123,21 +124,16 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
         //listen for messages
-        MobileWearableService.addListener(mGoogleApiClient, new MessageApi.MessageListener() {
-            @Override
-            public void onMessageReceived(MessageEvent messageEvent) {
-                Log.d(TAG,"Got message"+ messageEvent.getData().toString());
-            }
-        });
+        MobileWearableService.addListener(mGoogleApiClient, this);
 
 
-        CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,WatchDraw.FACE.getPreviewPreferences(currentFace),null);
-        MobileWearableService.sendMessage(mGoogleApiClient, Global.Messages.LAUNCH_WEAR_PREVIEW.name(),customFace.toJson(), new ResultCallback<MessageApi.SendMessageResult>() {
-            @Override
-            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
-                Log.d(TAG,"message result: "+ sendMessageResult.getStatus().getStatusMessage());
-            }
-        });
+//        CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,WatchDraw.FACE.getPreviewPreferences(currentFace),null);
+//        MobileWearableService.sendMessage(mGoogleApiClient, Global.Messages.LAUNCH_WEAR_PREVIEW.name(),customFace.toJson(), new ResultCallback<MessageApi.SendMessageResult>() {
+//            @Override
+//            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
+//                Log.d(TAG,"message result: "+ sendMessageResult.getStatus().getStatusMessage());
+//            }
+//        });
 
 
 
@@ -166,13 +162,28 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
             isRound = Constants.isRound(this);
         }
 
+
+        //todo hardcoding
+        isRound = true;
+
+
         if(!showPreview) {
             showPreview = true;
             previewHandler.postDelayed(previewRunnable, 0);
         }
 
 
+
         //todo load watch preview. launchFacePreview();
+
+
+    }
+
+    @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        mPager.setCurrentItem(mPagerAdapter.getCurrentFaceIndex());
+
     }
 
     @Override
@@ -180,6 +191,8 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         super.onPause();
         showPreview = false;
         mOverlayView.setVisibility(View.INVISIBLE);
+
+        MobileWearableService.removeListener(mGoogleApiClient,this);
     }
 
 
@@ -198,7 +211,19 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         takePhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                takePhoto();
+                if(faceIndex < mPagerAdapter.getCurrentFaceIndex()){
+                    //set watch
+                    Realm.getDefaultInstance().executeTransaction(new Realm.Transaction() {
+                        @Override
+                        public void execute(Realm realm) {
+                            realm.insert(new FaceSettings(currentSettings.getColors(),currentSettings.getBase()));
+                        }
+                    });
+                    Toast.makeText(getApplicationContext(),"Face Set",Toast.LENGTH_SHORT).show();
+                }else {
+                    //customise
+                    takePhoto();
+                }
             }
         });
 
@@ -220,6 +245,24 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
             }
         });
 
+        mOverlayView = findViewById(R.id.info_overlay);
+        if(mOverlayView != null){
+            mInfoOverlay = new InfoFragment();
+            mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_swipe_to_select,R.drawable.ic_info_arrowleft, InfoFragment.type.BOTTOM));
+            getSupportFragmentManager().beginTransaction().add(R.id.info_overlay,mInfoOverlay).commit();
+            mOverlayView.bringToFront();
+        }
+
+        mTopOverlayView = findViewById(R.id.top_info_overlay);
+        if(mTopOverlayView != null){
+            mTopInfoOverlay = new InfoFragment();
+            mTopInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.faces_face_title,-1, InfoFragment.type.TOP));
+            getSupportFragmentManager().beginTransaction().add(R.id.top_info_overlay,mTopInfoOverlay).commit();
+            View v = findViewById(R.id.top_info_overlay);
+            v.bringToFront();
+        }
+
+
         // Instantiate a ViewPager and a PagerAdapter.
         mPager = (ViewPager) findViewById(R.id.watch_pager);
         mPagerAdapter = new WatchPageAdapter(getSupportFragmentManager(), this);
@@ -236,13 +279,49 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
                     takePhoto.setVisibility(View.VISIBLE);
                     mOverlayView.setVisibility(View.INVISIBLE);
                 }
+
                 faceIndex = position;
-                mTopInfoOverlay.setTextString((String) mPagerAdapter.getPageTitle(position));
                 currentPreview = mPager.getChildAt(position);
                 currentFace = mPagerAdapter.faceAtPosition(position);
+                currentSettings = mPagerAdapter.settingsAtPosition(position);
 
 
-                CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,WatchDraw.FACE.getPreviewPreferences(currentFace),mPagerAdapter.getPageTitle(position).toString());
+
+                if(position < mPagerAdapter.getCurrentFaceIndex()){
+                    //familiar faces
+                    takePhoto.setVisibility(View.VISIBLE);
+                    takePhoto.setText("Set Face");
+                    if(mTopInfoOverlay !=null) {
+
+                        String text = "Familiar Face";
+                        if(currentSettings!=null)
+                            text = DateUtils.getRelativeTimeSpanString(currentSettings.getCreatedOn(), System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString();
+
+                        mTopInfoOverlay.setTextString(text);
+                    }
+                    //todo change the onclick listener
+                }else if(position == mPagerAdapter.getCurrentFaceIndex()){
+                    //current face
+                    if(mTopInfoOverlay != null) {
+                        mTopInfoOverlay.setTextString("On yer wrist!");
+                    }
+
+                    takePhoto.setVisibility(View.GONE);
+                }else{
+                    takePhoto.setVisibility(View.VISIBLE);
+                    takePhoto.setText("Customise");
+                    if(mTopInfoOverlay!=null) {
+                        mTopInfoOverlay.setTextString((String) mPagerAdapter.getPageTitle(position));
+                    }
+
+                }
+
+
+
+
+
+                int[] newcolors = (currentSettings!=null)?currentSettings.getColorsArray(): null;
+                CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,newcolors,null);
                 MobileWearableService.sendMessage(mGoogleApiClient, Global.Messages.UPDATE_WEAR_PREVIEW.name(), customFace.toJson(), new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
                     public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
@@ -255,6 +334,8 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
             public void onPageScrollStateChanged(int state) {
             }
         });
+
+
 
 //        mPager.setOnTouchListener(new View.OnTouchListener() {
 //
@@ -275,22 +356,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 //            }
 //        });
 
-        mOverlayView = findViewById(R.id.info_overlay);
-        if(mOverlayView != null){
-            mInfoOverlay = new InfoFragment();
-            mInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.info_swipe_to_select,R.drawable.ic_info_arrowleft, InfoFragment.type.BOTTOM));
-            getSupportFragmentManager().beginTransaction().add(R.id.info_overlay,mInfoOverlay).commit();
-            mOverlayView.bringToFront();
-        }
 
-        mTopOverlayView = findViewById(R.id.top_info_overlay);
-        if(mTopOverlayView != null){
-            mTopInfoOverlay = new InfoFragment();
-            mTopInfoOverlay.setArguments(InfoFragment.argumentBuilder(R.string.faces_face_title,-1, InfoFragment.type.TOP));
-            getSupportFragmentManager().beginTransaction().add(R.id.top_info_overlay,mTopInfoOverlay).commit();
-            View v = findViewById(R.id.top_info_overlay);
-            v.bringToFront();
-        }
 
 
     }
@@ -336,33 +402,10 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
     int[] colours = new int[]{slurpp.faces_lib.R.color.black, slurpp.faces_lib.R.color.green, slurpp.faces_lib.R.color.white, slurpp.faces_lib.R.color.white, slurpp.faces_lib.R.color.white};
-    private void createFaces(){
-        ArrayList<CustomFace> faces = new ArrayList<>();
-        faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME,colours,"Test Watch 1"));
-        faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.OUA_TIME,colours,"Test Watch 3"));
-        faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.FILL_TIME,colours,"Test Watch 4"));
-        faces.add(new CustomFace(System.currentTimeMillis(), WatchDraw.FACE.BUSINESS_TIME, colours, "Test Watch 5"));
-
-    }
-
 
 
     @Override
-    public boolean waitingForKey(String key) {
-        return (key.equals(Global.Messages.OPEN_FACE_SELECTION.name()));
-    }
-
-    @Override
-    public void received(String path, String message) {
-
-    }
-
-    @Override
-    public void updated(String path, DataMap map) {
-        Toast.makeText(getApplicationContext(),"UPDATED DATA",Toast.LENGTH_LONG).show();
-        WearSettings settings = map.get(Global.OLD_DataMap.WEAR_SETTINGS.name());
-        isActive = settings.isActive;
-        isRound = settings.isRound;
-        //todo update the preview if they are wrong.
+    public void onMessageReceived(MessageEvent messageEvent) {
+        Log.d(TAG,"Got message"+ messageEvent.getPath());
     }
 }

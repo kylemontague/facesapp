@@ -58,6 +58,7 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
     @Override
     public void setColours(int[] values) {
         colours = values;
+        invalidateColors();
     }
 
     @Override

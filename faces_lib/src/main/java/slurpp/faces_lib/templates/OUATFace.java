@@ -30,6 +30,27 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     private double mTextScale = 1.0;
 
+
+
+    private int[] colours = null;
+    int BACKGROUND_INDEX = 0;
+    int HOUR_INDEX = 1;
+    int MINUTE_INDEX = -2;
+    int SECOND_INDEX = 2;
+    int ACCENT_INDEX = -1;
+    int MERIDIAN_INDEX = -1;
+
+    private boolean hasColour(int index){
+        return (colours != null && index < colours.length && index >= 0);
+    }
+    private int getColour(int index){
+        if(colours != null && index < colours.length && index >= 0){
+            //request colour
+            return colours[index];
+        }
+        return -1;
+    }
+
     private static String name = null;
     public OUATFace(Context context){
         mContext=context;
@@ -56,7 +77,8 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public void setColours(int[] values) {
-
+        this.colours = values;
+        invalidateColors();
     }
 
     @Override
@@ -217,12 +239,14 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public int dateTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+       return secondsTextColour(faceState);
     }
 
     @Override
     public int hoursTextColour(State faceState) {
-        return (faceState!=State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_HOUR_COLOUR), mContext.getResources().getColor(R.color.black)):mContext.getResources().getColor(R.color.ambient_foreground);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(HOUR_INDEX)) ? getColour(HOUR_INDEX) : mContext.getResources().getColor(R.color.black);
     }
 
     @Override
@@ -232,8 +256,9 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public int secondsTextColour(State faceState) {
-        return hoursTextColour(faceState);
-    }
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(SECOND_INDEX)) ? getColour(SECOND_INDEX) : mContext.getResources().getColor(R.color.black);    }
 
     @Override
     public int meridianTextColour(State faceState) {
@@ -242,7 +267,10 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public int backgroundColour(State faceState) {
-        return (faceState != State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_BACKGROUND_COLOUR), mContext.getResources().getColor(R.color.white)):mContext.getResources().getColor(R.color.ambient_background);
+
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(BACKGROUND_INDEX)) ? getColour(BACKGROUND_INDEX) : mContext.getResources().getColor(R.color.white);
     }
 
     @Override
@@ -262,15 +290,15 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(key.toUpperCase().contains(name)){
-            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
-                mBackgroundPaint = null;
-            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
-                mHourPaint = null;
-                mAccentPaint = null;
-                mMinutePaint = null;
-                mSecondPaint = null;
-            }
-        }
+//        if(key.toUpperCase().contains(name)){
+//            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
+//                mBackgroundPaint = null;
+//            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
+//                mHourPaint = null;
+//                mAccentPaint = null;
+//                mMinutePaint = null;
+//                mSecondPaint = null;
+//            }
+//        }
     }
 }

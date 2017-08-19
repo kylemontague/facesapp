@@ -74,6 +74,8 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
 
     @Override
     public void setColours(int[] values) {
+        this.colours  = values;
+        invalidateColors();
     }
 
     @Override

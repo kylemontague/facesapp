@@ -1,14 +1,21 @@
 package slurpp.faces.controls;
 
 import android.content.Context;
-import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.util.Log;
 
 import java.util.ArrayList;
 
+import io.realm.OrderedCollectionChangeSet;
+import io.realm.OrderedRealmCollectionChangeListener;
+import io.realm.Realm;
+import io.realm.RealmResults;
+import io.realm.Sort;
 import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.v2.models.FaceSettings;
 
 /**
  * Created by kylemontague on 18/06/15.
@@ -18,21 +25,48 @@ public class WatchPageAdapter extends FragmentPagerAdapter {
 
     ArrayList<WatchFragment> watches;
     Context mContext;
+    RealmResults<FaceSettings> familiarFaces;
+    OrderedRealmCollectionChangeListener familiarChangeListener = new OrderedRealmCollectionChangeListener<RealmResults<FaceSettings>>() {
+        @Override
+        public void onChange(RealmResults<FaceSettings> faceSettings, OrderedCollectionChangeSet changeSet) {
+            faceSettings.load();
+            updateWatches();
+        }
+    };
+
+    public int getCurrentFaceIndex() {
+        return currentFaceIndex;
+    }
+
+
+
+    int currentFaceIndex = 0;
+
     public WatchPageAdapter(FragmentManager fm, Context context) {
         super(fm);
         mContext = context;
-        //todo load the dataset here and build an array of WatchFragment
-        watches = new ArrayList<WatchFragment>();
-        //TODO THIS IS THE NUMBER OF FACES THAT WILL BE SHOWN
-        WatchDraw.FACE[] array = WatchDraw.FACE.values();
-        for(int x=0;x<array.length;x++) {
-            WatchFragment wf = new WatchFragment();
-            Bundle b = new Bundle();
-            b.putInt("ARG.WATCH_FACE", array[x].ordinal());
-            b.putBoolean("ARG.WATCH_AMBIENT_MODE",false);
-            wf.setArguments(b);
-            watches.add(wf);
+        familiarFaces = FaceSettings.all(Realm.getDefaultInstance(), Sort.ASCENDING);
+        familiarFaces.addChangeListener(familiarChangeListener);
+        updateWatches();
+    }
+
+
+    private void updateWatches(){
+        currentFaceIndex = 0;
+        watches = new ArrayList<>();
+        for(FaceSettings face:familiarFaces){
+            Log.d("REALM",face.getId());
+            watches.add(WatchFragment.fromFaceSettings(face));
         }
+
+        if(watches.size() > 0){
+            currentFaceIndex = watches.size()-1;
+        }
+
+        for (slurpp.faces_lib.v2.models.FaceSettings face : slurpp.faces_lib.v2.models.FaceSettings.stock()) {
+            watches.add(WatchFragment.fromStock(face.getBase()));
+        }
+        notifyDataSetChanged();
     }
 
     @Override
@@ -62,6 +96,12 @@ public class WatchPageAdapter extends FragmentPagerAdapter {
 
     public WatchDraw.FACE faceAtPosition(int position){
         return watches.get(position).getFace();
+    }
+
+
+    @Nullable
+    public FaceSettings settingsAtPosition(int position){
+        return watches.get(position).getSettings();
     }
 
     public void setAmbientMode(boolean mode){

@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.RelativeLayout;
@@ -44,16 +43,16 @@ public class PreviewActivity extends Activity {
             if(intent.getAction().equals(Global.Messages.CLOSE_WEAR_PREVIEW.name()))
                 finish();
             else if(intent.getAction().equals(Global.Messages.UPDATE_WEAR_PREVIEW.name())){
-                Bundle extras = intent.getExtras();
-                if (extras != null) {
-                    String json = extras.getString(Global.PREF_WATCH_FACE, null);
-                    if (json != null && !json.equals("")) {
-                        faceSettings = CustomFace.fromJson(json);
-                        Log.d("Preview","FaceSettings:"+json);
-                        watchFragment.update(faceSettings);
-
-                    }
-                }
+//                Bundle extras = intent.getExtras();
+//                if (extras != null) {
+//                    String json = extras.getString(Global.PREF_WATCH_FACE, null);
+//                    if (json != null && !json.equals("")) {
+//                        faceSettings = CustomFace.fromJson(json);
+//                        Log.d("Preview","FaceSettings:"+json);
+//                        watchFragment.update(faceSettings);
+//
+//                    }
+//                }
             }
         }
     };
