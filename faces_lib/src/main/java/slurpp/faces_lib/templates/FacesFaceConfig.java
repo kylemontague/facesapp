@@ -46,6 +46,12 @@ public class FacesFaceConfig implements IFace, SharedPreferences.OnSharedPrefere
     }
 
     @Override
+    public void invalidateColors() {
+        mHourPaint = mAccentPaint = mMinutePaint = mSecondPaint = mBackgroundPaint = null;
+    }
+
+
+    @Override
     public void setColours(int[] values) {
 
     }
@@ -266,10 +272,6 @@ public class FacesFaceConfig implements IFace, SharedPreferences.OnSharedPrefere
 
     @Override
     public void changedState(State faceState) {
-        mAccentPaint = null;
-        mHourPaint = null;
-        mBackgroundPaint = null;
-        mSecondPaint = null;
-        mMinutePaint = null;
+        invalidateColors();
     }
 }

@@ -9,12 +9,12 @@ import android.support.v7.graphics.Palette;
 public class ColourContrast {
 
 
-    final static int COLOUR_THRESHOLD = 500;
-    final static int BRIGHTNESS_THRESHOLD = 125;
+    private final static int COLOUR_THRESHOLD = 500;
+    private final static int BRIGHTNESS_THRESHOLD = 125;
 
 
     public static boolean isValid(Palette.Swatch c1, Palette.Swatch c2){
-        return (colourDifference(c1,c2) >= COLOUR_THRESHOLD && brightnessDifference(c1,c2) >= BRIGHTNESS_THRESHOLD)?true:false;
+        return (colourDifference(c1, c2) >= COLOUR_THRESHOLD && brightnessDifference(c1, c2) >= BRIGHTNESS_THRESHOLD);
     }
 
     private static int colourDifference(Palette.Swatch c1, Palette.Swatch c2){

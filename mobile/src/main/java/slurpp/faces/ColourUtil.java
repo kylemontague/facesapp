@@ -2,10 +2,8 @@ package slurpp.faces;
 
 import android.graphics.Color;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -41,7 +39,7 @@ public class ColourUtil {
     }
 
 
-    public static float[] hsl(int colour){
+    private static float[] hsl(int colour){
         float[] hsv = new float[3];
         Color.colorToHSV(colour,hsv);
         return hsv;

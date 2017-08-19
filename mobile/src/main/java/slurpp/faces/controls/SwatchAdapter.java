@@ -2,7 +2,6 @@ package slurpp.faces.controls;
 
 import android.content.ClipData;
 import android.content.Context;
-import android.database.DataSetObserver;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.LayoutInflater;
@@ -36,10 +35,10 @@ public class SwatchAdapter extends BaseAdapter {
     private ArrayList<Swatch> allColours;
     private ArrayList<Integer> markers;
 
-    private ArrayList<DataSetObserver> observers;
 
     private int currentMarker =-1;
     private SwatchView markerView=null;
+
 
     public SwatchAdapter(Context context, List<Swatch> values){
         mContext = context;
@@ -47,7 +46,6 @@ public class SwatchAdapter extends BaseAdapter {
         allColours = new ArrayList<>();
         markers = new ArrayList<>();
         setSwatches(values);
-        observers = new ArrayList<>();
     }
 
 
@@ -100,18 +98,6 @@ public class SwatchAdapter extends BaseAdapter {
     }
 
 
-    @Override
-    public void registerDataSetObserver(DataSetObserver observer){
-        super.registerDataSetObserver(observer);
-        observers.add(observer);
-
-    }
-
-    @Override
-    public void unregisterDataSetObserver(DataSetObserver observer){
-        super.unregisterDataSetObserver(observer);
-        observers.remove(observer);
-    }
 
     public int getColour(int position){
         return colours.get(position).getRgb();
@@ -133,6 +119,12 @@ public class SwatchAdapter extends BaseAdapter {
     }
 
 
+    public void changeMarker(int oldValue, int newValue){
+        if(markers.contains(oldValue)){
+            markers.set(markers.indexOf(oldValue),newValue);
+        }
+    }
+
     public void addMarker(int position){
         markers.add(position);
 
@@ -141,12 +133,12 @@ public class SwatchAdapter extends BaseAdapter {
     }
 
     public void removeMarker(int position) {
-        if(markers.contains(Integer.valueOf(position)))
-            markers.remove(markers.indexOf(Integer.valueOf(position)));
+        if(markers.contains(position))
+            markers.remove(markers.indexOf(position));
     }
 
     public boolean containsMarker(int position){
-        return markers.contains(Integer.valueOf(position));
+        return markers.contains(position);
     }
 
     public ArrayList<Integer> getMarkers(){
@@ -234,8 +226,7 @@ public class SwatchAdapter extends BaseAdapter {
                     if(v.getTag(R.string.Swatch_ID_ViewTag)!=null) {
                         int index = (int) v.getTag(R.string.Swatch_ID_ViewTag);
                         Log.d("SWATCH", "DROPPER ON SWATCH:" + index);
-                        removeMarker(currentMarker);
-                        addMarker(index);
+                        changeMarker(currentMarker,index);
                         notifyDataSetChanged();
                         view.invalidate();
                         v.invalidate();
@@ -282,4 +273,6 @@ public class SwatchAdapter extends BaseAdapter {
         }
         return colors;
     }
+
+
 }

@@ -9,6 +9,8 @@ import android.graphics.Typeface;
  */
 public interface IFace {
 
+    void invalidateColors();
+
     enum Mode {
         ANALOG,
         DIGITAL

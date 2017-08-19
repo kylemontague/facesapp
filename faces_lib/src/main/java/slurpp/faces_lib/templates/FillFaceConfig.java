@@ -30,6 +30,28 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
     private static String name = null;
     private double mTextScale = 1.0;
 
+
+
+    private int[] colours = null;
+    int BACKGROUND_INDEX = 0;
+    int HOUR_INDEX = -1;
+    int MINUTE_INDEX = -1;
+    int SECOND_INDEX = -1;
+    int ACCENT_INDEX = 1;
+    int MERIDIAN_INDEX = -1;
+
+    private boolean hasColour(int index){
+        return (colours != null && index < colours.length && index >= 0);
+    }
+    private int getColour(int index){
+        if(colours != null && index < colours.length && index >= 0){
+            //request colour
+            return colours[index];
+        }
+        return -1;
+    }
+
+
     public FillFaceConfig(Context context){
         mContext=context;
         mP = new Prefs(context);
@@ -46,8 +68,12 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
     }
 
     @Override
-    public void setColours(int[] values) {
+    public void invalidateColors() {
+        mHourPaint = mAccentPaint = mMinutePaint = mSecondPaint = mBackgroundPaint = null;
+    }
 
+    @Override
+    public void setColours(int[] values) {
     }
 
     @Override
@@ -206,37 +232,47 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
 
     @Override
     public int dateTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+        return secondsTextColour(faceState);
     }
 
     @Override
     public int hoursTextColour(State faceState) {
-        return (faceState!=State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_HOUR_COLOUR), mContext.getResources().getColor(R.color.white)):mContext.getResources().getColor(R.color.ambient_foreground);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(HOUR_INDEX)) ? getColour(HOUR_INDEX) : mContext.getResources().getColor(R.color.white);
     }
 
     @Override
     public int minutesTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_MINUTE_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(MINUTE_INDEX)) ? getColour(MINUTE_INDEX) : mContext.getResources().getColor(R.color.black);
     }
 
     @Override
     public int secondsTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(SECOND_INDEX)) ? getColour(SECOND_INDEX) : mContext.getResources().getColor(R.color.black);
     }
 
     @Override
     public int meridianTextColour(State faceState) {
-        return mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.black));
+        return secondsTextColour(faceState);
     }
 
     @Override
     public int backgroundColour(State faceState) {
-        return (faceState!=State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_BACKGROUND_COLOUR), mContext.getResources().getColor(R.color.fill_default_background)):mContext.getResources().getColor(R.color.ambient_background);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(BACKGROUND_INDEX)) ? getColour(BACKGROUND_INDEX) : mContext.getResources().getColor(R.color.fill_default_background);
     }
 
     @Override
     public int accentColour(State faceState) {
-        return (faceState!=State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_ACCENT_COLOUR), mContext.getResources().getColor(R.color.fill_default_accent)):mContext.getResources().getColor(R.color.ambient_foreground);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(ACCENT_INDEX)) ? getColour(ACCENT_INDEX) : mContext.getResources().getColor(R.color.fill_default_accent);
     }
 
     @Override
@@ -264,10 +300,6 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
 
     @Override
     public void changedState(State faceState) {
-        mAccentPaint = null;
-        mHourPaint = null;
-        mBackgroundPaint = null;
-        mSecondPaint = null;
-        mMinutePaint = null;
+      invalidateColors();
     }
 }

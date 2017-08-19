@@ -50,7 +50,10 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
     }
 
 
-
+    @Override
+    public void invalidateColors() {
+        mHourPaint = mAccentPaint = mMinutePaint = mSecondPaint = mBackgroundPaint = null;
+    }
 
     @Override
     public void setColours(int[] values) {
@@ -265,7 +268,7 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
 
 
     private boolean hasColour(int index){
-        return (colours != null && index < colours.length && index >= 0)?true:false;
+        return (colours != null && index < colours.length && index >= 0);
     }
     private int getColour(int index){
         if(colours != null && index < colours.length && index >= 0){
@@ -296,10 +299,6 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
 
     @Override
     public void changedState(State faceState) {
-        mAccentPaint = null;
-        mHourPaint = null;
-        mBackgroundPaint = null;
-        mSecondPaint = null;
-        mMinutePaint = null;
+        invalidateColors();
     }
 }

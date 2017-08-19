@@ -9,7 +9,6 @@ import android.preference.PreferenceManager;
 
 import slurpp.faces_lib.Prefs;
 import slurpp.faces_lib.R;
-import slurpp.faces_lib.templates.IFace;
 import slurpp.faces_lib.utils.Font;
 
 
@@ -47,6 +46,13 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
         PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.OUAT_FaceName);
     }
+
+
+    @Override
+    public void invalidateColors() {
+        mHourPaint = mAccentPaint = mMinutePaint = mSecondPaint = mBackgroundPaint = null;
+    }
+
 
     @Override
     public void setColours(int[] values) {
@@ -251,11 +257,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public void changedState(State faceState) {
-        mAccentPaint = null;
-        mHourPaint = null;
-        mBackgroundPaint = null;
-        mSecondPaint = null;
-        mMinutePaint = null;
+       invalidateColors();
     }
 
     @Override

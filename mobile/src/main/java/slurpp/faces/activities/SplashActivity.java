@@ -8,17 +8,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.google.android.gms.wearable.DataMap;
 
 import slurpp.faces.Font;
-import slurpp.faces.services.MobileWearIO;
-import slurpp.faces_lib.utils.WearIO;
 import slurpp.faces_lib.utils.Constants;
 import slurpp.faces_lib.utils.Global;
-import slurpp.faces_lib.models.WearSettings;
-
 
 import static slurpp.faces.R.animator;
 import static slurpp.faces.R.drawable;
@@ -41,8 +34,6 @@ public class SplashActivity extends Activity{
     //todo need to update the background watch straps to be square also.
     boolean isRound = true;
     boolean isActive = false;
-    MobileWearIO wearIO;
-    WearIO.MessageListener splashListener;
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
@@ -50,26 +41,25 @@ public class SplashActivity extends Activity{
         setContentView(layout.splash);
 //        initialiseDB();
 
-        wearIO = MobileWearIO.shared();
-        splashListener = new WearIO.MessageListener() {
-            @Override
-            public boolean waitingForKey(String key) {
-                return (key.equals(Global.DATA_MAP_WEAR_DEVICE));
-            }
-
-            @Override
-            public void received(String path, String message) {
-                Toast.makeText(getApplicationContext(),"Message: "+message,Toast.LENGTH_LONG).show();
-
-            }
-
-            @Override
-            public void updated(String path, DataMap map) {
-                WearSettings settings = map.get(Global.OLD_DataMap.WEAR_SETTINGS.name());
-                isActive = settings.isActive;
-                isRound = settings.isRound;
-            }
-        };
+//        splashListener = new WearIO.MessageListener() {
+//            @Override
+//            public boolean waitingForKey(String key) {
+//                return (key.equals(Global.DATA_MAP_WEAR_DEVICE));
+//            }
+//
+//            @Override
+//            public void received(String path, String message) {
+//                Toast.makeText(getApplicationContext(),"Message: "+message,Toast.LENGTH_LONG).show();
+//
+//            }
+//
+//            @Override
+//            public void updated(String path, DataMap map) {
+//                WearSettings settings = map.get(Global.OLD_DataMap.WEAR_SETTINGS.name());
+//                isActive = settings.isActive;
+//                isRound = settings.isRound;
+//            }
+//        };
         //fixme uncomment once fixed
         //wearIO.requestSettings(splashListener);
 
@@ -123,7 +113,6 @@ public class SplashActivity extends Activity{
 
     public void hasLoaded(){
         //if(googleApi) {
-            wearIO.unregisterListener(splashListener);
             Intent i = new Intent(SplashActivity.this, Home.class);
             i.putExtra(Constants.PREF_BOOLEAN_SHOULD_ON_BOARD, shouldOnBoard);
             i.putExtra(Global.OLD_DataMap.WEAR_SHAPE.name(), isRound);

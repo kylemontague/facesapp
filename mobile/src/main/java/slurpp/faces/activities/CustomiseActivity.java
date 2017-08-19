@@ -1,6 +1,7 @@
 package slurpp.faces.activities;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.DataSetObserver;
 import android.graphics.Bitmap;
@@ -11,6 +12,7 @@ import android.graphics.drawable.Drawable;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.graphics.Palette;
 import android.util.Log;
@@ -22,7 +24,13 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.Wearable;
 import com.squareup.seismic.ShakeDetector;
 
 import java.util.List;
@@ -33,12 +41,12 @@ import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.ProgressAdapter;
 import slurpp.faces.controls.SwatchAdapter;
-import slurpp.faces.services.MobileWearIO;
+import slurpp.faces.services.MobileWearableService;
 import slurpp.faces.utils.BlurBuilder;
-import slurpp.faces_lib.utils.Constants;
 import slurpp.faces_lib.CustomFace;
-import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.WatchDraw;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.utils.WearIO;
 
 import static slurpp.faces_lib.utils.Global.Messages.LAUNCH_WEAR_PREVIEW;
@@ -75,7 +83,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     private Bitmap mImage;
     private WatchDraw.FACE currentFace;
 
-    private MobileWearIO wearIO;
     private DataSetObserver dragObserver;
 
     private SharedPreferences.OnSharedPreferenceChangeListener preferenceChangeListener;
@@ -87,9 +94,14 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activty_customise);
+
+        start();
+
         Bitmap mTmpImage = (Bitmap)getIntent().getExtras().get(CustomiseActivity.EXTRA_BITMAP_IMAGE);
         final int faceID = getIntent().getExtras().getInt(CustomiseActivity.EXTRA_WATCH_FACE,0);
         currentFace = WatchDraw.FACE.fromOrdinal(faceID);
+        Log.d(TAG,"FACE: "+currentFace.name());
+
         mImage = BlurBuilder.blur(this, mTmpImage, .95f, 2.0f);
 
         shouldOnBoard = Constants.shouldOnBoard(getApplicationContext());
@@ -108,36 +120,46 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         setup();
 
 
-
-        if(shouldOnBoard) {
-            dragObserver = new DataSetObserver() {
-                @Override
-                public void onChanged() {
-                    super.onChanged();
-                    if (shouldOnBoard) {
-                        if(mOnBoardView!=null)
-                           mOnBoardView.setVisibility(View.INVISIBLE);
-                        faceButton.setVisibility(View.VISIBLE);
-                        shouldOnBoard = false;
-                        swatchAdapter.unregisterDataSetObserver(dragObserver);
-                    }
+        dragObserver = new DataSetObserver() {
+            @Override
+            public void onChanged() {
+                super.onChanged();
+                if (shouldOnBoard) {
+                    if(mOnBoardView!=null)
+                        mOnBoardView.setVisibility(View.INVISIBLE);
+                    faceButton.setVisibility(View.VISIBLE);
+                    shouldOnBoard = false;
                 }
-            };
-        }
+
+                updateWatchFace();
+            }
+        };
+
+
 
         setCurrentPreviewWatch(currentFace);
         updateInterface(mImage);
 
-
-        wearIO = MobileWearIO.shared();
-
-        wearIO.launchFacePreview(this);
+        //todo launch preview
+        //launchFacePreview();
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         ShakeDetector sd = new ShakeDetector(this);
         sd.start(sensorManager);
+    }
 
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        Bitmap mTmpImage = (Bitmap)intent.getExtras().get(CustomiseActivity.EXTRA_BITMAP_IMAGE);
+        final int faceID = intent.getExtras().getInt(CustomiseActivity.EXTRA_WATCH_FACE,0);
+        currentFace = WatchDraw.FACE.fromOrdinal(faceID);
+        Log.d(TAG,"FACE UPDATED: "+currentFace.name());
+        mImage = BlurBuilder.blur(this, mTmpImage, .95f, 2.0f);
+        setCurrentPreviewWatch(currentFace);
+        updateInterface(mImage);
 
     }
 
@@ -146,6 +168,47 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         startPreview();
+        swatchAdapter.registerDataSetObserver(dragObserver);
+    }
+
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        swatchAdapter.unregisterDataSetObserver(dragObserver);
+    }
+
+    GoogleApiClient mGoogleApiClient;
+
+    private void start(){
+        if(null == mGoogleApiClient) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(Wearable.API)
+                    .build();
+            Log.v(TAG, "GoogleApiClient created");
+        }
+
+        if(!mGoogleApiClient.isConnected()){
+            mGoogleApiClient.connect();
+            Log.v(TAG, "Connecting to GoogleApiClient..");
+        }
+
+        //listen for messages
+        MobileWearableService.addListener(mGoogleApiClient, new MessageApi.MessageListener() {
+            @Override
+            public void onMessageReceived(MessageEvent messageEvent) {
+                Log.d(TAG,"Got message"+ messageEvent.getData().toString());
+            }
+        });
+
+        startService(new Intent(this, MobileWearableService.class));
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopService(new Intent(this, MobileWearableService.class));
     }
 
     private void setup() {
@@ -205,7 +268,17 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     public void saveFace(){
         //todo store the json / xml face design.
         CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
-        MobileWearIO.shared().updateFace(this,customFace.toJson());
+        MobileWearableService.sendData(mGoogleApiClient, Global.DataMaps.CURRENT_FACE_SETTINGS.name(), customFace.toJson(), new ResultCallback<DataApi.DataItemResult>() {
+            @Override
+            public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
+                if(dataItemResult.getStatus().isSuccess()){
+                    finish();
+                }
+            }
+        });
+
+        //TODO updateFace(customFace.toJson());
+
     }
 
     private void updateInterface(Bitmap image){
@@ -215,7 +288,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             swatchAdapter = new SwatchAdapter(this,swatches);
             swatchContainer.setVisibility(View.VISIBLE);
             swatchContainer.setAdapter(swatchAdapter);
-            swatchAdapter.registerDataSetObserver(dragObserver);
             LayoutAnimationController lac = new LayoutAnimationController(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.abc_fade_in), 0.4f); //0.5f == time between appearance of listview items.
             swatchContainer.setLayoutAnimation(lac);
 //            swatchContainer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -249,8 +321,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
 
     private void updateSwatches(){
-
-
         CustomiseActivity.this.runOnUiThread(new Runnable() {
             public void run() {
                 swatchContainer.setAdapter(swatchAdapter);
@@ -258,6 +328,20 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             }
         });
 
+    }
+
+
+
+
+    private void updateWatchFace(){
+        CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
+        Log.d(TAG,customFace.toJson());
+        MobileWearableService.sendMessage(mGoogleApiClient, Global.Messages.UPDATE_WEAR_PREVIEW.name(), customFace.toJson(), new ResultCallback<MessageApi.SendMessageResult>() {
+            @Override
+            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
+                Log.d(TAG,"message result: "+ sendMessageResult.getStatus().getStatusMessage());
+            }
+        });
     }
 
     private String colourFromRGB(int rgb){
@@ -299,6 +383,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
                     }
                 }
                 updateSwatches();
+                updateWatchFace();
+
             }
         };
 
@@ -322,8 +408,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
                 mOnBoardView.setVisibility(View.INVISIBLE);
             faceButton.setVisibility(View.VISIBLE);
             shouldOnBoard = false;
-            swatchAdapter.unregisterDataSetObserver(dragObserver);
         }
+
     }
 
     @Override

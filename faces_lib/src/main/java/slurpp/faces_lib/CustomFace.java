@@ -22,6 +22,8 @@ public class CustomFace{
     private int minuteColor;
     private int secondColor;
 
+    private int[] colors;
+
     private String name;
     private boolean is24Hour;
 
@@ -31,10 +33,13 @@ public class CustomFace{
     }
 
 
+
+
     public CustomFace(long created, WatchDraw.FACE base, int[] colours, String name){
         this.created = created;
         this.base = base;
         this.name = name;
+        this.colors = new int[]{};
         setColours(colours);
     }
 
@@ -62,6 +67,8 @@ public class CustomFace{
             return;
 
         int[] mapping = WatchDraw.FACE.getPreviewPreferences(base);
+        this.colors = new int[mapping.length];
+
 
         if(colours.length == TOTAL_COLOURS){
             this.backgroundColor = colours[0];
@@ -69,9 +76,11 @@ public class CustomFace{
             this.hourColor = colours[2];
             this.minuteColor = colours[3];
             this.secondColor = colours[4];
+            this.colors = colours;
         }else if(mapping.length == colours.length){
             for(int x=0;x<colours.length;x++){
                 int id = mapping[x];
+                this.colors[x] = colours[x];
 
                 if (id == R.string.PREVIEW_BACKGROUND_COLOUR) {
                     this.backgroundColor = colours[x];
@@ -92,6 +101,10 @@ public class CustomFace{
 
     }
 
+
+    public int[] getColors(){
+        return this.colors;
+    }
 
 
     @Override
@@ -180,5 +193,8 @@ public class CustomFace{
     public void setIs24Hour(boolean is24Hour) {
         this.is24Hour = is24Hour;
     }
+
+
+
 }
 

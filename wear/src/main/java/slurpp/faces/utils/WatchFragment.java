@@ -11,6 +11,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import slurpp.faces.R;
+import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.templates.BusinessIFaceConfig;
 import slurpp.faces_lib.templates.IFace;
 import slurpp.faces_lib.templates.FillFaceConfig;
@@ -29,6 +30,8 @@ public class WatchFragment extends Fragment {
     private WatchDraw.FACE mFace;
     private RelativeLayout watchPreview;
     private ImageView watchStraps;
+    PreviewCanvas previewCanvas;
+    CustomFace customFace;
 
     public WatchFragment(){
         mFace = faces[0];
@@ -39,6 +42,30 @@ public class WatchFragment extends Fragment {
         super.setArguments(args);
         int wID = args.getInt(PreviewActivity.ARG_WATCHFACE,0);
         mFace = WatchDraw.FACE.fromOrdinal(wID);
+
+        String json = args.getString(PreviewActivity.ARG_WATCH_SETTINGS,null);
+        if(json != null && !json.equals("")){
+            customFace = CustomFace.fromJson(json);
+            mFace = customFace.getBase();
+        }
+    }
+
+
+
+    public void update(CustomFace customFace){
+        this.customFace = customFace;
+        watchPreview.removeAllViews();
+
+        mFace = customFace.getBase();
+        Context c= getActivity().getApplicationContext();
+        IFace.Shape s = IFace.Shape.ROUND;
+        IFace iFace = getConfig(c,mFace);
+        iFace.setColours(customFace.getColors());
+
+        previewCanvas = new PreviewCanvas(c,mFace,iFace, s);
+        watchPreview.addView(previewCanvas);
+        watchPreview.invalidate();
+
     }
 
     @Override
@@ -47,10 +74,12 @@ public class WatchFragment extends Fragment {
         watchPreview = (RelativeLayout) rootView.findViewById(R.id.watch);
         Context c= getActivity().getApplicationContext();
         IFace.Shape s = IFace.Shape.ROUND;
-        PreviewCanvas previewCanvas = new PreviewCanvas(c,mFace,getConfig(c,mFace), s);
+        IFace iFace = getConfig(getActivity().getApplicationContext(),mFace);
+        if(customFace!=null){
+            iFace.setColours(customFace.getColors());
+        }
+        previewCanvas = new PreviewCanvas(c,mFace,iFace, s);
         watchPreview.addView(previewCanvas);
-
-
         return rootView;
     }
 
@@ -89,4 +118,7 @@ public class WatchFragment extends Fragment {
         return getResources().getString(name);
     }
 
+    public void redraw() {
+        watchPreview.invalidate();
+    }
 }

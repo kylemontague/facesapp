@@ -31,7 +31,7 @@ public class Global {
         LAUNCH_CUSTOMISE_ACTIVITY,
         LAUNCH_WEAR_PREVIEW,
         CLOSE_WEAR_PREVIEW,
-        VIBRATE_WATCH
+        UPDATE_WEAR_PREVIEW, VIBRATE_WATCH
     }
 
 

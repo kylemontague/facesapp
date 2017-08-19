@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
@@ -14,29 +15,32 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.Wearable;
 
 import java.util.ArrayList;
-import java.util.Locale;
 
 import slurpp.faces.Font;
 import slurpp.faces.R;
 import slurpp.faces.controls.InfoFragment;
 import slurpp.faces.controls.WatchPageAdapter;
 import slurpp.faces.objects.DepthPageTransformer;
-import slurpp.faces.services.MobileWearIO;
-import slurpp.faces_lib.utils.Constants;
+import slurpp.faces.services.MobileWearableService;
 import slurpp.faces_lib.CustomFace;
-import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.utils.WearIO;
 import slurpp.faces_lib.models.WearSettings;
-
-import static slurpp.faces_lib.utils.Global.Messages.LAUNCH_WEAR_PREVIEW;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.utils.Global;
+import slurpp.faces_lib.utils.WearIO;
 
 
 public class Home extends FragmentActivity implements WearIO.MessageListener {
 
+    private static final String TAG = "Home";
     private boolean shouldOnBoard = false;
     private boolean isActive = true;
     private boolean isRound = true;
@@ -57,7 +61,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
 
-    WatchDraw.FACE currentFace;
+    WatchDraw.FACE currentFace = WatchDraw.FACE.OUA_TIME;
     private int faceIndex =0;
     boolean firstLoad = true;
 
@@ -66,7 +70,6 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
     private boolean showPreview = true;
-    private MobileWearIO wearIO;
 
     @Override
     protected void onCreate(Bundle saved){
@@ -92,16 +95,62 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
                     .setPositiveButton(R.string.dialog_activate_ok_pick_face, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            wearIO.launchFaceSelection(Home.this);
+                            //TODO launchFaceSelection();
                         }
                     }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
         }
 
-
-
+        start();
 
     }
 
+
+    GoogleApiClient mGoogleApiClient;
+
+    private void start(){
+        if(null == mGoogleApiClient) {
+            mGoogleApiClient = new GoogleApiClient.Builder(this)
+                    .addApi(Wearable.API)
+                    .build();
+            Log.v(TAG, "GoogleApiClient created");
+        }
+
+        if(!mGoogleApiClient.isConnected()){
+            mGoogleApiClient.connect();
+            Log.v(TAG, "Connecting to GoogleApiClient..");
+        }
+
+
+
+        //listen for messages
+        MobileWearableService.addListener(mGoogleApiClient, new MessageApi.MessageListener() {
+            @Override
+            public void onMessageReceived(MessageEvent messageEvent) {
+                Log.d(TAG,"Got message"+ messageEvent.getData().toString());
+            }
+        });
+
+
+        CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,WatchDraw.FACE.getPreviewPreferences(currentFace),null);
+        MobileWearableService.sendMessage(mGoogleApiClient, Global.Messages.LAUNCH_WEAR_PREVIEW.name(),customFace.toJson(), new ResultCallback<MessageApi.SendMessageResult>() {
+            @Override
+            public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
+                Log.d(TAG,"message result: "+ sendMessageResult.getStatus().getStatusMessage());
+            }
+        });
+
+
+
+
+        startService(new Intent(this, MobileWearableService.class));
+   }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopService(new Intent(this,MobileWearableService.class));
+    }
 
     @Override
     public void onResume(){
@@ -123,27 +172,7 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         }
 
 
-        //todo load watch preview.
-
-        MobileWearIO.shared().launchFacePreview(new WearIO.MessageListener() {
-            @Override
-            public boolean waitingForKey(String key) {
-                if(key.equals(LAUNCH_WEAR_PREVIEW.name()))
-                    return true;
-                return false;
-            }
-
-            @Override
-            public void received(String path, String message) {
-                Log.d("Listener",String.format(Locale.ENGLISH,"%s %s",path,message));
-
-            }
-
-            @Override
-            public void updated(String path, DataMap map) {
-
-            }
-        });
+        //todo load watch preview. launchFacePreview();
     }
 
     @Override
@@ -158,25 +187,8 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
 
 
     private void setup(){
-        wearIO = MobileWearIO.shared();
-
-        wearIO.launchFaceSelection(new WearIO.MessageListener() {
-            @Override
-            public boolean waitingForKey(String key) {
-                return true;
-            }
-
-            @Override
-            public void received(String path, String message) {
-                Log.d("WearIO",String.format("Path: %s Message: %s",path,message));
-            }
-
-            @Override
-            public void updated(String path, DataMap map) {
-                Log.d("WearIO",String.format("Path: %s Map: %s",path,map.toString()));
-
-            }
-        });
+        //TODO LAUNCH FACE SELECTION
+        //launchFaceSelection();
 
         currentFace = WatchDraw.FACE.OUA_TIME;
 
@@ -186,7 +198,6 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
         takePhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                MobileWearIO.shared().vibrateWear(null);
                 takePhoto();
             }
         });
@@ -231,6 +242,13 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
                 currentFace = mPagerAdapter.faceAtPosition(position);
 
 
+                CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,WatchDraw.FACE.getPreviewPreferences(currentFace),mPagerAdapter.getPageTitle(position).toString());
+                MobileWearableService.sendMessage(mGoogleApiClient, Global.Messages.UPDATE_WEAR_PREVIEW.name(), customFace.toJson(), new ResultCallback<MessageApi.SendMessageResult>() {
+                    @Override
+                    public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
+                        Log.d(TAG,sendMessageResult.getStatus().getStatusMessage());
+                    }
+                });
             }
 
             @Override
@@ -298,6 +316,9 @@ public class Home extends FragmentActivity implements WearIO.MessageListener {
             case CAMERA_IMAGE_CAPTURE:
                 if(resultCode == 0)
                     return;
+
+                Log.d(TAG,"FACE: "+currentFace.name());
+
                 Bundle extras = data.getExtras();
                 Bitmap image = (Bitmap) extras.get("data");
                 Intent customiseIntent = new Intent(this,CustomiseActivity.class);

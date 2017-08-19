@@ -3,8 +3,6 @@ package slurpp.faces_lib.models;
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
 
-import com.orm.SugarRecord;
-
 import java.util.HashMap;
 
 import slurpp.faces_lib.WatchDraw;
@@ -13,7 +11,7 @@ import slurpp.faces_lib.WatchDraw;
  * Created by Kyle Montague on 20/05/2017.
  */
 
-public class ModelFace extends SugarRecord{
+public class ModelFace{
 
     public enum FaceColour{
         BACKGROUND,

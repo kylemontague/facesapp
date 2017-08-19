@@ -48,7 +48,13 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
     }
 
     @Override
+    public void invalidateColors() {
+        mHourPaint = mAccentPaint = mMinutePaint = mSecondPaint = mBackgroundPaint = null;
+    }
+
+    @Override
     public void setColours(int[] values) {
+        this.colours = values;
 
     }
 
@@ -105,7 +111,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
             mMinutePaint = new Paint();
             mMinutePaint.setColor(minutesTextColour(faceState));
             mMinutePaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thin_stroke));
-            mMinutePaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mMinutePaint.setAntiAlias(faceState != State.AMBIENT);
             mMinutePaint.setTypeface(minutesType(faceState));
             mMinutePaint.setStrokeCap(Paint.Cap.ROUND);
             mMinutePaint.setTextSize(minutesTextSize());
@@ -119,7 +125,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
             mSecondPaint = new Paint();
             mSecondPaint.setColor(secondsTextColour(faceState));
             mSecondPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.normal_stroke));
-            mSecondPaint.setAntiAlias(faceState == State.AMBIENT ? false : true);
+            mSecondPaint.setAntiAlias(faceState != State.AMBIENT);
             mSecondPaint.setStyle(Paint.Style.STROKE);
             mSecondPaint.setTypeface(secondsType(faceState));
             mSecondPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -139,7 +145,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(backgroundColour(faceState));
             mBackgroundPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thick_stroke));
-            mBackgroundPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mBackgroundPaint.setAntiAlias(faceState != State.AMBIENT);
         }
         return mBackgroundPaint;
     }
@@ -150,7 +156,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
             mAccentPaint = new Paint();
             mAccentPaint.setColor(accentColour(faceState));
             mAccentPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.normal_stroke));
-            mAccentPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mAccentPaint.setAntiAlias(faceState != State.AMBIENT);
             mAccentPaint.setTypeface(secondsType(faceState));
             mAccentPaint.setStrokeCap(Paint.Cap.ROUND);
             mAccentPaint.setTextSize(secondsTextSize());
@@ -210,12 +216,46 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
 
     @Override
     public int dateTextColour(State faceState) {
-        return (faceState!= State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_SECOND_COLOUR), mContext.getResources().getColor(R.color.white)):mContext.getResources().getColor(R.color.ambient_foreground);
+        return secondsTextColour(faceState);
     }
+
+//    @Override
+//    public int hoursTextColour(State faceState) {
+//        return (faceState != State.AMBIENT)? mP.getColourString(makeString(R.string.PREF_HOUR_COLOUR), mContext.getResources().getColor(R.color.white)):mContext.getResources().getColor(R.color.ambient_foreground);
+//    }
+//
+//    @Override
+//    public int minutesTextColour(State faceState) {
+//        return hoursTextColour(faceState);
+//    }
+//
+//    @Override
+//    public int secondsTextColour(State faceState) {
+//        return hoursTextColour(faceState);
+//    }
+//
+//    @Override
+//    public int meridianTextColour(State faceState) {
+//        return hoursTextColour(faceState);
+//    }
+//
+//    @Override
+//    public int backgroundColour(State faceState) {
+//        return (faceState != State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_BACKGROUND_COLOUR), mContext.getResources().getColor(R.color.dark_purple)): mContext.getResources().getColor(R.color.ambient_background);
+//    }
+//
+//    @Override
+//    public int accentColour(State faceState) {
+//        return (faceState != State.AMBIENT)? mP.getColourString(makeString(R.string.PREF_ACCENT_COLOUR), mContext.getResources().getColor(R.color.light_purple)):mContext.getResources().getColor(R.color.ambient_background);
+//    }
+
+
 
     @Override
     public int hoursTextColour(State faceState) {
-        return (faceState != State.AMBIENT)? mP.getColourString(makeString(R.string.PREF_HOUR_COLOUR), mContext.getResources().getColor(R.color.white)):mContext.getResources().getColor(R.color.ambient_foreground);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(HOUR_INDEX)) ? getColour(HOUR_INDEX) : mContext.getResources().getColor(R.color.white);
     }
 
     @Override
@@ -230,22 +270,44 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
 
     @Override
     public int meridianTextColour(State faceState) {
-        return hoursTextColour(faceState);
+       return hoursTextColour(faceState);
     }
 
     @Override
     public int backgroundColour(State faceState) {
-        return (faceState != State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_BACKGROUND_COLOUR), mContext.getResources().getColor(R.color.dark_purple)): mContext.getResources().getColor(R.color.ambient_background);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(BACKGROUND_INDEX)) ? getColour(BACKGROUND_INDEX) : mContext.getResources().getColor(R.color.light_purple);
     }
 
     @Override
     public int accentColour(State faceState) {
-        return (faceState != State.AMBIENT)? mP.getColourString(makeString(R.string.PREF_ACCENT_COLOUR), mContext.getResources().getColor(R.color.light_purple)):mContext.getResources().getColor(R.color.ambient_background);
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(ACCENT_INDEX)) ? getColour(ACCENT_INDEX) : mContext.getResources().getColor(R.color.dark_purple);
     }
 
     @Override
     public String makeString(int stringID){
         return name+"_"+mContext.getString(stringID);
+    }
+
+
+    private int[] colours = null;
+    int BACKGROUND_INDEX = 0;
+    int HOUR_INDEX = 2;
+    int ACCENT_INDEX = 1;
+
+
+    private boolean hasColour(int index){
+        return (colours != null && index < colours.length && index >= 0);
+    }
+    private int getColour(int index){
+        if(colours != null && index < colours.length && index >= 0){
+            //request colour
+            return colours[index];
+        }
+        return -1;
     }
 
     @Override
@@ -264,10 +326,6 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
 
     @Override
     public void changedState(State faceState) {
-        mAccentPaint = null;
-        mHourPaint = null;
-        mBackgroundPaint = null;
-        mSecondPaint = null;
-        mMinutePaint = null;
+       invalidateColors();
     }
 }

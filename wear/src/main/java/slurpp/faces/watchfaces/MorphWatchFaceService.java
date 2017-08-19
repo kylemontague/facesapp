@@ -15,25 +15,26 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
-import android.widget.Toast;
 
-import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.Wearable;
 
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import slurpp.faces.FaceWearIO;
-import slurpp.faces_lib.templates.BusinessIFaceConfig;
-import slurpp.faces_lib.utils.Constants;
-import slurpp.faces_lib.templates.IFace;
-import slurpp.faces_lib.templates.FillFaceConfig;
-import slurpp.faces_lib.utils.Global;
-import slurpp.faces_lib.templates.OUATFace;
+import slurpp.faces.services.WatchWearableService;
+import slurpp.faces_lib.CustomFace;
 import slurpp.faces_lib.WatchDraw;
-import slurpp.faces_lib.utils.WearIO;
+import slurpp.faces_lib.templates.BusinessIFaceConfig;
+import slurpp.faces_lib.templates.FillFaceConfig;
+import slurpp.faces_lib.templates.IFace;
+import slurpp.faces_lib.templates.OUATFace;
 import slurpp.faces_lib.templates.WordsmithFace;
-import slurpp.faces_lib.models.WearSettings;
+import slurpp.faces_lib.utils.Constants;
+import slurpp.faces_lib.utils.Global;
 
 /**
  * Created by kyle montague on 19/12/14.
@@ -59,6 +60,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 
         private static final int MSG_UPDATE_TIME = 0;
         private static final long INTERACTIVE_UPDATE_RATE_MS = 1000;
+        private static final String TAG = "MORPH";
 
 
         private GregorianCalendar mCalendar;
@@ -89,9 +91,11 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         IFace watchConfig;
         IFace.Shape shape = IFace.Shape.SQUARE;
 
+        CustomFace previewFace;
+
         boolean mRegisteredTimeZoneReceiver=false;
 
-        FaceWearIO listener;
+        WatchWearableService watchWearableService;
 
         /* handler to update the time once a second in interactive mode */
         final Handler mUpdateTimeHandler = new Handler() {
@@ -154,9 +158,48 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         };
 
 
+        GoogleApiClient mGoogleApiClient;
+        private void start(){
+            if(null == mGoogleApiClient) {
+                mGoogleApiClient = new GoogleApiClient.Builder(MorphWatchFaceService.this)
+                        .addApi(Wearable.API)
+                        .build();
+                Log.v(TAG, "GoogleApiClient created");
+            }
+
+            if(!mGoogleApiClient.isConnected()){
+                mGoogleApiClient.connect();
+                Log.v(TAG, "Connecting to GoogleApiClient..");
+            }
+
+            //listen for messages
+            WatchWearableService.addListener(mGoogleApiClient,previewListener);
+
+        }
+
+        MessageApi.MessageListener previewListener = new MessageApi.MessageListener() {
+            @Override
+            public void onMessageReceived(MessageEvent messageEvent) {
+
+                if(messageEvent.getPath().equals(Global.Messages.UPDATE_WEAR_PREVIEW.name())){
+                    final String message = new String(messageEvent.getData());
+                    Log.d(TAG,"Got preview update:"+ message);
+                    previewFace = CustomFace.fromJson(message);
+                    onTimeTick();
+                }
+            }
+        };
+
+        private void stop(){
+            WatchWearableService.removeListener(mGoogleApiClient,previewListener);
+        }
+
+
+
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
 
             mTapShowDate = Constants.getPreferences(MorphWatchFaceService.this).getBoolean(Constants.PREF_BOOLEAN_TAP_SHOW_DATE,true);
 
@@ -167,7 +210,15 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
 //            Resources resources = OUATWatchFaceService.this.getResources();
 
             //TODO here defines the colour and layout properties of the face (ADD SWITCH)
-            setWatchFaceType(WatchDraw.FACE.TWO_TIME);
+
+            String json = Constants.getPreferences(MorphWatchFaceService.this).getString(Global.PREF_WATCH_FACE,null);
+            if(json == null || json.equals("")) {
+                setWatchFaceType(WatchDraw.FACE.TWO_TIME);
+            }else{
+                CustomFace customFace = CustomFace.fromJson(json);
+                setWatchFaceType(customFace.getBase());
+                watchConfig.setColours(customFace.getColors());
+            }
 
 
             /* allocate an object to hold the time */
@@ -187,42 +238,19 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                     .build());
 
 
-            listener = new FaceWearIO();
-            listener.init(MorphWatchFaceService.this, new WearIO.OnErrorListener() {
-                @Override
-                public void onError(Throwable throwable) {
-                    Toast.makeText(MorphWatchFaceService.this,"Failed to init",Toast.LENGTH_LONG).show();
-                }
-            });
 
-            listener.updateSettings(new WearSettings(true,false));//todo remove
-
-
-            listener.sentWearInfo(new WearIO.MessageListener() {
-                @Override
-                public boolean waitingForKey(String key) {
-                    return true;
-                }
-
-                @Override
-                public void received(String path, String message) {
-                    Log.d("WearIO",String.format("Path: %s Message: %s",path,message));
-                }
-
-                @Override
-                public void updated(String path, DataMap map) {
-                    Log.d("WearIO",String.format("Path: %s Map: %s",path,map.toString()));
-
-                }
-            });
-
+            Intent intent = new Intent(getApplicationContext(), WatchWearableService.class);
+            startService(intent);
+            start();
         }
 
 
         @Override
         public void onDestroy(){
             super.onDestroy();
-
+            Intent intent = new Intent(getApplicationContext(), WatchWearableService.class);
+            stopService(intent);
+            stop();
         }
 
         @Override
@@ -238,6 +266,13 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
         public void onTimeTick() {
             /* the time changed */
             super.onTimeTick();
+
+            if(previewFace !=null){
+                watchType = previewFace.getBase();
+                watchConfig.setColours(previewFace.getColors());
+                watchConfig.invalidateColors();
+            }
+
             invalidate();
         }
 
@@ -269,7 +304,7 @@ public class MorphWatchFaceService extends CanvasWatchFaceService {
                         dateTimeoutHandler.removeCallbacks(dateTimeoutRunnable);
 
                 }else {
-                    onAmbientModeChanged((mAmbient) ? false : true);
+                    onAmbientModeChanged(!mAmbient);
                 }
             }
         }
