@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
 
 import slurpp.faces_lib.Prefs;
 import slurpp.faces_lib.R;
@@ -41,8 +40,10 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
     int MERIDIAN_INDEX = -1;
 
     private boolean hasColour(int index){
-        return (colours != null && index < colours.length && index >= 0);
+        return (colours != null && index < colours.length && index >= 0 && colours[index] != -1);
     }
+
+
     private int getColour(int index){
         if(colours != null && index < colours.length && index >= 0){
             //request colour
@@ -55,7 +56,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
     public OUATFace(Context context){
         mContext=context;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.OUAT_FaceName);
     }
 
@@ -64,7 +65,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
         mContext=context;
         mTextScale = textScale;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.OUAT_FaceName);
     }
 
@@ -93,7 +94,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
 
     @Override
     public void setAsCurrentFace() {
-        Prefs.setCurrentFace(mContext,getFaceName());
+//        Prefs.setCurrentFace(mContext,getFaceName());
         //FaceListener.shared(mContext, getFaceName()).sendMessage(mContext.getString(R.string.PREF_CURRENT_FACE),getFaceName());
     }
 
@@ -120,7 +121,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
             mHourPaint = new Paint();
             mHourPaint.setColor(hoursTextColour(faceState));
             mHourPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thin_stroke));
-            mHourPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mHourPaint.setAntiAlias(faceState != State.AMBIENT);
             mHourPaint.setTypeface(hoursType(faceState));
             mHourPaint.setStrokeCap(Paint.Cap.ROUND);
             mHourPaint.setTextSize(hoursTextSize());
@@ -134,7 +135,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
             mMinutePaint = new Paint();
             mMinutePaint.setColor(minutesTextColour(faceState));
             mMinutePaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thin_stroke));
-            mMinutePaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mMinutePaint.setAntiAlias(faceState != State.AMBIENT);
             mMinutePaint.setTypeface(minutesType(faceState));
             mMinutePaint.setStrokeCap(Paint.Cap.ROUND);
             mMinutePaint.setTextSize(minutesTextSize());
@@ -148,7 +149,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
             mSecondPaint = new Paint();
             mSecondPaint.setColor(secondsTextColour(faceState));
             mSecondPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.normal_stroke));
-            mSecondPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mSecondPaint.setAntiAlias(faceState != State.AMBIENT);
             mSecondPaint.setStyle(Paint.Style.STROKE);
             mSecondPaint.setTypeface(secondsType(faceState));
             mSecondPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -168,7 +169,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(backgroundColour(faceState));
             mBackgroundPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.thin_stroke));
-            mBackgroundPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mBackgroundPaint.setAntiAlias(faceState != State.AMBIENT);
         }
         return mBackgroundPaint;
     }
@@ -179,7 +180,7 @@ public class OUATFace implements IFace, SharedPreferences.OnSharedPreferenceChan
             mAccentPaint = new Paint();
             mAccentPaint.setColor(accentColour(faceState));
             mAccentPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.normal_stroke));
-            mAccentPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mAccentPaint.setAntiAlias(faceState != State.AMBIENT);
             mAccentPaint.setTypeface(secondsType(faceState));
             mAccentPaint.setStrokeCap(Paint.Cap.ROUND);
             mAccentPaint.setTextSize(secondsTextSize());

@@ -21,6 +21,7 @@ public class Prefs {
 
 
 
+
     public void set(String key, String value){
         mPreferences.edit().putString(key, value).apply();
     }
@@ -70,10 +71,12 @@ public class Prefs {
     }
 
 
+    public static boolean hasGoogleSignIn(Context context) {
+        return PreferenceManager.getDefaultSharedPreferences(context).getBoolean("PREF.GOOGLE_SIGNIN",false);
+    }
 
-
-
-
-
+    public static void setGoogleSignIn(Context context, boolean hasSignin) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("PREF.GOOGLE_SIGNIN",hasSignin).commit();
+    }
 
 }

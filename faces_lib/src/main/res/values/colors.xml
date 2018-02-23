@@ -19,4 +19,8 @@
     <color name="business_default_second">#ff3c797f</color>
     <color name="ambient_background">#000000</color>
     <color name="ambient_foreground">#ffffff</color>
+    <color name="prism_background_one">#2369ad</color>
+    <color name="prism_background_two">#32a3c2</color>
+    <color name="prism_background_three">#4e8eb4</color>
+
 </resources>

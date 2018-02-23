@@ -5,11 +5,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
 
-import slurpp.faces_lib.utils.Font;
 import slurpp.faces_lib.Prefs;
 import slurpp.faces_lib.R;
+import slurpp.faces_lib.utils.Font;
 
 /**
  * Created by kylemontague on 19/12/14.
@@ -41,8 +40,9 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
     int MERIDIAN_INDEX = -1;
 
     private boolean hasColour(int index){
-        return (colours != null && index < colours.length && index >= 0);
+        return (colours != null && index < colours.length && index >= 0 && colours[index] != -1);
     }
+
     private int getColour(int index){
         if(colours != null && index < colours.length && index >= 0){
             //request colour
@@ -55,7 +55,7 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
     public FillFaceConfig(Context context){
         mContext=context;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.FillUp_FaceName);
     }
 
@@ -63,7 +63,7 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
         mTextScale = textScale;
         mContext=context;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.FillUp_FaceName);
     }
 
@@ -90,7 +90,7 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
 
     @Override
     public void setAsCurrentFace() {
-        Prefs.setCurrentFace(mContext,getFaceName());
+//        Prefs.setCurrentFace(mContext,getFaceName());
         //FaceListener.shared(mContext, getFaceName()).sendMessage(mContext.getString(R.string.PREF_CURRENT_FACE),getFaceName());
     }
 
@@ -285,19 +285,19 @@ public class FillFaceConfig implements IFace, SharedPreferences.OnSharedPreferen
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
-        if(key.toUpperCase().contains(name)){
-           if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
-                mBackgroundPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_ACCENT_COLOUR))){
-               mAccentPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
-               mHourPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_MINUTE_COLOUR))){
-               mMinutePaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_SECOND_COLOUR))){
-               mSecondPaint = null;
-           }
-        }
+//        if(key.toUpperCase().contains(name)){
+//           if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
+//                mBackgroundPaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_ACCENT_COLOUR))){
+//               mAccentPaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
+//               mHourPaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_MINUTE_COLOUR))){
+//               mMinutePaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_SECOND_COLOUR))){
+//               mSecondPaint = null;
+//           }
+//        }
     }
 
     @Override

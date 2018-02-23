@@ -165,7 +165,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
     protected void onResume(){
         super.onResume();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        startPreview();
         swatchAdapter.registerDataSetObserver(dragObserver);
         sd.start(sensorManager);
     }
@@ -266,19 +265,20 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
 
     public void saveFace(){
-        //todo store the json / xml face design.
         final CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
+        FaceSettings.fromCustomFace(Realm.getDefaultInstance(),customFace);
+
         MobileWearableService.sendData(mGoogleApiClient, Global.DataMaps.CURRENT_FACE_SETTINGS.name(), customFace.toJson(), new ResultCallback<DataApi.DataItemResult>() {
             @Override
             public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
                 if(dataItemResult.getStatus().isSuccess()){
-                    FaceSettings.fromCustomFace(Realm.getDefaultInstance(),customFace);
+                    Toast.makeText(getApplicationContext(),"Saved",Toast.LENGTH_SHORT).show();
                     finish();
+                }else{
+                    Toast.makeText(getApplicationContext(),"Failed",Toast.LENGTH_SHORT).show();
                 }
             }
         });
-
-        //TODO updateFace(customFace.toJson());
 
     }
 
@@ -291,23 +291,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
             swatchContainer.setAdapter(swatchAdapter);
             LayoutAnimationController lac = new LayoutAnimationController(AnimationUtils.loadAnimation(getApplicationContext(), R.anim.abc_fade_in), 0.4f); //0.5f == time between appearance of listview items.
             swatchContainer.setLayoutAnimation(lac);
-//            swatchContainer.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-//                @Override
-//                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//
-//                    swatchAdapter.setSelected(position);
-//                    selectedSwatch = swatchAdapter.getColour(position);
-//                    //updateProgressBar(selectedSwatch);
-//                    String tmp_colour = colourFromRGB(selectedSwatch);//tmp.getRgb());
-//                    //todo this should update the watch preview app.
-//                    if(preferenceIndex < preferences.length) {
-//                        updateWatchface(getString(preferences[preferenceIndex]), tmp_colour);
-//                    }
-//                    faceButton.setVisibility(View.VISIBLE);
-//                    updateSwatches();
-//
-//                }
-//            });
             swatchContainer.startLayoutAnimation();
             //faceButton.setVisibility(View.INVISIBLE);
 
@@ -331,9 +314,6 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
 
     }
 
-
-
-
     private void updateWatchFace(){
         CustomFace customFace = new CustomFace(System.currentTimeMillis(),currentFace,swatchAdapter.getColors(),null);
         Log.d(TAG,customFace.toJson());
@@ -349,20 +329,8 @@ public class CustomiseActivity extends FragmentActivity implements ShakeDetector
         return String.format("#%06X", 0xFFFFFF & rgb);
     }
 
-    private void updateWatchFace(String name, int[] keys, String[] values) {
-        //todo dont forget the name
-        //wearIO.update(Global.DATA_MAP_CURRENT_FACE,keys,values);
-    }
-
     public void setCurrentPreviewWatch(WatchDraw.FACE face) {
         preferences = WatchDraw.FACE.getPreviewPreferences(face);
-
-    }
-
-
-    private void startPreview(){
-        //todo need to pass the file path to the serialised setup.
-//        mobileListener.startPreview(this, "");
     }
 
 

@@ -5,11 +5,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
 
-import slurpp.faces_lib.utils.Font;
 import slurpp.faces_lib.Prefs;
 import slurpp.faces_lib.R;
+import slurpp.faces_lib.utils.Font;
 
 /**
  * Created by kylemontague on 19/12/14.
@@ -33,7 +32,7 @@ public class FacesFaceConfig implements IFace, SharedPreferences.OnSharedPrefere
     public FacesFaceConfig(Context context){
         mContext=context;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.Faces_FaceName);
     }
 
@@ -41,7 +40,7 @@ public class FacesFaceConfig implements IFace, SharedPreferences.OnSharedPrefere
         mTextScale = textScale;
         mContext=context;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.Faces_FaceName);
     }
 
@@ -68,7 +67,7 @@ public class FacesFaceConfig implements IFace, SharedPreferences.OnSharedPrefere
 
     @Override
     public void setAsCurrentFace() {
-        Prefs.setCurrentFace(mContext,getFaceName());
+//        Prefs.setCurrentFace(mContext,getFaceName());
         //FaceListener.shared(mContext, getFaceName()).sendMessage(mContext.getString(R.string.PREF_CURRENT_FACE),getFaceName());
     }
 
@@ -255,19 +254,19 @@ public class FacesFaceConfig implements IFace, SharedPreferences.OnSharedPrefere
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 
-        if(key.toUpperCase().contains(name)){
-           if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
-                mBackgroundPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_ACCENT_COLOUR))){
-               mAccentPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
-               mHourPaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_MINUTE_COLOUR))){
-               mMinutePaint = null;
-           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_SECOND_COLOUR))){
-               mSecondPaint = null;
-           }
-        }
+//        if(key.toUpperCase().contains(name)){
+//           if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
+//                mBackgroundPaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_ACCENT_COLOUR))){
+//               mAccentPaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
+//               mHourPaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_MINUTE_COLOUR))){
+//               mMinutePaint = null;
+//           }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_SECOND_COLOUR))){
+//               mSecondPaint = null;
+//           }
+//        }
     }
 
     @Override

@@ -31,7 +31,9 @@ public class FaceSettings extends RealmObject{
     String name;
     RealmList<FaceColor> colors = new RealmList<>();
     int base;
-    int tapMode = WatchDraw.TAPMODE.DATE.ordinal();
+    int tapMode = WatchDraw.FaceMode.DATE.ordinal();
+
+    boolean favourite = false;
 
     public FaceSettings() {
     }
@@ -50,13 +52,20 @@ public class FaceSettings extends RealmObject{
 
 
     public String getId() {
-        return id;
+        return this.id;
     }
 
     public void setId(String id) {
         this.id = id;
     }
 
+    public boolean isFavourite() {
+        return favourite;
+    }
+
+    public void setFavourite(boolean favourite) {
+        this.favourite = favourite;
+    }
 
     public long getCreatedOn() {
         return createdOn;
@@ -100,11 +109,11 @@ public class FaceSettings extends RealmObject{
         this.colors.add(color);
     }
 
-    public WatchDraw.TAPMODE getTapMode() {
-        return WatchDraw.TAPMODE.fromOrdinal(this.tapMode);
+    public WatchDraw.FaceMode getTapMode() {
+        return WatchDraw.FaceMode.fromOrdinal(this.tapMode);
     }
 
-    public void setTapMode(WatchDraw.TAPMODE tapMode) {
+    public void setTapMode(WatchDraw.FaceMode tapMode) {
         this.tapMode = tapMode.ordinal();
     }
 
@@ -158,8 +167,8 @@ public class FaceSettings extends RealmObject{
                     faceSettings.addColor(new FaceColor(color));
                 }
                 faceSettings.setBase(customFace.getBase());
+
                 realm.insert(faceSettings);
-                realm.close();
             }
         });
     }

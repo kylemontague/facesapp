@@ -52,7 +52,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="text_ambient_mode">Ambient</string>
-    <string name="text_active_mode">Active</string>
+    <string name="text_active_mode">Screen On</string>
     <string name="info_pick_colours">Pick your colours</string>
     <string name="Swatch_ID_ViewTag">SwatchID</string>
     <string name="button_edit_face">Edit</string>
@@ -65,5 +65,9 @@
     <string name="dialog_activate_ok_pick_face">Open on Wear</string>
     <string name="dialog_activate_cancel_continute">Not yet</string>
     <string name="title_activate_faces_dialog">Time to meet Faces</string>
+    <string name="menu_sign_in">Sign In</string>
 
+    <string name="button_set_face">Set Face</string>
+    <string name="title_familiar_face">Familiar Face</string>
+    <string name="button_customise_face">Customise</string>
 </resources>

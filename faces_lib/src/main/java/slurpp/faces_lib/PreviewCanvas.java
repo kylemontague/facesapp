@@ -6,10 +6,14 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.view.View;
 
+import com.manolovn.trianglify.generator.point.RegularPointGenerator;
+
 import java.util.GregorianCalendar;
 
 import slurpp.faces_lib.models.ModelFace;
+import slurpp.faces_lib.templates.FacesTrianglifyDrawable;
 import slurpp.faces_lib.templates.IFace;
+import slurpp.faces_lib.templates.PaletteColorGenerator;
 import slurpp.faces_lib.v2.models.FaceSettings;
 
 /**
@@ -58,7 +62,7 @@ public class PreviewCanvas extends View {
     }
 
     public PreviewCanvas(Context context, WatchDraw.FACE watch_face, IFace watch_config, IFace.Shape shape) {
-        this(context, watch_face, watch_config, shape, false);
+        this(context, watch_face, watch_config, shape, shape == IFace.Shape.ROUND);
     }
 
     public PreviewCanvas(Context context, WatchDraw.FACE watch_face, IFace watch_config, IFace.Shape shape, boolean shouldClipBounds) {
@@ -85,6 +89,14 @@ public class PreviewCanvas extends View {
         ambientMode = mode;
     }
 
+
+    WatchDraw.FACE currentFace;
+    Bitmap backgroundImage;
+    WatchDraw.FaceMode faceMode = WatchDraw.FaceMode.TIME;
+
+    int stepCount = 0;
+
+
     @Override
     protected void onDraw(Canvas canvas){
 
@@ -92,21 +104,41 @@ public class PreviewCanvas extends View {
         Rect card = new Rect(0,0,0,0);
         switch (mWatchFace){
             case BUSINESS_TIME:
-                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, card, clipBounds,false);
+                currentFace = WatchDraw.FACE.BUSINESS_TIME;
+                WatchDraw.BusinessTime(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0, card, clipBounds,faceMode,stepCount);
                 break;
             case FILL_TIME:
-                WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,false);
+                currentFace = WatchDraw.FACE.FILL_TIME;
+                WatchDraw.FillTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,faceMode,stepCount);
                 break;
 //            case FACES_FACE:
 //                Bitmap image = BitmapFactory.decodeResource(getResources(),(mShape == Face.Shape.ROUND)?R.drawable.rounded_49:R.drawable.square_49);
 //                WatchDraw.FacesFace(image, canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0);
 //                break;
             case OUA_TIME:
-                WatchDraw.OUATime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,false);
+                currentFace = WatchDraw.FACE.OUA_TIME;
+                WatchDraw.OUATime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps, 0, card, clipBounds,faceMode,stepCount);
                 break;
             case TWO_TIME:
-                WatchDraw.TwoTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps,0, card, clipBounds,false);
+                currentFace = WatchDraw.FACE.TWO_TIME;
+                WatchDraw.TwoTime(canvas, canvas.getClipBounds(), mConfig, mCal, ambientMode, mShape, straps,0, card, clipBounds,faceMode,stepCount);
                 break;
+            case PRISM_TIME:
+
+                if(currentFace!= WatchDraw.FACE.PRISM_TIME){
+                    IFace.State state = ambientMode? IFace.State.AMBIENT: IFace.State.ACTIVE;
+                    int accentColor = mConfig.accentColour(state);
+                    int bgColor = mConfig.backgroundColour(state);
+                    int meridianColor = mConfig.meridianTextColour(state);
+                    Rect bounds = canvas.getClipBounds();
+                    FacesTrianglifyDrawable drawable = new FacesTrianglifyDrawable(5, 5, 200, 75, new PaletteColorGenerator(new int[]{bgColor,accentColor,meridianColor}),new RegularPointGenerator(),bounds);
+                    drawable.setBounds(new Rect(0,0,bounds.width()*3, bounds.height()*3));
+                    drawable.triangulate();
+                    backgroundImage = WatchDraw.drawableToBitmap(drawable,bounds.width()*4, bounds.height()*4);
+                }
+
+                currentFace = WatchDraw.FACE.PRISM_TIME;
+                WatchDraw.SpaceTimePrism(canvas,canvas.getClipBounds(),mConfig,mCal,ambientMode,mShape,straps,0,card,clipBounds,faceMode,backgroundImage,stepCount);
             default:
                 break;
         }

@@ -8,8 +8,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import slurpp.faces.utils.WatchFragment;
@@ -30,6 +32,9 @@ public class PreviewActivity extends Activity {
 
     private WatchFragment watchFragment;
     private RelativeLayout watchPreview;
+
+    private ImageView testImage;
+
     private Runnable previewRunnable;
     private Handler previewHandler;
 
@@ -43,16 +48,16 @@ public class PreviewActivity extends Activity {
             if(intent.getAction().equals(Global.Messages.CLOSE_WEAR_PREVIEW.name()))
                 finish();
             else if(intent.getAction().equals(Global.Messages.UPDATE_WEAR_PREVIEW.name())){
-//                Bundle extras = intent.getExtras();
-//                if (extras != null) {
-//                    String json = extras.getString(Global.PREF_WATCH_FACE, null);
-//                    if (json != null && !json.equals("")) {
-//                        faceSettings = CustomFace.fromJson(json);
-//                        Log.d("Preview","FaceSettings:"+json);
-//                        watchFragment.update(faceSettings);
-//
-//                    }
-//                }
+                Bundle extras = intent.getExtras();
+                if (extras != null) {
+                    String json = extras.getString(Global.PREF_WATCH_FACE, null);
+                    if (json != null && !json.equals("")) {
+                        faceSettings = CustomFace.fromJson(json);
+                        Log.d("Preview","FaceSettings:"+json);
+                        watchFragment.update(faceSettings);
+
+                    }
+                }
             }
         }
     };
@@ -78,7 +83,9 @@ public class PreviewActivity extends Activity {
         }
         else{
             face = Constants.currentFace(this);
+            face = Constants.currentFace(this);
         }
+
 
 
         watchPreview = (RelativeLayout)findViewById(R.id.watch);

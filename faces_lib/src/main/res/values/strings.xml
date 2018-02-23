@@ -13,6 +13,7 @@
     <string name="faces_face_title">Faces</string>
     <string name="unknown_face_title">Mystery Face</string>
     <string name="two_times_face_title">Two Times</string>
+    <string name="prism_face_title">Space-Time Prism</string>
 
     <!--THESE ARE THE PREFERENCES RELATING TO THE WATCHES-->
     <string name="PREF_IS_ROUND">PREF.IS_ROUND</string>
@@ -23,6 +24,8 @@
     <string name="PREF_MINUTE_COLOUR">PREF.MINUTE.COLOUR</string>
     <string name="PREF_SECOND_COLOUR">PREF.SECOND.COLOUR</string>
     <string name="PREF_ACCENT_COLOUR">PREF.ACCENT.COLOUR</string>
+    <string name="PREF_MERIDIAN_COLOUR">PREF.MERIDIAN.COLOUR</string>
+
 
 
     <!--THESE ARE THE PREFERENCES RELATING TO THE PREVIEWS-->
@@ -32,6 +35,9 @@
     <string name="PREVIEW_MINUTE_COLOUR">PREVIEW.MINUTE.COLOUR</string>
     <string name="PREVIEW_SECOND_COLOUR">PREVIEW.SECOND.COLOUR</string>
     <string name="PREVIEW_ACCENT_COLOUR">PREVIEW.ACCENT.COLOUR</string>
+    <string name="PREVIEW_MERIDIAN_COLOUR">PREVIEW.MERIDIAN.COLOUR</string>
+
+
 
     <!--THESE ARE THE WATCH FACES-->
     <string name="OUAT_FaceName">OUAT_FACE</string>
@@ -39,8 +45,8 @@
     <string name="Business_FaceName">BUSINESS_FACE</string>
     <string name="Faces_FaceName">OFFICAL_FACES_FACE</string>
     <string name="TwoTimes_FaceName">TWO_TIMES_FACES_FACE</string>
+    <string name="Prism_FaceName">PRISM_FACES_FACE</string>
     <string name="timestring">20:44</string>
-
 
 
 </resources>

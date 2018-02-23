@@ -6,9 +6,8 @@ import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 
-import slurpp.faces_lib.utils.Font;
-import slurpp.faces_lib.Prefs;
 import slurpp.faces_lib.R;
+import slurpp.faces_lib.utils.Font;
 
 
 /**
@@ -73,7 +72,7 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
 
     @Override
     public void setAsCurrentFace() {
-        Prefs.setCurrentFace(mContext,getFaceName());
+//        Prefs.setCurrentFace(mContext,getFaceName());
         //FaceListener.shared(mContext, getFaceName()).sendMessage(mContext.getString(R.string.PREF_CURRENT_FACE),getFaceName());
     }
 
@@ -269,8 +268,9 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
 
 
     private boolean hasColour(int index){
-        return (colours != null && index < colours.length && index >= 0);
+        return (colours != null && index < colours.length && index >= 0 && colours[index] != -1);
     }
+
     private int getColour(int index){
         if(colours != null && index < colours.length && index >= 0){
             //request colour
@@ -286,16 +286,16 @@ public class BusinessIFaceConfig implements IFace, SharedPreferences.OnSharedPre
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(key.toUpperCase().contains(name)){
-            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
-                mBackgroundPaint = null;
-            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
-                mHourPaint = null;
-                mAccentPaint = null;
-                mMinutePaint = null;
-                mSecondPaint = null;
-            }
-        }
+//        if(key.toUpperCase().contains(name)){
+//            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
+//                mBackgroundPaint = null;
+//            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
+//                mHourPaint = null;
+//                mAccentPaint = null;
+//                mMinutePaint = null;
+//                mSecondPaint = null;
+//            }
+//        }
     }
 
     @Override

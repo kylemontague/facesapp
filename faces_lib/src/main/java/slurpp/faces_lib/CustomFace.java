@@ -82,15 +82,15 @@ public class CustomFace{
                 int id = mapping[x];
                 this.colors[x] = colours[x];
 
-                if (id == R.string.PREVIEW_BACKGROUND_COLOUR) {
+                if (id == R.string.PREF_BACKGROUND_COLOUR) {
                     this.backgroundColor = colours[x];
-                }else if (id == R.string.PREVIEW_ACCENT_COLOUR) {
+                }else if (id == R.string.PREF_ACCENT_COLOUR) {
                     this.accentColor = colours[x];
-                }else if (id == R.string.PREVIEW_HOUR_COLOUR) {
+                }else if (id == R.string.PREF_HOUR_COLOUR) {
                     this.hourColor = colours[x];
-                }else if (id == R.string.PREVIEW_MINUTE_COLOUR) {
+                }else if (id == R.string.PREF_MINUTE_COLOUR) {
                     this.minuteColor = colours[x];
-                }else if (id == R.string.PREVIEW_SECOND_COLOUR) {
+                }else if (id == R.string.PREF_SECOND_COLOUR) {
                     this.secondColor = colours[x];
                 }
             }

@@ -5,15 +5,20 @@ import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.text.format.Time;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 
 import slurpp.faces_lib.templates.IFace;
 import slurpp.faces_lib.utils.NumbersToWords;
@@ -24,13 +29,13 @@ import slurpp.faces_lib.utils.NumbersToWords;
 public class WatchDraw {
 
 
-    public enum TAPMODE{
+    public enum FaceMode {
+        TIME,
         DATE,
-        COLOR,
         STEPS;
 
-        private static TAPMODE[] allValues = values();
-        public static TAPMODE fromOrdinal(int n) {
+        private static FaceMode[] allValues = values();
+        public static FaceMode fromOrdinal(int n) {
             return allValues[n];
         }
 
@@ -42,7 +47,8 @@ public class WatchDraw {
         OUA_TIME,
         FILL_TIME,
         BUSINESS_TIME,
-        TWO_TIME;
+        TWO_TIME,
+        PRISM_TIME;
 
         private static FACE[] allValues = values();
 
@@ -63,6 +69,8 @@ public class WatchDraw {
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
 //                case FACES_FACE:
 //                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
+                case PRISM_TIME:
+                    return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_MERIDIAN_COLOUR};
                 default:
                     return new int[]{R.string.PREF_CURRENT_FACE,R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
             }
@@ -81,6 +89,8 @@ public class WatchDraw {
                     return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_MINUTE_COLOUR, R.string.PREF_SECOND_COLOUR};
 //                case FACES_FACE:
 //                    return new int[]{R.string.PREVIEW_BACKGROUND_COLOUR, R.string.PREVIEW_ACCENT_COLOUR, R.string.PREVIEW_HOUR_COLOUR};
+                case PRISM_TIME:
+                    return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_HOUR_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_MERIDIAN_COLOUR};
                 default:
                     return new int[]{R.string.PREF_BACKGROUND_COLOUR, R.string.PREF_ACCENT_COLOUR, R.string.PREF_HOUR_COLOUR};
             }
@@ -123,11 +133,11 @@ public class WatchDraw {
         return new Rect((int)(bounds.left+l), bounds.top,(int)(bounds.right-l),(int)(bounds.bottom-t));
     }
 
-    public static void BusinessTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
-        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard,false, showDate);
+    public static void BusinessTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, FaceMode faceMode, long stepCount) {
+        BusinessTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard,false, faceMode, stepCount);
     }
 
-    public static void BusinessTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void BusinessTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, FaceMode faceMode, long stepCount) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
         if(shape == IFace.Shape.SQUARE) {
@@ -152,7 +162,7 @@ public class WatchDraw {
         float centerX = bounds.centerX();
         float centerY = bounds.centerY();
 
-        if(!showDate){
+        if(faceMode.equals(FaceMode.TIME)){
             //Compute rotations and lengths for the clock hands.
 
             float secRot = mTime.get(Calendar.SECOND) / 30f * (float) Math.PI;
@@ -189,18 +199,22 @@ public class WatchDraw {
 
 
         }
-        else{
+        else if(faceMode.equals(FaceMode.DATE)){
             drawDate(canvas,bounds,mMinutePaint,mTime.getTime(),SHORT_DATE,peekCard.top);//todo should change this based on locale (US format)
+        }else{
+            //draw steps
+            String steps = String.format(Locale.ENGLISH,"%d Steps",stepCount);
+            drawText(canvas,bounds,mMinutePaint,peekCard.top, steps);
         }
 
     }
 
 
-    public static void FillTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
-        FillTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,showDate);
+    public static void FillTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, FaceMode faceMode, long stepCount) {
+        FillTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,faceMode, stepCount);
     }
 
-    public static void FillTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void FillTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, FaceMode faceMode, long stepCount) {
 
         int accentColor = watchConfig.accentColour(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
         int bgColor = watchConfig.backgroundColour(mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE);
@@ -238,7 +252,7 @@ public class WatchDraw {
         Rect b = new Rect();
         float txtWidth;
         String timeString;
-        if(!showDate) {
+        if(faceMode.equals(FaceMode.TIME)) {
             int hours = mTime.get(Calendar.HOUR);
             if(hours == 0)
                 hours = 12;
@@ -253,8 +267,11 @@ public class WatchDraw {
                 canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), (bF.centerY() + (b.height() / 2)), txtPaint);
             }
 
-        }else{
+        }else if(faceMode.equals(FaceMode.DATE)){
             drawDate(canvas,bounds,txtPaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
+        }else{
+            String steps = String.format(Locale.ENGLISH,"%d Steps",stepCount);
+            drawText(canvas,bounds,txtPaint,peekCard.top, steps);
         }
 
 
@@ -262,11 +279,91 @@ public class WatchDraw {
 
     }
 
-    public static void PrideTime(Canvas canvas, Rect bounds, IFace watchConfig, Time mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset , boolean showDate) {
-        PrideTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false,showDate);
+
+
+    public static void SpaceTimePrism(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, FaceMode faceMode, Bitmap bitmap, long stepCount) {
+        SpaceTimePrism(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,faceMode, bitmap, stepCount);
     }
 
-    public static void PrideTime(Canvas canvas, Rect bounds, IFace watchConfig, Time mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, boolean isPreview, boolean showDate) {
+    public static void SpaceTimePrism(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, FaceMode faceMode, Bitmap bitmap, long stepCount) {
+
+        IFace.State state = mAmbient? IFace.State.AMBIENT: IFace.State.ACTIVE;
+
+
+
+        //todo fix the start and stop positions of the seconds tick.
+        if(shape == IFace.Shape.SQUARE && isPreview)
+            bounds = scaleRect(bounds,.9f, .99f);
+
+        RectF bF= new RectF(bounds.left,bounds.top,bounds.right,bounds.bottom);
+
+        Paint bgPaint = watchConfig.hoursPaint(state);
+
+        Paint txtPaint = watchConfig.hoursPaint(state);
+        setTextSizeForWidth(txtPaint, (bounds.width() * .85f), "00:00");
+
+
+
+        if(!mAmbient) {
+//            canvas.drawBitmap(bitmap,0,0,bgPaint);
+            if(shape == IFace.Shape.SQUARE)
+                canvas.drawRect(bounds,watchConfig.backgroundPaint(state));
+            else
+                canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(state));
+
+
+            if(bitmap!=null) {
+                if (shape == IFace.Shape.ROUND && isPreview) {
+                    Bitmap b = getCroppedBitmap(bitmap, bounds.width() / 2, bounds.height() / 2, (bounds.width() / 2) + 10);
+                    canvas.drawBitmap(b, 0, 0, bgPaint);
+                } else {
+                    canvas.drawBitmap(bitmap, 0, 0, bgPaint);
+                }
+            }
+
+        }else{
+            if(shape == IFace.Shape.SQUARE)
+                canvas.drawRect(bounds,watchConfig.backgroundPaint(IFace.State.AMBIENT));
+            else
+                canvas.drawCircle(bounds.centerX(), bounds.centerY(), bounds.width() / 2, watchConfig.backgroundPaint(IFace.State.AMBIENT));
+            txtPaint.setStyle(Paint.Style.STROKE);
+        }
+
+        Rect b = new Rect();
+        float txtWidth;
+        String timeString;
+
+        if(faceMode.equals(FaceMode.TIME)) {
+            int hours = mTime.get(Calendar.HOUR);
+            if(hours == 0)
+                hours = 12;
+            timeString = hours + ":" + ((mTime.get(Calendar.MINUTE) < 10) ? "0" + mTime.get(Calendar.MINUTE) : mTime.get(Calendar.MINUTE));
+            txtWidth = txtPaint.measureText(timeString);
+            txtPaint.getTextBounds("00:00", 0, "00:00".length(), b);
+
+            if(peekCard.top > 0) {
+                bF.set(bF.left, bF.top, bF.right, peekCard.top);
+                canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), bF.centerY()+b.height(), txtPaint);
+            }else {
+                canvas.drawText(timeString, bF.centerX() - (txtWidth / 2), (bF.centerY() + (b.height() / 2)), txtPaint);
+            }
+
+        }else if(faceMode.equals(FaceMode.DATE)){
+            drawDate(canvas,bounds,txtPaint,mTime.getTime(),UK_DATE,peekCard.top);//todo should change this based on locale (US format)
+        }else{
+            String steps = String.format(Locale.ENGLISH,"%d Steps",stepCount);
+            drawText(canvas,bounds,txtPaint,peekCard.top, steps);
+        }
+
+    }
+
+
+
+    public static void PrideTime(Canvas canvas, Rect bounds, IFace watchConfig, Time mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset , boolean showDate, long stepCount) {
+        PrideTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, false,showDate, stepCount);
+    }
+
+    public static void PrideTime(Canvas canvas, Rect bounds, IFace watchConfig, Time mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, boolean isPreview, boolean showDate, long stepCount) {
 
         if(shape == IFace.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
@@ -293,11 +390,11 @@ public class WatchDraw {
     }
 
 
-    public static void OUATime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
-        OUATime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false, showDate);
+    public static void OUATime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, FaceMode faceMode, long stepCount) {
+        OUATime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false, faceMode, stepCount);
     }
 
-    public static void OUATime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void OUATime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, FaceMode faceMode, long stepCount) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
 
@@ -317,7 +414,7 @@ public class WatchDraw {
         float centerX =bounds.centerX();
         float centerY = bounds.centerY();
         String[] values;
-        if(!showDate) {
+        if(faceMode.equals(FaceMode.TIME)) {
             //draw second counter
             if (!mAmbient) {
                 int radius = (int) ((width / 2) * .9f);
@@ -330,11 +427,14 @@ public class WatchDraw {
 
             values=getHoursMins(mTime.get(Calendar.HOUR_OF_DAY) % 12, mTime.get(Calendar.MINUTE));
 
-        }else{
+        }else if(faceMode.equals(FaceMode.DATE)){
             String day = NumbersToWords.convert(mTime.get(Calendar.DAY_OF_MONTH));
             day = day.substring(1).replace(" ", "\n");
             values = new String[]{datestring(mTime.getTime(),MONTH_ONLY).toLowerCase(),day};
+        }else{
+            values = new String[]{String.valueOf(stepCount),"Steps"};
         }
+
 
         if (values.length > 1) {
             canvas.drawText(values[0], centerX + watchConfig.xOffset(shape), centerY + watchConfig.yOffset(shape), watchConfig.hoursPaint(mAmbient ? IFace.State.AMBIENT : IFace.State.ACTIVE));
@@ -348,11 +448,11 @@ public class WatchDraw {
 //        }
     }
 
-    public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean showDate) {
-        TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,showDate);
+    public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, FaceMode faceMode, long stepCount) {
+        TwoTime(canvas, bounds, watchConfig, mTime, mAmbient, shape, background, chinInset, peekCard, false,faceMode, stepCount);
     }
 
-    public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, boolean showDate) {
+    public static void TwoTime(Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, Rect peekCard, boolean isPreview, FaceMode faceMode, long stepCount) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
         if(shape == IFace.Shape.SQUARE && isPreview)
             bounds = scaleRect(bounds,.9f, .99f);
@@ -367,7 +467,7 @@ public class WatchDraw {
 
         String hourStr ="";
         String mintues = "";
-        if(!showDate) {
+        if(faceMode.equals(FaceMode.TIME)) {
             int hours = mTime.get(Calendar.HOUR_OF_DAY) % 12;
             if (hours == 0)
                 hours = 12;
@@ -376,9 +476,18 @@ public class WatchDraw {
                 hourStr += "0";
             hourStr += hours;
             mintues = getMins(mTime.get(Calendar.MINUTE)).replace("-\n", "");
-        }else{
+        }else if(faceMode.equals(FaceMode.DATE)){
             hourStr = datestring(mTime.getTime(),DAY_ONLY);
             mintues = datestring(mTime.getTime(),MONTH_ONLY).toLowerCase();
+        }else{
+            //todo could round into 3.4K etc
+            if(stepCount >= 10000){
+                float steps = stepCount/1000.0f;
+                hourStr = String.format(Locale.ENGLISH,"%.1fK",steps);
+            }else {
+                hourStr = String.format(Locale.ENGLISH, "%d", stepCount);
+            }
+            mintues = "steps";
         }
 
         float yPos = centerY;
@@ -420,7 +529,7 @@ public class WatchDraw {
 
 
 
-    public static void FacesFace(Bitmap image, Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, boolean showDate) {
+    public static void FacesFace(Bitmap image, Canvas canvas, Rect bounds, IFace watchConfig, GregorianCalendar mTime, Boolean mAmbient, IFace.Shape shape, Bitmap background, int chinInset, FaceMode faceMode) {
         //canvas.drawBitmap(background,bounds.centerX()-(background.getWidth()/2),bounds.centerY()-(background.getHeight()/2),null);
 
         if(shape == IFace.Shape.SQUARE)
@@ -575,6 +684,48 @@ public class WatchDraw {
 
 
 
+    public static Bitmap drawableToBitmap (Drawable drawable, int width, int height) {
+        Bitmap bitmap = null;
+
+        if (drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            if(bitmapDrawable.getBitmap() != null) {
+                return bitmapDrawable.getBitmap();
+            }
+        }
+
+
+        bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
+    public static Bitmap getCroppedBitmap(Bitmap bitmap, int cx, int cy, int radius) {
+        Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
+                bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(output);
+
+        final int color = 0xff424242;
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        // canvas.drawRoundRect(rectF, roundPx, roundPx, paint);
+        canvas.drawCircle(cx, cy, radius, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+        //Bitmap _bmp = Bitmap.createScaledBitmap(output, 60, 60, false);
+        //return _bmp;
+        return output;
+    }
+
+
+
     protected static String UK_DATE = "dd/MM/yy";
     protected static String US_DATE = "MM/dd/yy";
 
@@ -590,6 +741,11 @@ public class WatchDraw {
 
     private static void drawDate(Canvas canvas, Rect bounds, Paint paint, Date date, String dateformat, int peekCardTop){
         String string = WatchDraw.datestring(date,dateformat);
+        drawText(canvas,bounds,paint,peekCardTop,string);
+    }
+
+
+    private static void drawText(Canvas canvas, Rect bounds, Paint paint, int peekCardTop, String string){
         Paint tmp = new Paint(paint);
         tmp.setTextSize(paint.getTextSize()/1.5f);
         float txtWidth = tmp.measureText(string);

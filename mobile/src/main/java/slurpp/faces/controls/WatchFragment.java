@@ -19,6 +19,7 @@ import slurpp.faces_lib.templates.BusinessIFaceConfig;
 import slurpp.faces_lib.templates.FillFaceConfig;
 import slurpp.faces_lib.templates.IFace;
 import slurpp.faces_lib.templates.OUATFace;
+import slurpp.faces_lib.templates.PrismFaceConfig;
 import slurpp.faces_lib.templates.WordsmithFace;
 import slurpp.faces_lib.v2.models.FaceSettings;
 
@@ -60,6 +61,9 @@ public class WatchFragment extends Fragment {
     private RelativeLayout watchPreview;
     private ImageView watchStraps;
 
+    IFace.Shape s;
+    IFace iFace;
+
     private boolean ambientMode = false;
     public WatchFragment(){
         mFace = faces[0];
@@ -76,6 +80,9 @@ public class WatchFragment extends Fragment {
             faceSettings = FaceSettings.get(Realm.getDefaultInstance(),settingsID);
             mFace = faceSettings.getBase();
         }
+
+
+
     }
 
     @Override
@@ -84,9 +91,10 @@ public class WatchFragment extends Fragment {
         watchPreview = (RelativeLayout) rootView.findViewById(R.id.watch);
         Context c= getActivity().getApplicationContext();
 
-        IFace.Shape s = IFace.Shape.ROUND; //WearSettings.load(getContext()).isRound?IFace.Shape.ROUND:IFace.Shape.SQUARE;
-        IFace iFace = getConfig(c,mFace);
-        if(faceSettings!=null) {
+        s = IFace.Shape.ROUND; //WearSettings.load(getContext()).isRound?IFace.Shape.ROUND:IFace.Shape.SQUARE;
+        iFace = getConfig(c,mFace);
+
+        if(faceSettings!=null && faceSettings.isValid()) {
             iFace.setColours(faceSettings.getColorsArray());
         }
 
@@ -109,6 +117,8 @@ public class WatchFragment extends Fragment {
                 return new FillFaceConfig(c);
             case BUSINESS_TIME:
                 return new BusinessIFaceConfig(c);
+            case PRISM_TIME:
+                return new PrismFaceConfig(c);
         }
         return null;
     }
@@ -127,6 +137,9 @@ public class WatchFragment extends Fragment {
                 break;
             case TWO_TIME:
                 name =  R.string.two_times_face_title;
+                break;
+            case PRISM_TIME:
+                name = R.string.prism_face_title;
                 break;
         }
         return c.getResources().getString(name);

@@ -167,6 +167,7 @@ public class WatchWearableService extends WearableListenerService implements Goo
             DataMap data = putDataMapRequest.getDataMap();
             if(path.equals("/"+Global.DataMaps.CURRENT_FACE_SETTINGS.name())){
                 updateCurrentFace(data);
+
                 closeFacePreview(new ResultCallback<MessageApi.SendMessageResult>() {
                     @Override
                     public void onResult(@NonNull MessageApi.SendMessageResult sendMessageResult) {
@@ -251,6 +252,9 @@ public class WatchWearableService extends WearableListenerService implements Goo
             vibrate();
         }else if(path.equals(Global.Messages.GET_WATCH.name())){
             updateSettings(WearSettings.load(this));
+        }else if(path.equals(Global.Messages.UPDATE_CURRENT_FACE.name())){
+            //save watch json.
+            updateCurrentFace(message);
         }
 
     }
@@ -390,12 +394,14 @@ public class WatchWearableService extends WearableListenerService implements Goo
 
     private void updateCurrentFace(DataMap map) {
         String json = map.getString("json",null);
+        updateCurrentFace(json);
+    }
+
+
+    private void updateCurrentFace(String json){
         if(json!=null){
             Constants.getEditor(this).putString(Global.PREF_WATCH_FACE,json).commit();
         }
-
-        //todo current face has been updated
-        //create the object and over write the existing watch face.
     }
 
     private void updatePreview(DataMap map) {

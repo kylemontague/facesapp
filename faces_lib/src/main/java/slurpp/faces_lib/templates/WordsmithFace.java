@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.preference.PreferenceManager;
 
 import slurpp.faces_lib.Prefs;
 import slurpp.faces_lib.R;
@@ -34,7 +33,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
     public WordsmithFace(Context context){
         mContext=context;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.TwoTimes_FaceName);
     }
 
@@ -43,7 +42,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
         mContext=context;
         mTextScale = textScale;
         mP = new Prefs(context);
-        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
         name = mContext.getResources().getString(R.string.TwoTimes_FaceName);
     }
 
@@ -64,7 +63,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
 
     @Override
     public void setAsCurrentFace() {
-        Prefs.setCurrentFace(mContext,getFaceName());
+//        Prefs.setCurrentFace(mContext,getFaceName());
         //FaceListener.shared(mContext, getFaceName()).sendMessage(mContext.getString(R.string.PREF_CURRENT_FACE),getFaceName());
     }
 
@@ -91,7 +90,7 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
             mHourPaint = new Paint();
             mHourPaint.setColor(hoursTextColour(faceState));
             mHourPaint.setStrokeWidth(mContext.getResources().getDimension(R.dimen.normal_stroke));
-            mHourPaint.setAntiAlias(faceState==State.AMBIENT?false:true);
+            mHourPaint.setAntiAlias(faceState != State.AMBIENT);
             mHourPaint.setTypeface(hoursType(faceState));
             mHourPaint.setStrokeCap(Paint.Cap.ROUND);
             mHourPaint.setTextSize(hoursTextSize());
@@ -213,37 +212,6 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
         return secondsTextColour(faceState);
     }
 
-//    @Override
-//    public int hoursTextColour(State faceState) {
-//        return (faceState != State.AMBIENT)? mP.getColourString(makeString(R.string.PREF_HOUR_COLOUR), mContext.getResources().getColor(R.color.white)):mContext.getResources().getColor(R.color.ambient_foreground);
-//    }
-//
-//    @Override
-//    public int minutesTextColour(State faceState) {
-//        return hoursTextColour(faceState);
-//    }
-//
-//    @Override
-//    public int secondsTextColour(State faceState) {
-//        return hoursTextColour(faceState);
-//    }
-//
-//    @Override
-//    public int meridianTextColour(State faceState) {
-//        return hoursTextColour(faceState);
-//    }
-//
-//    @Override
-//    public int backgroundColour(State faceState) {
-//        return (faceState != State.AMBIENT)?mP.getColourString(makeString(R.string.PREF_BACKGROUND_COLOUR), mContext.getResources().getColor(R.color.dark_purple)): mContext.getResources().getColor(R.color.ambient_background);
-//    }
-//
-//    @Override
-//    public int accentColour(State faceState) {
-//        return (faceState != State.AMBIENT)? mP.getColourString(makeString(R.string.PREF_ACCENT_COLOUR), mContext.getResources().getColor(R.color.light_purple)):mContext.getResources().getColor(R.color.ambient_background);
-//    }
-
-
 
     @Override
     public int hoursTextColour(State faceState) {
@@ -301,28 +269,25 @@ public class WordsmithFace implements IFace, SharedPreferences.OnSharedPreferenc
 
 
     private boolean hasColour(int index){
-        return (colours != null && index < colours.length && index >= 0);
+        return (colours != null && index < colours.length && index >= 0 && colours[index] != -1);
     }
+
     private int getColour(int index){
-        if(colours != null && index < colours.length && index >= 0){
-            //request colour
-            return colours[index];
-        }
-        return -1;
+        return hasColour(index)?colours[index]:-1;
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        if(key.toUpperCase().contains(name)){
-            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
-                mBackgroundPaint = null;
-            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
-                mHourPaint = null;
-                mAccentPaint = null;
-                mMinutePaint = null;
-                mSecondPaint = null;
-            }
-        }
+//        if(key.toUpperCase().contains(name)){
+//            if(key.toUpperCase().contains(mContext.getString(R.string.PREF_BACKGROUND_COLOUR))){
+//                mBackgroundPaint = null;
+//            }else if(key.toUpperCase().contains(mContext.getString(R.string.PREF_HOUR_COLOUR))){
+//                mHourPaint = null;
+//                mAccentPaint = null;
+//                mMinutePaint = null;
+//                mSecondPaint = null;
+//            }
+//        }
     }
 
     @Override

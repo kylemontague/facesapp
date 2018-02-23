@@ -1,0 +1,280 @@
+package slurpp.faces_lib.templates;
+
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+
+import slurpp.faces_lib.Prefs;
+import slurpp.faces_lib.R;
+import slurpp.faces_lib.utils.Font;
+
+/**
+ * Created by kylemontague on 19/12/14.
+ */
+public class PrismFaceConfig implements IFace, SharedPreferences.OnSharedPreferenceChangeListener {
+
+
+    private Context mContext;
+
+    private Paint mHourPaint;
+    private Paint mMinutePaint;
+    private Paint mSecondPaint;
+
+
+    private Paint mMeridianPaint;
+    private Paint mBackgroundPaint;
+    private Paint mAccentPaint;
+
+    private Prefs mP;
+    private static String name = null;
+    private double mTextScale = 1.0;
+
+
+
+    private int[] colours = null;
+    int BACKGROUND_INDEX = 0;
+    int HOUR_INDEX = 1;
+    int MINUTE_INDEX = -1;
+    int SECOND_INDEX = -1;
+    int ACCENT_INDEX = 2;
+    int MERIDIAN_INDEX = 3;
+
+    private boolean hasColour(int index){
+        return (colours != null && index < colours.length && index >= 0 && colours[index] != -1);
+    }
+
+    private int getColour(int index){
+        if(colours != null && index < colours.length && index >= 0){
+            //request colour
+            return colours[index];
+        }
+        return -1;
+    }
+
+
+    public PrismFaceConfig(Context context){
+        mContext=context;
+        mP = new Prefs(context);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+        name = mContext.getResources().getString(R.string.Prism_FaceName);
+    }
+
+    public PrismFaceConfig(Context context, double textScale){
+        mTextScale = textScale;
+        mContext=context;
+        mP = new Prefs(context);
+//        PreferenceManager.getDefaultSharedPreferences(context).registerOnSharedPreferenceChangeListener(this);
+        name = mContext.getResources().getString(R.string.Prism_FaceName);
+    }
+
+    @Override
+    public void invalidateColors() {
+        mHourPaint = mAccentPaint = mMinutePaint = mSecondPaint = mBackgroundPaint = null;
+    }
+
+    @Override
+    public void setColours(int[] values) {
+        this.colours  = values;
+        invalidateColors();
+    }
+
+    @Override
+    public int xOffset(Shape faceShape) {
+        return (int)mTextScale*((faceShape == Shape.ROUND)?-80:-80);
+    }
+
+    @Override
+    public int yOffset(Shape faceShape) {
+        return (int)mTextScale*((faceShape == Shape.ROUND)?30:30);
+    }
+
+    @Override
+    public void setAsCurrentFace() {
+//        Prefs.setCurrentFace(mContext,getFaceName());
+        //FaceListener.shared(mContext, getFaceName()).sendMessage(mContext.getString(R.string.PREF_CURRENT_FACE),getFaceName());
+    }
+
+    @Override
+    public String getFaceName() {
+        if(name == null)
+            name = mContext.getString(R.string.Prism_FaceName);
+        return name;
+    }
+
+    @Override
+    public Mode mode() {
+        return Mode.DIGITAL;
+    }
+
+    @Override
+    public Paint datePaint(State faceState) {
+        return minutesPaint(faceState);
+    }
+
+    @Override
+    public Paint hoursPaint(State faceState) {
+        mHourPaint = new Paint();
+        mHourPaint.setColor(hoursTextColour(faceState));
+        mHourPaint.setStrokeWidth(1.0f);
+        mHourPaint.setAntiAlias(true);
+        mHourPaint.setTypeface(hoursType(faceState));
+        mHourPaint.setStrokeCap(Paint.Cap.ROUND);
+        mHourPaint.setTextSize(hoursTextSize());
+        mHourPaint.setStyle(faceState==State.AMBIENT? Paint.Style.STROKE: Paint.Style.FILL_AND_STROKE);
+        return mHourPaint;
+    }
+
+    @Override
+    public Paint minutesPaint(State faceState) {
+       return hoursPaint(faceState);
+    }
+
+    @Override
+    public Paint secondsPaint(State faceState) {
+       return  hoursPaint(faceState);
+    }
+
+    @Override
+    public Paint meridianPaint(State faceState) {
+        mMeridianPaint = new Paint();
+        mMeridianPaint.setColor(meridianTextColour(faceState));
+        mMeridianPaint.setStrokeWidth(1.0f);
+        mMeridianPaint.setStyle(Paint.Style.FILL);
+        mMeridianPaint.setAntiAlias(faceState != State.AMBIENT);
+        return mMeridianPaint;
+    }
+
+    @Override
+    public Paint backgroundPaint(State faceState) {
+        mBackgroundPaint = new Paint();
+        mBackgroundPaint.setColor(backgroundColour(faceState));
+        mBackgroundPaint.setStrokeWidth(1.0f);
+        mBackgroundPaint.setStyle(Paint.Style.FILL);
+        mBackgroundPaint.setAntiAlias(faceState != State.AMBIENT);
+        return mBackgroundPaint;
+    }
+
+    @Override
+    public Paint accentPaint(State faceState) {
+        if(mAccentPaint == null) {
+            mAccentPaint = new Paint();
+            mAccentPaint.setColor(accentColour(faceState));
+            mAccentPaint.setStyle(Paint.Style.FILL);
+            mAccentPaint.setAntiAlias(faceState != State.AMBIENT);
+            mAccentPaint.setTypeface(secondsType(faceState));
+            mAccentPaint.setStrokeCap(Paint.Cap.ROUND);
+            mAccentPaint.setTextSize(secondsTextSize());
+        }
+        return mAccentPaint;
+    }
+
+    @Override
+    public Typeface dateType(State faceState) {
+        return Font.get(mContext,Font.PROXI_LIGHT);
+    }
+
+    @Override
+    public Typeface hoursType(State faceState) {
+        return (faceState == State.ACTIVE)?Font.get(mContext,Font.PROXI_SEMIBOLD):Font.get(mContext,Font.PROXI_LIGHT);
+    }
+
+    @Override
+    public Typeface minutesType(State faceState) {
+        return Font.get(mContext,Font.PROXI_LIGHT);
+    }
+
+    @Override
+    public Typeface secondsType(State faceState) {
+        return Font.get(mContext,Font.PROXI_LIGHT);
+    }
+
+    @Override
+    public Typeface meridianType(State faceState) {
+        return (faceState == State.ACTIVE)?Font.get(mContext,Font.PROXI_SEMIBOLD):Font.get(mContext,Font.PROXI_LIGHT);
+    }
+
+    @Override
+    public int dateTextSize() {
+        return (int)mTextScale*30;
+    }
+
+    @Override
+    public int hoursTextSize() {
+        return (int)mTextScale*80;
+    }
+
+    @Override
+    public int minutesTextSize() {
+        return (int)mTextScale*80;
+    }
+
+    @Override
+    public int secondsTextSize() {
+        return (int)mTextScale*53;
+    }
+
+    @Override
+    public int meridianTextSize() {
+        return (int)mTextScale*30;
+    }
+
+    @Override
+    public int dateTextColour(State faceState) {
+        return secondsTextColour(faceState);
+    }
+
+    @Override
+    public int hoursTextColour(State faceState) {
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(HOUR_INDEX)) ? getColour(HOUR_INDEX) : mContext.getResources().getColor(R.color.white);
+    }
+
+    @Override
+    public int minutesTextColour(State faceState) {
+       return hoursTextColour(faceState);
+    }
+
+    @Override
+    public int secondsTextColour(State faceState) {
+        return hoursTextColour(faceState);
+    }
+
+    @Override
+    public int meridianTextColour(State faceState) {
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(MERIDIAN_INDEX)) ? getColour(MERIDIAN_INDEX) : mContext.getResources().getColor(R.color.prism_background_one);
+    }
+
+    @Override
+    public int backgroundColour(State faceState) {
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_background);
+        return (hasColour(BACKGROUND_INDEX)) ? getColour(BACKGROUND_INDEX) : mContext.getResources().getColor(R.color.prism_background_two);
+    }
+
+    @Override
+    public int accentColour(State faceState) {
+        if (faceState == State.AMBIENT)
+            return mContext.getResources().getColor(R.color.ambient_foreground);
+        return (hasColour(ACCENT_INDEX)) ? getColour(ACCENT_INDEX) : mContext.getResources().getColor(R.color.prism_background_three);
+    }
+
+    @Override
+    public String makeString(int stringID){
+        return name+"_"+mContext.getString(stringID);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+
+    }
+
+    @Override
+    public void changedState(State faceState) {
+      invalidateColors();
+    }
+}
