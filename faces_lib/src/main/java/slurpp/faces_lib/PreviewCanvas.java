@@ -90,6 +90,9 @@ public class PreviewCanvas extends View {
     }
 
 
+
+
+
     WatchDraw.FACE currentFace;
     Bitmap backgroundImage;
     WatchDraw.FaceMode faceMode = WatchDraw.FaceMode.TIME;

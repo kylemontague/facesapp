@@ -119,6 +119,18 @@ public class WatchFragment extends Fragment {
     }
 
     public void redraw() {
-        watchPreview.invalidate();
+        if(shouldPreview)
+            watchPreview.invalidate();
+    }
+
+
+    boolean shouldPreview = true;
+
+    public void stopPreview(){
+        shouldPreview = false;
+    }
+
+    public void startPreview(){
+        shouldPreview = true;
     }
 }

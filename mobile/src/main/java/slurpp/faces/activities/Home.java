@@ -40,6 +40,8 @@ import slurpp.faces_lib.utils.Constants;
 import slurpp.faces_lib.utils.Global;
 import slurpp.faces_lib.v2.models.FaceSettings;
 
+import static android.support.v4.view.ViewPager.SCROLL_STATE_DRAGGING;
+
 
 public class Home extends FragmentActivity implements MessageApi.MessageListener {
 
@@ -108,6 +110,7 @@ public class Home extends FragmentActivity implements MessageApi.MessageListener
                     }).setNegativeButton(R.string.dialog_activate_cancel_continute,null).show();
         }
 
+
         start();
     }
 
@@ -156,9 +159,21 @@ public class Home extends FragmentActivity implements MessageApi.MessageListener
 
         //todo hardcoding
         isRound = true;
+        startPreview();
+    }
+
+
+    private void startPreview(){
         if(!showPreview) {
             showPreview = true;
             previewHandler.postDelayed(previewRunnable, 0);
+        }
+    }
+
+    private void stopPreview(){
+        if(showPreview){
+            showPreview = false;
+            previewHandler.removeCallbacks(previewRunnable);
         }
     }
 
@@ -386,6 +401,12 @@ public class Home extends FragmentActivity implements MessageApi.MessageListener
 
             @Override
             public void onPageScrollStateChanged(int state) {
+                if(state == SCROLL_STATE_DRAGGING){
+                    stopPreview();
+                }else
+                {
+                    startPreview();
+                }
             }
         });
 

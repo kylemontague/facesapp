@@ -166,4 +166,20 @@ public class WatchFragment extends Fragment {
         }
     }
 
+    boolean shouldPreview = true;
+    public void startPreview() {
+        shouldPreview = true;
+//        if(watchPreview!=null) {
+//            PreviewCanvas pc = (PreviewCanvas)watchPreview.getChildAt(0);
+//            if(pc !=null) {
+//                pc.invalidate();
+//
+//            }
+//        }
+    }
+
+    public void stopPreview(){
+        shouldPreview = false;
+    }
+
 }

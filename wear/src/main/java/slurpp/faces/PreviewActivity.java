@@ -106,8 +106,8 @@ public class PreviewActivity extends Activity {
             public void run() {
                 if(showPreview) {
                     watchFragment.redraw();
-                    previewHandler.postDelayed(previewRunnable, 1000);
                 }
+                previewHandler.postDelayed(previewRunnable, 1000);
             }
         };
 
@@ -129,11 +129,7 @@ public class PreviewActivity extends Activity {
         filter.addAction(Global.Messages.UPDATE_WEAR_PREVIEW.name());
         registerReceiver(onCloseReceiver,filter);
 
-
-        if (!showPreview) {
-            showPreview = true;
-            previewHandler.postDelayed(previewRunnable, 0);
-        }
+        startPreview();
     }
 
 
@@ -165,6 +161,18 @@ public class PreviewActivity extends Activity {
     }
 
 
+    public void stopPreview(){
+        showPreview = false;
+    }
+
+    public void startPreview(){
+        previewHandler.removeCallbacks(previewRunnable);
+        if (!showPreview) {
+            showPreview = true;
+        }
+        previewHandler.postDelayed(previewRunnable, 0);
+
+    }
 
 
 }
