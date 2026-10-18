@@ -235,6 +235,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 style = sharedData.style,
                 colors = sharedData.colors,
                 name = sharedData.name,
+                options = sharedData.options,
                 isFavorite = false,
                 createdAt = System.currentTimeMillis(),
                 lastWornAt = System.currentTimeMillis(),

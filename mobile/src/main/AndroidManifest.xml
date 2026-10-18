@@ -45,6 +45,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="facesapp" android:host="share" />
+                <data android:scheme="faces" android:host="share" />
             </intent-filter>
         </activity>
 

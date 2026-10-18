@@ -47,6 +47,26 @@ class FaceShareUtilsTest {
         assertEquals(0xFF131947.toInt(), parsed.colors[0])
         assertEquals(0xFFC7FD00.toInt(), parsed.colors[1])
         assertEquals("Neon Executive", parsed.name)
+        assertTrue(parsed.options.isEmpty())
+    }
+
+    @Test
+    fun testCreateAndParseCustomSchemeWithOptions() {
+        val style = FaceStyle.OUA_TIME
+        val colors = listOf(0xFF000000.toInt(), 0xFFFFFFFF.toInt())
+        val name = "Classic Monospaced"
+        val options = mapOf("time_format" to "12h", "case" to "upper")
+
+        val url = FaceShareUtils.createCustomSchemeUrl(style, colors, name, options)
+        assertTrue(url.startsWith("facesapp://share?"))
+        assertTrue(url.contains("opts="))
+
+        val parsed = FaceShareUtils.parseShareUri(url)
+        assertNotNull(parsed)
+        assertEquals(FaceStyle.OUA_TIME, parsed!!.style)
+        assertEquals(2, parsed.options.size)
+        assertEquals("12h", parsed.options["time_format"])
+        assertEquals("upper", parsed.options["case"])
     }
 
     @Test

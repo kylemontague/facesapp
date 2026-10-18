@@ -73,10 +73,11 @@ fun ShareWatchFaceSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val shareUrl = remember(face) {
-        FaceShareUtils.createShareUrl(
+        FaceShareUtils.createCustomSchemeUrl(
             style = face.style,
             colors = face.colors,
-            name = face.name
+            name = face.name,
+            options = face.options
         )
     }
 

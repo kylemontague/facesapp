@@ -9,7 +9,8 @@ import java.net.URLEncoder
 data class SharedFaceData(
     val style: FaceStyle,
     val colors: List<Int>,
-    val name: String
+    val name: String,
+    val options: Map<String, String> = emptyMap()
 )
 
 object FaceShareUtils {
@@ -18,35 +19,53 @@ object FaceShareUtils {
     const val APP_HOST = "share"
 
     /**
-     * Builds a universal web deep link encoding the watch face template, color hexes, and name.
+     * Builds a universal web deep link encoding the watch face template, color hexes, name, and options.
      * E.g. https://www.facesapp.watch/share?style=FILL_TIME&colors=FF89C4BB,FFCDE9E6&name=Filling+Time
      */
-    fun createShareUrl(style: FaceStyle, colors: List<Int>, name: String? = null): String {
+    fun createShareUrl(
+        style: FaceStyle,
+        colors: List<Int>,
+        name: String? = null,
+        options: Map<String, String> = emptyMap()
+    ): String {
         val colorHexes = colors.joinToString(",") { color ->
             "%08X".format(color)
         }
         val faceName = name?.ifBlank { style.displayName } ?: style.displayName
         val encodedName = URLEncoder.encode(faceName, "UTF-8")
+        val optsQuery = if (options.isNotEmpty()) {
+            val optsStr = options.entries.joinToString(";") { "${it.key}:${it.value}" }
+            "&opts=" + URLEncoder.encode(optsStr, "UTF-8")
+        } else ""
 
-        return "$WEB_BASE_URL?style=${style.id}&colors=$colorHexes&name=$encodedName"
+        return "$WEB_BASE_URL?style=${style.id}&colors=$colorHexes&name=$encodedName$optsQuery"
     }
 
     /**
      * Builds a custom scheme deep link (facesapp://share?style=...&colors=...&name=...)
      */
-    fun createCustomSchemeUrl(style: FaceStyle, colors: List<Int>, name: String? = null): String {
+    fun createCustomSchemeUrl(
+        style: FaceStyle,
+        colors: List<Int>,
+        name: String? = null,
+        options: Map<String, String> = emptyMap()
+    ): String {
         val colorHexes = colors.joinToString(",") { color ->
             "%08X".format(color)
         }
         val faceName = name?.ifBlank { style.displayName } ?: style.displayName
         val encodedName = URLEncoder.encode(faceName, "UTF-8")
+        val optsQuery = if (options.isNotEmpty()) {
+            val optsStr = options.entries.joinToString(";") { "${it.key}:${it.value}" }
+            "&opts=" + URLEncoder.encode(optsStr, "UTF-8")
+        } else ""
 
-        return "$APP_SCHEME://$APP_HOST?style=${style.id}&colors=$colorHexes&name=$encodedName"
+        return "$APP_SCHEME://$APP_HOST?style=${style.id}&colors=$colorHexes&name=$encodedName$optsQuery"
     }
 
     /**
      * Parses a deep link String (e.g. https://www.facesapp.watch/share?... or facesapp://share?...)
-     * and extracts the watch face style, colors, and name.
+     * and extracts the watch face style, colors, name, and options.
      */
     fun parseShareUri(uriString: String): SharedFaceData? {
         return try {
@@ -109,10 +128,23 @@ object FaceShareUtils {
             val nameParam = queryParams["name"]
             val name = nameParam?.trim()?.take(50)?.ifBlank { style.displayName } ?: style.displayName
 
+            val optsParam = queryParams["opts"]
+            val options = if (!optsParam.isNullOrBlank()) {
+                optsParam.split(";").mapNotNull { entry ->
+                    val parts = entry.split(":", limit = 2)
+                    if (parts.size == 2 && parts[0].isNotBlank()) {
+                        parts[0] to parts[1]
+                    } else null
+                }.toMap()
+            } else {
+                emptyMap()
+            }
+
             SharedFaceData(
                 style = style,
                 colors = effectiveColors,
-                name = name
+                name = name,
+                options = options
             )
         } catch (_: Exception) {
             null
