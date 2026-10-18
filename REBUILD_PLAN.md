@@ -129,29 +129,29 @@ Faces/
 ## 4. Phase-by-Phase Implementation Roadmap
 
 ### Phase 1: Build System & Gradle Modernization
-- [ ] **1.1 Version Catalog Setup**: Create `gradle/libs.versions.toml` defining AGP 8.5+, Kotlin 2.0+, Compose BOM, Room 2.6+, CameraX 1.3+, AndroidX Wear Watchface 1.2+, Coroutines, and test dependencies.
-- [ ] **1.2 Root Build Scripts**: Migrate `build.gradle` and `settings.gradle` to `build.gradle.kts` and `settings.gradle.kts`. Configure repository mirrors (`google()`, `mavenCentral()`). Purge `jcenter()`.
-- [ ] **1.3 Module Structure**: Configure `:core`, `:mobile`, and `:wear` subprojects with unified Kotlin JVM targets (Java 17 / JVM 17) and SDK versions (`minSdk = 26`, `targetSdk = 34`).
+- [x] **1.1 Version Catalog Setup**: Create `gradle/libs.versions.toml` defining AGP 8.5+, Kotlin 2.0+, Compose BOM, Room 2.6+, CameraX 1.3+, AndroidX Wear Watchface 1.2+, Coroutines, and test dependencies.
+- [x] **1.2 Root Build Scripts**: Migrate `build.gradle` and `settings.gradle` to `build.gradle.kts` and `settings.gradle.kts`. Configure repository mirrors (`google()`, `mavenCentral()`). Purge `jcenter()`.
+- [x] **1.3 Module Structure**: Configure `:core`, `:mobile`, and `:wear` subprojects with unified Kotlin JVM targets (Java 17 / JVM 17) and SDK versions (`minSdk = 26`, `targetSdk = 34`).
 
 ### Phase 2: `:core` Shared Rendering Engine
-- [ ] **2.1 Domain Models**: Implement `FaceStyle`, `FaceConfig`, `ColorPalette`, `FaceMode` (Time, Date, Steps).
-- [ ] **2.2 Typography & Asset Migration**: Move `Quicksand-Bold.otf` and `ProximaNova-*.otf` into `core/src/main/res/font/`. Move `watch_strap.png` and `watch_strap_square.png` into `core/src/main/res/drawable/`.
-- [ ] **2.3 Face Renderers**:
+- [x] **2.1 Domain Models**: Implement `FaceStyle`, `FaceConfig`, `ColorPalette`, `FaceMode` (Time, Date, Steps).
+- [x] **2.2 Typography & Asset Migration**: Move `Quicksand-Bold.otf` and `ProximaNova-*.otf` into `core/src/main/res/font/`. Move `watch_strap.png` and `watch_strap_square.png` into `core/src/main/res/drawable/`.
+- [x] **2.3 Face Renderers**:
   - Implement `OUATRenderer` (word clock with text wrapping and sizing).
   - Implement `BusinessRenderer` (clean analog hour, minute, second hands, ambient stroke).
   - Implement `FillRenderer` (filled background sector with contrasting clock hands).
   - Implement `TwoTimeRenderer` (split-color digital typography).
   - Implement `PrismRenderer` with native Kotlin `Trianglify` polygonal mesh background generation.
-- [ ] **2.4 Unified WatchRenderer**: Provide a single render function:
+- [x] **2.4 Unified WatchRenderer**: Provide a single render function:
   `fun render(canvas: Canvas, bounds: Rect, style: FaceStyle, config: FaceConfig, time: Calendar, isAmbient: Boolean, shape: WatchShape)`
-- [ ] **2.5 Unit Testing**: Verify `NumbersToWords` and color contrast computations with JUnit tests.
+- [x] **2.5 Unit Testing**: Verify `NumbersToWords` and color contrast computations with JUnit tests.
 
 ### Phase 3: Mobile Persistence & Wear Sync Layer
-- [ ] **3.1 Room Database**:
+- [x] **3.1 Room Database**:
   - Define `FaceEntity` with primary key UUID, style enum, JSON/list color array converter, favorite flag, timestamp.
   - Implement `FaceDao` with queries for favorites, recent familiar faces, and CRUD operations.
   - Populate stock presets on initial database creation.
-- [ ] **3.2 Wearable Sync Manager**:
+- [x] **3.2 Wearable Sync Manager**:
   - Implement `WearSyncManager` using `Wearable.getDataClient(context)` and `Wearable.getMessageClient(context)`.
   - Serialise `CustomFace` payload via Kotlinx Serialization or Moshi to transmit current face configuration to Wear OS.
 
