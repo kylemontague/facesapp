@@ -21,6 +21,7 @@ import watch.facesapp.mobile.data.db.FaceEntity
 import watch.facesapp.mobile.data.db.FaceWearLogEntity
 import watch.facesapp.mobile.data.db.FaceWearSession
 import watch.facesapp.mobile.data.db.FacesDatabase
+import watch.facesapp.mobile.data.prefs.ComplicationsRepository
 import watch.facesapp.mobile.data.sync.WearSyncManager
 import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
@@ -58,6 +59,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val db = FacesDatabase.getInstance(application)
     private val faceDao = db.faceDao()
     private val syncManager = WearSyncManager(application)
+    private val complicationsRepo = ComplicationsRepository.getInstance(application)
+
+    val activeComplications: StateFlow<List<FaceMode>> = complicationsRepo.activeComplications
 
     private val _isAmbient = MutableStateFlow(false)
     val isAmbient: StateFlow<Boolean> = _isAmbient.asStateFlow()
@@ -205,8 +209,37 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun wearAgain(entity: FaceEntity) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
+            faceDao.clearCurrentOnWatch()
+            val updated = entity.copy(lastWornAt = now, isCurrentOnWatch = true)
+            faceDao.insertFace(updated)
             faceDao.recordWearFace(entity.id, now)
-            syncManager.syncCurrentFace(entity.toFaceConfig())
+            val configWithUniversalComplications = updated.toFaceConfig().withComplications(complicationsRepo.activeComplications.value)
+            syncManager.syncCurrentFace(configWithUniversalComplications)
+        }
+    }
+
+    fun toggleComplication(mode: FaceMode) {
+        complicationsRepo.toggleComplication(mode)
+        syncActiveFaceComplications()
+    }
+
+    fun updateComplicationsOrder(newOrder: List<FaceMode>) {
+        complicationsRepo.setComplications(newOrder)
+        syncActiveFaceComplications()
+    }
+
+    private fun syncActiveFaceComplications() {
+        viewModelScope.launch {
+            val currentFace = faceDao.getCurrentFace() ?: return@launch
+            val updatedConfig = currentFace.toFaceConfig().withComplications(complicationsRepo.activeComplications.value)
+            val entity = FaceEntity.fromFaceConfig(
+                config = updatedConfig,
+                name = currentFace.name,
+                lastWornAt = currentFace.lastWornAt,
+                isCurrentOnWatch = true
+            )
+            faceDao.insertFace(entity)
+            syncManager.syncCurrentFace(updatedConfig)
         }
     }
 
@@ -214,12 +247,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _isAmbient.value = !_isAmbient.value
     }
 
-    fun cycleFaceMode(activeComplications: List<FaceMode> = FaceMode.DEFAULT_CYCLE) {
+    fun cycleFaceMode(activeComplications: List<FaceMode> = complicationsRepo.activeComplications.value) {
         _faceMode.value = _faceMode.value.next(activeComplications)
     }
 
     fun toggleFaceMode() {
-        cycleFaceMode(FaceMode.DEFAULT_CYCLE)
+        cycleFaceMode(complicationsRepo.activeComplications.value)
     }
 
     private fun getBatteryPercentage(context: android.content.Context): Int {
@@ -264,7 +297,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             )
             faceDao.insertFace(entity)
             faceDao.recordWearFace(entity.id, entity.lastWornAt ?: System.currentTimeMillis())
-            syncManager.syncCurrentFace(entity.toFaceConfig())
+            val configWithComplications = entity.toFaceConfig().withComplications(complicationsRepo.activeComplications.value)
+            syncManager.syncCurrentFace(configWithComplications)
             kotlinx.coroutines.withContext(Dispatchers.Main) {
                 onImported?.invoke(entity)
             }

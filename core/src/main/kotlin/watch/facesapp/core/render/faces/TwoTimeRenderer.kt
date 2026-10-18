@@ -91,7 +91,7 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
             val hourTextSize = width * 0.22f
             val minuteTextSize = width * 0.08f
 
-            val textColor = config.getHourColor(isAmbient)
+            val textColor = config.getTextColor(isAmbient)
 
             hourPaint.color = textColor
             hourPaint.textSize = hourTextSize

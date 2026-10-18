@@ -65,8 +65,7 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
             if (!isAmbient) {
                 val meshColors = listOf(
                     config.getBackgroundColor(isAmbient = false),
-                    config.getAccentColor(isAmbient = false),
-                    config.getMeridianColor(isAmbient = false)
+                    config.getAccentColor(isAmbient = false)
                 )
 
                 val w = bounds.width()
@@ -97,7 +96,7 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
             // Draw Digital Time / Date / Complications
             textPaint.typeface = FontProvider.getProximaSemibold(context)
 
-            val textColor = config.getHourColor(isAmbient)
+            val textColor = config.getTextColor(isAmbient)
             textPaint.color = textColor
 
             if (isAmbient) {

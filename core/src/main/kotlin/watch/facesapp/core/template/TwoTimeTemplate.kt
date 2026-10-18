@@ -2,6 +2,7 @@ package watch.facesapp.core.template
 
 import android.content.Context
 import watch.facesapp.core.model.ColorRoleDefinition
+import watch.facesapp.core.model.ContrastConstraint
 import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.core.model.FaceTemplate
 import watch.facesapp.core.model.TemplateOption
@@ -26,6 +27,15 @@ object TwoTimeTemplate : FaceTemplate {
             defaultValue = "12H",
             choices = listOf("12H", "24H"),
             description = "12-hour or 24-hour digital clock display."
+        )
+    )
+
+    override val contrastConstraints: List<ContrastConstraint> = listOf(
+        ContrastConstraint(
+            foregroundRole = "TXT",
+            backgroundRole = "BG",
+            minRatio = 3.0,
+            description = "Digits against background"
         )
     )
 

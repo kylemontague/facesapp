@@ -124,19 +124,114 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
             }
         }
 
-        // 5. Draw text layout with signature offset
-        val xOffset = -width * 0.18f
-        val yOffset = -height * 0.10f
+        val allLines = listOf(hourText) + minuteLines
 
+        // 5. Dynamic text sizing & bounds check
+        // Move text more to the left (-0.28f from center)
+        val xOffset = -width * 0.28f
         val startX = centerX + xOffset
-        val startY = centerY + yOffset
 
-        canvas.drawText(hourText, startX, startY, hourPaint)
+        val maxFontSize = width * 0.145f
+        val minFontSize = width * 0.065f
 
-        val lineSpacing = centerY - startY
-        for (i in minuteLines.indices) {
-            val lineY = centerY + (i * lineSpacing)
-            canvas.drawText(minuteLines[i], startX, lineY, minutePaint)
+        var low = minFontSize
+        var high = maxFontSize
+        var bestFontSize = minFontSize
+
+        if (checkFits(maxFontSize, startX, allLines, hourPaint, minutePaint, shape, centerX, centerY, width, height, bounds)) {
+            bestFontSize = maxFontSize
+        } else {
+            repeat(8) {
+                val mid = (low + high) / 2f
+                if (checkFits(mid, startX, allLines, hourPaint, minutePaint, shape, centerX, centerY, width, height, bounds)) {
+                    bestFontSize = mid
+                    low = mid
+                } else {
+                    high = mid
+                }
+            }
         }
+
+        // Apply final optimal font size
+        hourPaint.textSize = bestFontSize
+        minutePaint.textSize = bestFontSize
+
+        val lineSpacing = bestFontSize * 1.05f
+        val totalLines = allLines.size
+        // Center the text block vertically
+        val startY = centerY - 0.02f * height + 0.25f * bestFontSize - (totalLines - 1) * lineSpacing / 2f
+
+        for (i in allLines.indices) {
+            val lineY = startY + (i * lineSpacing)
+            val paint = if (i == 0) hourPaint else minutePaint
+            canvas.drawText(allLines[i], startX, lineY, paint)
+        }
+    }
+
+    private fun checkFits(
+        fontSize: Float,
+        startX: Float,
+        lines: List<String>,
+        hPaint: Paint,
+        mPaint: Paint,
+        shape: WatchShape,
+        centerX: Float,
+        centerY: Float,
+        width: Float,
+        height: Float,
+        bounds: Rect
+    ): Boolean {
+        hPaint.textSize = fontSize
+        mPaint.textSize = fontSize
+
+        val lineSpacing = fontSize * 1.05f
+        val totalLines = lines.size
+        val startY = centerY - 0.02f * height + 0.25f * fontSize - (totalLines - 1) * lineSpacing / 2f
+
+        val safeRadius = (width / 2f) * 0.86f
+        val safeRadiusSq = safeRadius * safeRadius
+        val safeMargin = width * 0.07f
+
+        val rect = Rect()
+
+        for (i in lines.indices) {
+            val text = lines[i]
+            val paint = if (i == 0) hPaint else mPaint
+            val lineY = startY + (i * lineSpacing)
+
+            paint.getTextBounds(text, 0, text.length, rect)
+            val textWidth = maxOf(rect.width().toFloat(), paint.measureText(text))
+
+            val left = startX + rect.left
+            val right = startX + rect.left + textWidth
+            val top = lineY + rect.top
+            val bottom = lineY + rect.bottom
+
+            if (shape == WatchShape.SQUARE) {
+                if (left < bounds.left + safeMargin ||
+                    right > bounds.right - safeMargin ||
+                    top < bounds.top + safeMargin ||
+                    bottom > bounds.bottom - safeMargin
+                ) {
+                    return false
+                }
+            } else {
+                // Round watch face: verify all 4 corners are inside safe radius
+                val corners = arrayOf(
+                    left to top,
+                    right to top,
+                    left to bottom,
+                    right to bottom
+                )
+                for ((cx, cy) in corners) {
+                    val dx = cx - centerX
+                    val dy = cy - centerY
+                    if (dx * dx + dy * dy > safeRadiusSq) {
+                        return false
+                    }
+                }
+            }
+        }
+        return true
     }
 }

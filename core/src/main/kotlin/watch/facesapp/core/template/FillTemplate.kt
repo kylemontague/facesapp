@@ -2,6 +2,7 @@ package watch.facesapp.core.template
 
 import android.content.Context
 import watch.facesapp.core.model.ColorRoleDefinition
+import watch.facesapp.core.model.ContrastConstraint
 import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.core.model.FaceTemplate
 import watch.facesapp.core.render.TemplateRenderer
@@ -16,6 +17,15 @@ object FillTemplate : FaceTemplate {
         ColorRoleDefinition("BG", "Background", 0xFF89C4BB.toInt()),
         ColorRoleDefinition("ACC", "Fill Accent", 0xFFCDE9E6.toInt()),
         ColorRoleDefinition("TXT", "Time Text", 0xFFFFFFFF.toInt())
+    )
+
+    override val contrastConstraints: List<ContrastConstraint> = listOf(
+        ContrastConstraint(
+            foregroundRole = "TXT",
+            backgroundRole = "BG",
+            minRatio = 3.0,
+            description = "Time text against background"
+        )
     )
 
     override fun createRenderer(context: Context): TemplateRenderer = FillRenderer(context)

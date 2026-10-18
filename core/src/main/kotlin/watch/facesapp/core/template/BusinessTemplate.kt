@@ -2,6 +2,7 @@ package watch.facesapp.core.template
 
 import android.content.Context
 import watch.facesapp.core.model.ColorRoleDefinition
+import watch.facesapp.core.model.ContrastConstraint
 import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.core.model.FaceTemplate
 import watch.facesapp.core.model.TemplateOption
@@ -26,6 +27,21 @@ object BusinessTemplate : FaceTemplate {
             displayName = "Second Hand",
             defaultValue = true,
             description = "Display active ticking second hand."
+        )
+    )
+
+    override val contrastConstraints: List<ContrastConstraint> = listOf(
+        ContrastConstraint(
+            foregroundRole = "HR",
+            backgroundRole = "BG",
+            minRatio = 3.0,
+            description = "Hour hand against dial background"
+        ),
+        ContrastConstraint(
+            foregroundRole = "MIN",
+            backgroundRole = "BG",
+            minRatio = 3.0,
+            description = "Minute hand against dial background"
         )
     )
 

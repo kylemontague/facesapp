@@ -36,6 +36,9 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import watch.facesapp.core.model.SwatchContrastStatus
 import watch.facesapp.core.util.ColorContrast
 import watch.facesapp.mobile.ui.customise.ColorRole
 import watch.facesapp.mobile.ui.theme.BorderWhite
@@ -55,7 +58,8 @@ fun SwatchGrid(
     onRoleSelected: (ColorRole) -> Unit,
     onRoleAssigned: (ColorRole, Int) -> Unit,
     onSwatchClick: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    swatchStatuses: Map<Int, SwatchContrastStatus> = emptyMap()
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -64,6 +68,7 @@ fun SwatchGrid(
     val currentOnRoleSelected by rememberUpdatedState(onRoleSelected)
     val currentOnRoleAssigned by rememberUpdatedState(onRoleAssigned)
     val currentOnSwatchClick by rememberUpdatedState(onSwatchClick)
+    val currentSwatchStatuses by rememberUpdatedState(swatchStatuses)
 
     var isDragging by remember { mutableStateOf(false) }
     var activeDragRole by remember { mutableStateOf<ColorRole?>(null) }
@@ -155,7 +160,8 @@ fun SwatchGrid(
                             if (dragStarted && candidateRole != null) {
                                 change.consume()
                                 val closest = findClosestSwatch(currentOffset, swatchSize, step)
-                                if (closest != currentTargetIndex) {
+                                val targetStatus = currentSwatchStatuses[closest] ?: SwatchContrastStatus.VALID
+                                if (closest != currentTargetIndex && targetStatus != SwatchContrastStatus.DISABLED) {
                                     currentTargetIndex = closest
                                     activeDragSwatchIndex = closest
                                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -166,16 +172,22 @@ fun SwatchGrid(
                             // Pointer released
                             change.consume()
                             if (dragStarted && candidateRole != null) {
-                                currentOnRoleAssigned(candidateRole, currentTargetIndex)
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                val targetStatus = currentSwatchStatuses[currentTargetIndex] ?: SwatchContrastStatus.VALID
+                                if (targetStatus != SwatchContrastStatus.DISABLED) {
+                                    currentOnRoleAssigned(candidateRole, currentTargetIndex)
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                }
                             } else {
                                 // Tap interaction
-                                if (hasMarker && candidateRole != null) {
-                                    currentOnRoleSelected(candidateRole)
-                                } else {
-                                    currentOnSwatchClick(startIndex)
+                                val tapStatus = currentSwatchStatuses[startIndex] ?: SwatchContrastStatus.VALID
+                                if (tapStatus != SwatchContrastStatus.DISABLED) {
+                                    if (hasMarker && candidateRole != null) {
+                                        currentOnRoleSelected(candidateRole)
+                                    } else {
+                                        currentOnSwatchClick(startIndex)
+                                    }
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 }
-                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             }
                             break
                         }
@@ -203,6 +215,9 @@ fun SwatchGrid(
                         val matchedMarkers = markers.filter { it.colorIndex == index }
                         val isSelected = matchedMarkers.isNotEmpty()
                         val isBeingDragged = isDragging && (index == activeDragSwatchIndex)
+                        val status = swatchStatuses[index] ?: SwatchContrastStatus.VALID
+                        val isDisabled = status == SwatchContrastStatus.DISABLED
+                        val isWarning = status == SwatchContrastStatus.WARNING
 
                         val scale by animateFloatAsState(
                             targetValue = when {
@@ -234,6 +249,7 @@ fun SwatchGrid(
                                 .graphicsLayer {
                                     scaleX = scale
                                     scaleY = scale
+                                    alpha = if (isDisabled) 0.25f else 1.0f
                                 }
                                 .clip(CircleShape)
                                 .background(color)
@@ -243,6 +259,7 @@ fun SwatchGrid(
                                         color = when {
                                             isBeingDragged -> PureWhite
                                             isSelected -> BorderWhite
+                                            isDisabled -> Color(0x1AFFFFFF)
                                             else -> Color(0x33FFFFFF)
                                         }
                                     ),
@@ -263,6 +280,18 @@ fun SwatchGrid(
                                     fontFamily = QuicksandFontFamily,
                                     fontSize = 11.sp,
                                     color = textColor
+                                )
+                            }
+
+                            if (isWarning) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(top = 4.dp, end = 4.dp)
+                                        .size(7.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFFFB300))
+                                        .border(0.5.dp, Color(0x80000000), CircleShape)
                                 )
                             }
                         }

@@ -14,6 +14,7 @@ interface FaceTemplate {
     val colorRoles: List<ColorRoleDefinition>
     val defaultColors: List<Int> get() = colorRoles.map { it.defaultColor }
     val options: List<TemplateOption<*>> get() = emptyList()
+    val contrastConstraints: List<ContrastConstraint> get() = emptyList()
 
     fun createRenderer(context: Context): TemplateRenderer
 }

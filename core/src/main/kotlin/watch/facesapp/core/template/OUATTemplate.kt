@@ -2,6 +2,7 @@ package watch.facesapp.core.template
 
 import android.content.Context
 import watch.facesapp.core.model.ColorRoleDefinition
+import watch.facesapp.core.model.ContrastConstraint
 import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.core.model.FaceTemplate
 import watch.facesapp.core.model.TemplateOption
@@ -25,6 +26,15 @@ object OUATTemplate : FaceTemplate {
             displayName = "Seconds Arc",
             defaultValue = true,
             description = "Draw live second progression sweep arc."
+        )
+    )
+
+    override val contrastConstraints: List<ContrastConstraint> = listOf(
+        ContrastConstraint(
+            foregroundRole = "HR",
+            backgroundRole = "BG",
+            minRatio = 3.5,
+            description = "Word text against dial background"
         )
     )
 

@@ -34,6 +34,12 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import watch.facesapp.core.model.ContrastGuardMode
+import watch.facesapp.mobile.ui.theme.FrostedPill
 import watch.facesapp.mobile.sensor.ShakeDetector
 import watch.facesapp.mobile.ui.components.BottomVignette
 import watch.facesapp.mobile.ui.components.FacesPillButton
@@ -64,8 +70,9 @@ fun CustomiseScreen(
     val config by viewModel.currentConfig.collectAsState()
     val activeComplications by viewModel.activeComplications.collectAsState()
     val previewFaceMode by viewModel.previewFaceMode.collectAsState()
-
-    var showComplicationsSheet by remember { mutableStateOf(false) }
+    val contrastGuardMode by viewModel.contrastGuardMode.collectAsState()
+    val swatchContrastStatuses by viewModel.swatchContrastStatuses.collectAsState()
+    val isConstraintRelaxed by viewModel.isConstraintRelaxed.collectAsState()
 
     val shakeDetector = remember(context) { ShakeDetector(context) }
 
@@ -158,14 +165,78 @@ fun CustomiseScreen(
                 fontSize = 10.sp,
                 color = SubtitleGray,
                 letterSpacing = 1.sp,
-                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
             )
 
-            // 3. 4x4 Swatch Grid with drag-to-reassign and snap-to-grid
+            // Role Indicator & Contrast Guard Toggle Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp, start = 4.dp, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "ROLE: ",
+                        fontFamily = QuicksandFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        color = SubtitleGray,
+                        letterSpacing = 1.sp
+                    )
+                    Text(
+                        text = selectedRole.displayName.uppercase(),
+                        fontFamily = QuicksandFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        color = PureWhite,
+                        letterSpacing = 1.sp
+                    )
+                }
+
+                val guardLabel = when {
+                    isConstraintRelaxed -> "GUARD: RELAXED"
+                    contrastGuardMode == ContrastGuardMode.HARD -> "GUARD: STRICT"
+                    else -> "GUARD: SOFT"
+                }
+                val guardColor = when {
+                    isConstraintRelaxed -> Color(0xFFFFB300)
+                    contrastGuardMode == ContrastGuardMode.HARD -> PureWhite
+                    else -> SubtitleGray
+                }
+
+                Box(
+                    modifier = Modifier
+                        .background(FrostedPill, shape = RoundedCornerShape(4.dp))
+                        .border(
+                            BorderStroke(0.5.dp, guardColor.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .clickable {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            viewModel.toggleContrastGuardMode()
+                        }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = guardLabel,
+                        fontFamily = QuicksandFontFamily,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                        color = guardColor
+                    )
+                }
+            }
+
+            // 3. 4x4 Swatch Grid with drag-to-reassign, contrast filtering and snap-to-grid
             SwatchGrid(
                 paletteColors = paletteColors,
                 markers = markers,
                 selectedRole = selectedRole,
+                swatchStatuses = swatchContrastStatuses,
                 onRoleSelected = { role -> viewModel.selectRole(role) },
                 onRoleAssigned = { role, index -> viewModel.assignRoleToSwatch(role, index) },
                 onSwatchClick = { index ->
@@ -176,42 +247,19 @@ fun CustomiseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 4. Action Row: Complications & Save Buttons
-            Row(
+            // 4. Action: Save Face Button
+            FacesPillButton(
+                text = "Save Face",
+                onClick = {
+                    viewModel.saveFace(onSaved = onNavigateBack)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FacesPillButton(
-                    text = "Complications",
-                    icon = Icons.Default.Widgets,
-                    onClick = { showComplicationsSheet = true },
-                    modifier = Modifier.weight(1f)
-                )
-
-                FacesPillButton(
-                    text = "Save Face",
-                    onClick = {
-                        viewModel.saveFace(onSaved = onNavigateBack)
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                    .padding(bottom = 24.dp)
+            )
         }
 
         TopVignette(modifier = Modifier.align(Alignment.TopCenter), height = 40.dp)
         BottomVignette(modifier = Modifier.align(Alignment.BottomCenter), height = 50.dp)
-
-        // 5. Complications Configuration Modal Sheet
-        if (showComplicationsSheet) {
-            ComplicationsSheet(
-                activeComplications = activeComplications,
-                onToggleComplication = { viewModel.toggleComplication(it) },
-                onMoveUp = { viewModel.moveComplicationUp(it) },
-                onMoveDown = { viewModel.moveComplicationDown(it) },
-                onDismiss = { showComplicationsSheet = false }
-            )
-        }
     }
 }

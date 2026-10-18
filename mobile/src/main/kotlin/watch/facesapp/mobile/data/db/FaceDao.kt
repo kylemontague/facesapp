@@ -36,6 +36,9 @@ interface FaceDao {
     @Query("SELECT * FROM faces WHERE isCurrentOnWatch = 1 LIMIT 1")
     fun getCurrentActiveFace(): Flow<FaceEntity?>
 
+    @Query("SELECT * FROM faces WHERE isCurrentOnWatch = 1 LIMIT 1")
+    suspend fun getCurrentFace(): FaceEntity?
+
     @Query("SELECT * FROM faces WHERE lastWornAt IS NOT NULL AND isCurrentOnWatch = 0 ORDER BY lastWornAt ASC")
     fun getHistoricalWornFaces(): Flow<List<FaceEntity>>
 

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -44,6 +45,7 @@ import watch.facesapp.mobile.ui.components.FacesPillButton
 import watch.facesapp.mobile.ui.components.TopInfoPill
 import watch.facesapp.mobile.ui.components.TopVignette
 import watch.facesapp.mobile.ui.components.WatchFacePreview
+import watch.facesapp.mobile.ui.customise.ComplicationsSheet
 import watch.facesapp.mobile.ui.theme.LuxuryBlack
 import watch.facesapp.mobile.ui.theme.PureWhite
 import kotlin.time.Duration.Companion.milliseconds
@@ -62,7 +64,10 @@ fun HomeScreen(
     val isAmbient by viewModel.isAmbient.collectAsState()
     val calendar by viewModel.calendar.collectAsState()
     val faceMode by viewModel.faceMode.collectAsState()
+    val activeComplications by viewModel.activeComplications.collectAsState()
     val complicationState by viewModel.complicationState.collectAsState()
+
+    var showComplicationsSheet by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val items = pagerStateData.items
@@ -176,7 +181,7 @@ fun HomeScreen(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
                                 ) {
-                                    viewModel.cycleFaceMode(item.config.activeComplications)
+                                    viewModel.cycleFaceMode(activeComplications)
                                 }
                         )
                     }
@@ -201,6 +206,15 @@ fun HomeScreen(
                 Icon(
                     imageVector = if (isAmbient) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                     contentDescription = "Toggle Ambient Mode",
+                    tint = PureWhite
+                )
+            }
+
+            // Universal Complications configuration
+            IconButton(onClick = { showComplicationsSheet = true }) {
+                Icon(
+                    imageVector = Icons.Default.Widgets,
+                    contentDescription = "Tap Complications Sequence",
                     tint = PureWhite
                 )
             }
@@ -373,6 +387,16 @@ fun HomeScreen(
             ShareWatchFaceSheet(
                 face = shareTarget!!,
                 onDismiss = { shareTarget = null }
+            )
+        }
+
+        // 6. Universal Complications Bottom Sheet Modal
+        if (showComplicationsSheet) {
+            ComplicationsSheet(
+                activeComplications = activeComplications,
+                onToggleComplication = { viewModel.toggleComplication(it) },
+                onReorderComplications = { viewModel.updateComplicationsOrder(it) },
+                onDismiss = { showComplicationsSheet = false }
             )
         }
     }

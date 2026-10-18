@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -50,10 +51,8 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _options = MutableStateFlow<Map<String, String>>(emptyMap())
     val options: StateFlow<Map<String, String>> = _options.asStateFlow()
 
-    private val _activeComplications = MutableStateFlow<List<watch.facesapp.core.model.FaceMode>>(
-        watch.facesapp.core.model.FaceMode.DEFAULT_CYCLE
-    )
-    val activeComplications: StateFlow<List<watch.facesapp.core.model.FaceMode>> = _activeComplications.asStateFlow()
+    private val complicationsRepo = watch.facesapp.mobile.data.prefs.ComplicationsRepository.getInstance(application)
+    val activeComplications: StateFlow<List<watch.facesapp.core.model.FaceMode>> = complicationsRepo.activeComplications
 
     private val _previewFaceMode = MutableStateFlow(watch.facesapp.core.model.FaceMode.TIME)
     val previewFaceMode: StateFlow<watch.facesapp.core.model.FaceMode> = _previewFaceMode.asStateFlow()
@@ -67,7 +66,87 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _selectedRole = MutableStateFlow(ColorRole.BACKGROUND)
     val selectedRole: StateFlow<ColorRole> = _selectedRole.asStateFlow()
 
-    val currentConfig: StateFlow<FaceConfig> = combine(_style, _paletteColors, _roleAssignments, _options) { st, pal, roles, opts ->
+    private val _contrastGuardMode = MutableStateFlow(watch.facesapp.core.model.ContrastGuardMode.HARD)
+    val contrastGuardMode: StateFlow<watch.facesapp.core.model.ContrastGuardMode> = _contrastGuardMode.asStateFlow()
+
+    data class ContrastEvaluation(
+        val statuses: Map<Int, watch.facesapp.core.model.SwatchContrastStatus>,
+        val isRelaxed: Boolean
+    )
+
+    private val contrastEvaluation: StateFlow<ContrastEvaluation> = combine(
+        _paletteColors,
+        _roleAssignments,
+        _selectedRole,
+        _style,
+        _contrastGuardMode
+    ) { pal, roles, selRole, st, guardMode ->
+        val constraints = st.template.contrastConstraints
+        val currentRoleAssignments = roles.mapKeys { it.key.code.uppercase() }
+            .mapValues { (_, swatchIdx) -> pal.getOrElse(swatchIdx) { 0 } }
+
+        val hasConstraintsForRole = constraints.any {
+            it.foregroundRole.equals(selRole.code, ignoreCase = true) ||
+            it.backgroundRole.equals(selRole.code, ignoreCase = true)
+        }
+
+        if (!hasConstraintsForRole || constraints.isEmpty()) {
+            val allValid = (0 until minOf(16, pal.size)).associateWith { watch.facesapp.core.model.SwatchContrastStatus.VALID }
+            return@combine ContrastEvaluation(allValid, false)
+        }
+
+        val validFlags = (0 until minOf(16, pal.size)).associateWith { idx ->
+            val swatchColor = pal[idx]
+            watch.facesapp.core.util.ColorContrast.isSwatchValidForRole(
+                swatchColor = swatchColor,
+                roleCode = selRole.code,
+                currentAssignments = currentRoleAssignments,
+                constraints = constraints
+            )
+        }
+
+        // Smart relaxation rule:
+        // If in HARD mode and NO swatch meets the constraint, relax to SOFT mode so user is never locked out
+        val allInvalid = validFlags.values.none { it }
+        val isRelaxed = guardMode == watch.facesapp.core.model.ContrastGuardMode.HARD && allInvalid
+        val effectiveMode = if (isRelaxed) watch.facesapp.core.model.ContrastGuardMode.SOFT else guardMode
+
+        val statuses = validFlags.mapValues { (_, isValid) ->
+            if (isValid) {
+                watch.facesapp.core.model.SwatchContrastStatus.VALID
+            } else {
+                if (effectiveMode == watch.facesapp.core.model.ContrastGuardMode.HARD) {
+                    watch.facesapp.core.model.SwatchContrastStatus.DISABLED
+                } else {
+                    watch.facesapp.core.model.SwatchContrastStatus.WARNING
+                }
+            }
+        }
+
+        ContrastEvaluation(statuses, isRelaxed)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = ContrastEvaluation(emptyMap(), false)
+    )
+
+    val swatchContrastStatuses: StateFlow<Map<Int, watch.facesapp.core.model.SwatchContrastStatus>> = contrastEvaluation
+        .map { it.statuses }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    val isConstraintRelaxed: StateFlow<Boolean> = contrastEvaluation
+        .map { it.isRelaxed }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun toggleContrastGuardMode() {
+        _contrastGuardMode.value = if (_contrastGuardMode.value == watch.facesapp.core.model.ContrastGuardMode.HARD) {
+            watch.facesapp.core.model.ContrastGuardMode.SOFT
+        } else {
+            watch.facesapp.core.model.ContrastGuardMode.HARD
+        }
+    }
+
+    val currentConfig: StateFlow<FaceConfig> = combine(_style, _paletteColors, _roleAssignments, _options, activeComplications) { st, pal, roles, opts, comps ->
         val resolvedColors = st.template.colorRoles.map { def ->
             val role = ColorRole.fromCode(def.code)
             val swatchIdx = roles[role]
@@ -77,11 +156,12 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
                 def.defaultColor
             }
         }
+        val complicationsStr = comps.joinToString(",") { it.id }
         FaceConfig(
             id = UUID.randomUUID().toString(),
             style = st,
             colors = resolvedColors,
-            options = opts
+            options = opts + ("complications" to complicationsStr)
         )
     }.stateIn(
         scope = viewModelScope,
@@ -106,44 +186,7 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun cyclePreviewMode() {
-        _previewFaceMode.value = _previewFaceMode.value.next(_activeComplications.value)
-    }
-
-    fun toggleComplication(mode: watch.facesapp.core.model.FaceMode) {
-        if (mode == watch.facesapp.core.model.FaceMode.TIME) return // Time is always locked
-        val current = _activeComplications.value.toMutableList()
-        if (mode in current) {
-            current.remove(mode)
-        } else {
-            current.add(mode)
-        }
-        _activeComplications.value = current
-        saveComplicationsOption(current)
-    }
-
-    fun moveComplicationUp(index: Int) {
-        if (index <= 1) return // index 0 is Time
-        val current = _activeComplications.value.toMutableList()
-        if (index >= current.size) return
-        val item = current.removeAt(index)
-        current.add(index - 1, item)
-        _activeComplications.value = current
-        saveComplicationsOption(current)
-    }
-
-    fun moveComplicationDown(index: Int) {
-        val current = _activeComplications.value.toMutableList()
-        if (index < 1 || index >= current.lastIndex) return
-        val item = current.removeAt(index)
-        current.add(index + 1, item)
-        _activeComplications.value = current
-        saveComplicationsOption(current)
-    }
-
-    private fun saveComplicationsOption(list: List<watch.facesapp.core.model.FaceMode>) {
-        val raw = list.joinToString(",") { it.id }
-        _options.value = _options.value + ("complications" to raw)
-        syncPreview()
+        _previewFaceMode.value = _previewFaceMode.value.next(complicationsRepo.activeComplications.value)
     }
 
     fun initializeWithPalette(colors: List<Int>) {
@@ -160,7 +203,6 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         _style.value = styleMatch
         _paletteColors.value = ColorPalette.defaultPalette()
         _options.value = emptyMap()
-        _activeComplications.value = watch.facesapp.core.model.FaceMode.DEFAULT_CYCLE
         initAssignmentsForStyle(styleMatch)
         shuffleAssignments()
     }
@@ -176,7 +218,6 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
                 if (match != null) {
                     _style.value = match.style
                     _options.value = match.options
-                    _activeComplications.value = match.toFaceConfig().activeComplications
                     if (match.colors.isNotEmpty()) {
                         _paletteColors.value = (match.colors + ColorPalette.defaultPalette()).distinct().take(16)
                     }
@@ -201,6 +242,12 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun assignRoleToSwatch(role: ColorRole, swatchIndex: Int) {
+        if (_contrastGuardMode.value == watch.facesapp.core.model.ContrastGuardMode.HARD && !isConstraintRelaxed.value) {
+            val status = swatchContrastStatuses.value[swatchIndex]
+            if (status == watch.facesapp.core.model.SwatchContrastStatus.DISABLED) {
+                return
+            }
+        }
         val updated = _roleAssignments.value.toMutableMap()
         updated[role] = swatchIndex.coerceIn(0, 15)
         _roleAssignments.value = updated
@@ -214,13 +261,42 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun shuffleAssignments() {
         val roles = _style.value.requiredRoles()
-        val availableIndices = (0 until minOf(16, _paletteColors.value.size)).shuffled()
-        val updated = mutableMapOf<ColorRole, Int>()
-        roles.forEachIndexed { index, role ->
-            updated[role] = availableIndices.getOrElse(index) { index }
+        val pal = _paletteColors.value
+        val constraints = _style.value.template.contrastConstraints
+        val availableIndices = (0 until minOf(16, pal.size)).toList()
+        if (availableIndices.isEmpty()) return
+
+        var bestAssignment: Map<ColorRole, Int>? = null
+        var bestScore = -1.0
+
+        // Try up to 40 random permutations to pick one satisfying all contrast constraints
+        for (attempt in 0 until 40) {
+            val shuffled = availableIndices.shuffled()
+            val candidate = roles.mapIndexed { idx, role ->
+                role to shuffled.getOrElse(idx) { idx % availableIndices.size }
+            }.toMap()
+
+            val candidateColorMap = candidate.mapKeys { it.key.code.uppercase() }
+                .mapValues { (_, sIdx) -> pal.getOrElse(sIdx) { 0 } }
+
+            val satisfies = watch.facesapp.core.util.ColorContrast.satisfiesAllConstraints(candidateColorMap, constraints)
+            val score = watch.facesapp.core.util.ColorContrast.calculateCumulativeScore(candidateColorMap, constraints)
+
+            if (satisfies) {
+                bestAssignment = candidate
+                break
+            }
+
+            if (score > bestScore) {
+                bestScore = score
+                bestAssignment = candidate
+            }
         }
-        _roleAssignments.value = updated
-        syncPreview()
+
+        if (bestAssignment != null) {
+            _roleAssignments.value = bestAssignment
+            syncPreview()
+        }
     }
 
     private fun syncPreview() {
@@ -233,6 +309,7 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         viewModelScope.launch {
             val config = currentConfig.value
             val now = System.currentTimeMillis()
+            faceDao.clearCurrentOnWatch()
             val entity = FaceEntity.fromFaceConfig(
                 config = config,
                 name = config.style.displayName,

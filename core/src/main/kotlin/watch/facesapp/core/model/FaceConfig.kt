@@ -10,29 +10,42 @@ data class FaceConfig(
     val isFavorite: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 ) {
+    fun getColorForRole(roleCode: String, fallback: Int = 0xFFFFFFFF.toInt()): Int {
+        val roleIndex = style.template.colorRoles.indexOfFirst { it.code.equals(roleCode, ignoreCase = true) }
+        if (roleIndex in colors.indices) {
+            return colors[roleIndex]
+        }
+        return fallback
+    }
+
     fun getBackgroundColor(isAmbient: Boolean): Int {
         if (isAmbient) return 0xFF000000.toInt()
-        return colors.getOrElse(0) { defaultColorsForStyle(style)[0] }
+        return getColorForRole("BG", colors.getOrElse(0) { defaultColorsForStyle(style).getOrElse(0) { 0xFF000000.toInt() } })
     }
 
     fun getHourColor(isAmbient: Boolean): Int {
         if (isAmbient) return 0xFFFFFFFF.toInt()
-        return colors.getOrElse(1) { defaultColorsForStyle(style).getOrElse(1) { 0xFFFFFFFF.toInt() } }
+        return getColorForRole("HR", getColorForRole("TXT", colors.getOrElse(1) { defaultColorsForStyle(style).getOrElse(1) { 0xFFFFFFFF.toInt() } }))
     }
 
     fun getMinuteColor(isAmbient: Boolean): Int {
         if (isAmbient) return 0xFFFFFFFF.toInt()
-        return colors.getOrElse(2) { defaultColorsForStyle(style).getOrElse(2) { 0xFFFFFFFF.toInt() } }
+        return getColorForRole("MIN", colors.getOrElse(2) { defaultColorsForStyle(style).getOrElse(2) { 0xFFFFFFFF.toInt() } })
     }
 
     fun getSecondColor(isAmbient: Boolean): Int {
         if (isAmbient) return 0x00000000 // In ambient mode second hand is hidden
-        return colors.getOrElse(3) { defaultColorsForStyle(style).getOrElse(3) { 0xFFFFFFFF.toInt() } }
+        return getColorForRole("SEC", colors.getOrElse(3) { defaultColorsForStyle(style).getOrElse(3) { 0xFFFFFFFF.toInt() } })
     }
 
     fun getAccentColor(isAmbient: Boolean): Int {
         if (isAmbient) return 0xFFFFFFFF.toInt()
-        return colors.getOrElse(4) { defaultColorsForStyle(style).getOrElse(4) { 0xFFFFFFFF.toInt() } }
+        return getColorForRole("ACC", colors.getOrElse(1) { defaultColorsForStyle(style).getOrElse(1) { 0xFFFFFFFF.toInt() } })
+    }
+
+    fun getTextColor(isAmbient: Boolean): Int {
+        if (isAmbient) return 0xFFFFFFFF.toInt()
+        return getColorForRole("TXT", getColorForRole("HR", colors.getOrElse(1) { defaultColorsForStyle(style).getOrElse(1) { 0xFFFFFFFF.toInt() } }))
     }
 
     fun getMeridianColor(isAmbient: Boolean): Int {
