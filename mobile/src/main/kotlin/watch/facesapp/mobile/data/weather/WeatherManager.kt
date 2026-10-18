@@ -15,6 +15,9 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
+import android.net.ConnectivityManager
+import kotlinx.coroutines.delay
+
 data class WeatherInfo(
     val tempC: Int,
     val condition: String
@@ -24,30 +27,58 @@ class WeatherManager(private val context: Context) {
 
     suspend fun fetchCurrentWeather(): WeatherInfo? = withContext(Dispatchers.IO) {
         val (lat, lon) = getApproximateCoordinates()
+        val urlString = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code"
+        Log.d(TAG, "Requesting weather from: $urlString")
 
-        try {
-            val urlString = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code"
-            val url = URL(urlString)
-            val connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 6000
-                readTimeout = 6000
-                requestMethod = "GET"
-                setRequestProperty("User-Agent", "FacesApp/2.0")
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
+
+        for (attempt in 1..3) {
+            var connection: HttpURLConnection? = null
+            try {
+                val url = URL(urlString)
+                val activeNetwork = cm?.activeNetwork
+                connection = ((if (activeNetwork != null) {
+                    activeNetwork.openConnection(url)
+                } else {
+                    url.openConnection()
+                }) as HttpURLConnection).apply {
+                    connectTimeout = 15000
+                    readTimeout = 15000
+                    requestMethod = "GET"
+                    setRequestProperty("User-Agent", "FacesWatchApp/2.0 (Android; +https://facesapp.watch)")
+                    setRequestProperty("Accept", "application/json")
+                }
+
+                val statusCode = connection.responseCode
+                if (statusCode == HttpURLConnection.HTTP_OK) {
+                    val response = connection.inputStream.bufferedReader().use(BufferedReader::readText)
+                    val json = JSONObject(response)
+                    val current = json.getJSONObject("current")
+                    val temp = current.getDouble("temperature_2m").toInt()
+                    val code = current.getInt("weather_code")
+                    val condition = mapWmoCode(code)
+
+                    Log.d(TAG, "Fetched live weather for ($lat, $lon): $temp°C, $condition")
+                    return@withContext WeatherInfo(temp, condition)
+                } else {
+                    val errBody = try {
+                        connection.errorStream?.bufferedReader()?.use(BufferedReader::readText)
+                    } catch (_: Exception) {
+                        null
+                    }
+                    Log.w(TAG, "Open-Meteo returned HTTP $statusCode for URL $urlString: $errBody")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Attempt $attempt failed fetching live weather: ${e.javaClass.simpleName} - ${e.message}")
+                if (attempt < 3) {
+                    delay(1000L * attempt)
+                }
+            } finally {
+                try {
+                    connection?.disconnect()
+                } catch (_: Exception) {
+                }
             }
-
-            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                val response = connection.inputStream.bufferedReader().use(BufferedReader::readText)
-                val json = JSONObject(response)
-                val current = json.getJSONObject("current")
-                val temp = current.getDouble("temperature_2m").toInt()
-                val code = current.getInt("weather_code")
-                val condition = mapWmoCode(code)
-
-                Log.d(TAG, "Fetched live weather for ($lat, $lon): $temp°C, $condition")
-                return@withContext WeatherInfo(temp, condition)
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Error fetching live weather from Open-Meteo", e)
         }
 
         // Return null if offline or network unavailable so complication is not populated with dummy data
@@ -60,10 +91,16 @@ class WeatherManager(private val context: Context) {
         ) {
             try {
                 val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-                val loc: Location? = lm?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                val loc: Location? = (if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    lm?.getLastKnownLocation(LocationManager.FUSED_PROVIDER)
+                } else null)
+                    ?: lm?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
                     ?: lm?.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER)
+                    ?: lm?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
                 if (loc != null) {
-                    return Pair(loc.latitude, loc.longitude)
+                    val lat = String.format(java.util.Locale.US, "%.4f", loc.latitude).toDouble()
+                    val lon = String.format(java.util.Locale.US, "%.4f", loc.longitude).toDouble()
+                    return Pair(lat, lon)
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Error retrieving coarse location", e)
