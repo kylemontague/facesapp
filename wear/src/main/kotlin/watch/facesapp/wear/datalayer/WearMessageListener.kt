@@ -4,6 +4,7 @@ import android.content.Context
 import watch.facesapp.core.model.FaceConfig
 import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.wear.service.FacesWatchFaceService
+import watch.facesapp.wear.service.FacesComplicationDataSourceService
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
@@ -31,6 +32,14 @@ class WearMessageListener : WearableListenerService() {
 
                     saveConfigLocally(newConfig)
                     FacesWatchFaceService.updateConfig(newConfig)
+
+                    try {
+                        androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester.create(
+                            this@WearMessageListener,
+                            android.content.ComponentName(this@WearMessageListener, FacesComplicationDataSourceService::class.java)
+                        ).requestUpdateAll()
+                    } catch (_: Exception) {
+                    }
                 }
             }
         }

@@ -5,6 +5,7 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.view.SurfaceHolder
 import androidx.wear.watchface.CanvasType
+import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.Renderer
 import androidx.wear.watchface.WatchState
@@ -14,13 +15,13 @@ import watch.facesapp.core.model.FaceMode
 import watch.facesapp.core.model.WatchShape
 import watch.facesapp.core.render.WatchRenderer
 import java.time.ZonedDateTime
-import java.util.GregorianCalendar
 
 class FacesCanvasRenderer(
     private val context: Context,
     surfaceHolder: SurfaceHolder,
     watchState: WatchState,
     currentUserStyleRepository: CurrentUserStyleRepository,
+    private val complicationSlotsManager: ComplicationSlotsManager,
     canvasType: Int = CanvasType.HARDWARE
 ) : Renderer.CanvasRenderer2<Renderer.SharedAssets>(
     surfaceHolder = surfaceHolder,
@@ -53,6 +54,7 @@ class FacesCanvasRenderer(
         reusableCalendar.timeInMillis = zonedDateTime.toInstant().toEpochMilli()
         reusableCalendar.timeZone = java.util.TimeZone.getTimeZone(zonedDateTime.zone)
 
+        // 1. Draw watch face background, hands, numerals
         coreRenderer.render(
             canvas = canvas,
             bounds = bounds,
@@ -62,6 +64,13 @@ class FacesCanvasRenderer(
             shape = shape,
             faceMode = faceMode
         )
+
+        // 2. Render live complication slots over watch face
+        for ((_, complication) in complicationSlotsManager.complicationSlots) {
+            if (complication.enabled) {
+                complication.render(canvas, zonedDateTime, renderParameters)
+            }
+        }
     }
 
     override fun renderHighlightLayer(
@@ -70,6 +79,12 @@ class FacesCanvasRenderer(
         zonedDateTime: ZonedDateTime,
         sharedAssets: SharedAssets
     ) {
-        // Unused for Canvas watchface without complication slots
+        val highlight = renderParameters.highlightLayer ?: return
+        canvas.drawColor(highlight.backgroundTint)
+        for ((_, complication) in complicationSlotsManager.complicationSlots) {
+            if (complication.enabled) {
+                complication.renderHighlightLayer(canvas, zonedDateTime, renderParameters)
+            }
+        }
     }
 }

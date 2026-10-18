@@ -44,6 +44,7 @@ dependencies {
     implementation(libs.androidx.wear.watchface)
     implementation(libs.androidx.wear.watchface.complications.data)
     implementation(libs.androidx.wear.watchface.complications.data.source)
+    implementation(libs.androidx.wear.watchface.complications.rendering)
     implementation(libs.play.services.wearable)
 
     implementation(libs.kotlinx.coroutines.android)

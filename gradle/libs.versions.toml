@@ -55,6 +55,7 @@ androidx-wear = { group = "androidx.wear", name = "wear", version.ref = "wear" }
 androidx-wear-watchface = { group = "androidx.wear.watchface", name = "watchface", version.ref = "wearWatchface" }
 androidx-wear-watchface-complications-data = { group = "androidx.wear.watchface", name = "watchface-complications-data", version.ref = "wearWatchface" }
 androidx-wear-watchface-complications-data-source = { group = "androidx.wear.watchface", name = "watchface-complications-data-source", version.ref = "wearWatchface" }
+androidx-wear-watchface-complications-rendering = { group = "androidx.wear.watchface", name = "watchface-complications-rendering", version.ref = "wearWatchface" }
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
 
 # Coroutines
