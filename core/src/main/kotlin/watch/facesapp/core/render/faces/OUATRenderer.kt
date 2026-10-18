@@ -43,7 +43,8 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode,
-        stepCount: Long
+        stepCount: Long,
+        complicationState: watch.facesapp.core.model.ComplicationState
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()
@@ -93,6 +94,7 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
         }
 
         // 4. Resolve text values
+        val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
         val (hourText, minuteLines) = when (faceMode) {
             FaceMode.TIME -> {
                 val h = calendar.get(Calendar.HOUR)
@@ -104,8 +106,21 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
                 val day = NumbersToWords.convert(calendar.get(Calendar.DAY_OF_MONTH))
                 Pair(month, day.split(" ").filter { it.isNotBlank() })
             }
+            FaceMode.BATTERY -> {
+                val words = NumbersToWords.convert(complicationState.batteryPercent)
+                Pair(words, listOf("percent", "battery"))
+            }
             FaceMode.STEPS -> {
-                Pair(stepCount.toString(), listOf("steps"))
+                val words = NumbersToWords.convert(effectiveSteps.toInt().coerceAtMost(99999))
+                Pair(words, listOf("steps"))
+            }
+            FaceMode.HEART_RATE -> {
+                val words = NumbersToWords.convert(complicationState.heartRateBpm)
+                Pair(words, listOf("beats per", "minute"))
+            }
+            FaceMode.CALORIES -> {
+                val words = NumbersToWords.convert(complicationState.caloriesBurned)
+                Pair(words, listOf("calories", "burned"))
             }
         }
 
@@ -118,8 +133,9 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
 
         canvas.drawText(hourText, startX, startY, hourPaint)
 
+        val lineSpacing = centerY - startY
         for (i in minuteLines.indices) {
-            val lineY = centerY + (i * (height / 6.2f))
+            val lineY = centerY + (i * lineSpacing)
             canvas.drawText(minuteLines[i], startX, lineY, minutePaint)
         }
     }

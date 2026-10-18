@@ -44,7 +44,8 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode,
-        stepCount: Long
+        stepCount: Long,
+        complicationState: watch.facesapp.core.model.ComplicationState
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()
@@ -93,9 +94,8 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
                 drawPaint(bgPaint)
             }
 
-            // Draw Digital Time / Date / Steps
+            // Draw Digital Time / Date / Complications
             textPaint.typeface = FontProvider.getProximaSemibold(context)
-            textPaint.textSize = width * 0.26f
 
             val textColor = config.getHourColor(isAmbient)
             textPaint.color = textColor
@@ -108,11 +108,17 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
                 textPaint.strokeWidth = 1f
             }
 
+            val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
             val displayText = when (faceMode) {
                 FaceMode.TIME -> TimeUtils.formatDigitalTime(calendar)
                 FaceMode.DATE -> TimeUtils.formatDate(calendar.time, TimeUtils.UK_DATE)
-                FaceMode.STEPS -> "$stepCount"
+                FaceMode.BATTERY -> "${complicationState.batteryPercent}%"
+                FaceMode.STEPS -> "$effectiveSteps"
+                FaceMode.HEART_RATE -> "${complicationState.heartRateBpm} bpm"
+                FaceMode.CALORIES -> "${complicationState.caloriesBurned} kcal"
             }
+
+            textPaint.textSize = if (displayText.length > 5) width * 0.19f else width * 0.26f
 
             val textY = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
             drawText(displayText, centerX, textY, textPaint)

@@ -2,6 +2,7 @@ package watch.facesapp.core.render
 
 import android.graphics.Canvas
 import android.graphics.Rect
+import watch.facesapp.core.model.ComplicationState
 import watch.facesapp.core.model.FaceConfig
 import watch.facesapp.core.model.FaceMode
 import watch.facesapp.core.model.WatchShape
@@ -20,6 +21,7 @@ interface TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode = FaceMode.TIME,
-        stepCount: Long = 0L
+        stepCount: Long = 0L,
+        complicationState: ComplicationState = ComplicationState(stepCount = if (stepCount > 0L) stepCount else 7420L)
     )
 }

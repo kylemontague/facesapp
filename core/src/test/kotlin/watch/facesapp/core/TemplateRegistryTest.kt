@@ -58,7 +58,8 @@ class TemplateRegistryTest {
                     isAmbient: Boolean,
                     shape: WatchShape,
                     faceMode: FaceMode,
-                    stepCount: Long
+                    stepCount: Long,
+                    complicationState: watch.facesapp.core.model.ComplicationState
                 ) {
                     // Custom render logic
                 }

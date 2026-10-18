@@ -27,7 +27,8 @@ class WatchRenderer(private val context: Context) : TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode,
-        stepCount: Long
+        stepCount: Long,
+        complicationState: watch.facesapp.core.model.ComplicationState
     ) {
         val renderer = rendererCache.getOrPut(config.style.id) {
             val template = TemplateRegistry.get(config.style.id)
@@ -43,7 +44,8 @@ class WatchRenderer(private val context: Context) : TemplateRenderer {
             isAmbient = isAmbient,
             shape = shape,
             faceMode = faceMode,
-            stepCount = stepCount
+            stepCount = stepCount,
+            complicationState = complicationState
         )
     }
 }

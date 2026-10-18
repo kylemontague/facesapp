@@ -49,7 +49,8 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode,
-        stepCount: Long
+        stepCount: Long,
+        complicationState: watch.facesapp.core.model.ComplicationState
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()
@@ -112,6 +113,7 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
             linePaint.strokeWidth = (width * 0.006f).coerceAtLeast(2f)
 
             // 3. Resolve display strings
+            val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
             val (topText, bottomText) = when (faceMode) {
                 FaceMode.TIME -> {
                     val hourStr = TimeUtils.formatTwoDigitHour(calendar)
@@ -126,13 +128,25 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
                     Pair(day, month)
                 }
 
+                FaceMode.BATTERY -> {
+                    Pair("${complicationState.batteryPercent}%", "battery")
+                }
+
                 FaceMode.STEPS -> {
-                    val stepStr = if (stepCount >= 10_000) {
-                        String.format(Locale.getDefault(),"%.1fK", stepCount / 1000f)
+                    val stepStr = if (effectiveSteps >= 10_000) {
+                        String.format(Locale.getDefault(), "%.1fK", effectiveSteps / 1000f)
                     } else {
-                        stepCount.toString()
+                        effectiveSteps.toString()
                     }
                     Pair(stepStr, "steps")
+                }
+
+                FaceMode.HEART_RATE -> {
+                    Pair("${complicationState.heartRateBpm}", "bpm")
+                }
+
+                FaceMode.CALORIES -> {
+                    Pair("${complicationState.caloriesBurned}", "kcal")
                 }
             }
 

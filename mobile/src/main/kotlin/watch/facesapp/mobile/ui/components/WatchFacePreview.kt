@@ -33,6 +33,7 @@ fun WatchFacePreview(
     shape: WatchShape = WatchShape.ROUND,
     faceMode: FaceMode = FaceMode.TIME,
     stepCount: Long = 0L,
+    complicationState: watch.facesapp.core.model.ComplicationState = watch.facesapp.core.model.ComplicationState(stepCount = if (stepCount > 0L) stepCount else 7420L),
     bezelSize: Dp = 230.dp
 ) {
     val context = LocalContext.current
@@ -71,7 +72,8 @@ fun WatchFacePreview(
                     isAmbient = isAmbient,
                     shape = shape,
                     faceMode = faceMode,
-                    stepCount = stepCount
+                    stepCount = stepCount,
+                    complicationState = complicationState
                 )
             }
         }

@@ -50,6 +50,14 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _options = MutableStateFlow<Map<String, String>>(emptyMap())
     val options: StateFlow<Map<String, String>> = _options.asStateFlow()
 
+    private val _activeComplications = MutableStateFlow<List<watch.facesapp.core.model.FaceMode>>(
+        watch.facesapp.core.model.FaceMode.DEFAULT_CYCLE
+    )
+    val activeComplications: StateFlow<List<watch.facesapp.core.model.FaceMode>> = _activeComplications.asStateFlow()
+
+    private val _previewFaceMode = MutableStateFlow(watch.facesapp.core.model.FaceMode.TIME)
+    val previewFaceMode: StateFlow<watch.facesapp.core.model.FaceMode> = _previewFaceMode.asStateFlow()
+
     // Map each required ColorRole to an index (0..15) into paletteColors
     private val _roleAssignments = MutableStateFlow(
         FaceStyle.OUA_TIME.requiredRoles().mapIndexed { index, role -> role to index }.toMap()
@@ -97,6 +105,47 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         syncPreview()
     }
 
+    fun cyclePreviewMode() {
+        _previewFaceMode.value = _previewFaceMode.value.next(_activeComplications.value)
+    }
+
+    fun toggleComplication(mode: watch.facesapp.core.model.FaceMode) {
+        if (mode == watch.facesapp.core.model.FaceMode.TIME) return // Time is always locked
+        val current = _activeComplications.value.toMutableList()
+        if (mode in current) {
+            current.remove(mode)
+        } else {
+            current.add(mode)
+        }
+        _activeComplications.value = current
+        saveComplicationsOption(current)
+    }
+
+    fun moveComplicationUp(index: Int) {
+        if (index <= 1) return // index 0 is Time
+        val current = _activeComplications.value.toMutableList()
+        if (index >= current.size) return
+        val item = current.removeAt(index)
+        current.add(index - 1, item)
+        _activeComplications.value = current
+        saveComplicationsOption(current)
+    }
+
+    fun moveComplicationDown(index: Int) {
+        val current = _activeComplications.value.toMutableList()
+        if (index < 1 || index >= current.lastIndex) return
+        val item = current.removeAt(index)
+        current.add(index + 1, item)
+        _activeComplications.value = current
+        saveComplicationsOption(current)
+    }
+
+    private fun saveComplicationsOption(list: List<watch.facesapp.core.model.FaceMode>) {
+        val raw = list.joinToString(",") { it.id }
+        _options.value = _options.value + ("complications" to raw)
+        syncPreview()
+    }
+
     fun initializeWithPalette(colors: List<Int>) {
         if (colors.isNotEmpty()) {
             _paletteColors.value = colors
@@ -110,6 +159,8 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         } ?: FaceStyle.OUA_TIME
         _style.value = styleMatch
         _paletteColors.value = ColorPalette.defaultPalette()
+        _options.value = emptyMap()
+        _activeComplications.value = watch.facesapp.core.model.FaceMode.DEFAULT_CYCLE
         initAssignmentsForStyle(styleMatch)
         shuffleAssignments()
     }
@@ -124,6 +175,8 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
             faceDao.getFaceById(faceIdOrStyleId).collect { match ->
                 if (match != null) {
                     _style.value = match.style
+                    _options.value = match.options
+                    _activeComplications.value = match.toFaceConfig().activeComplications
                     if (match.colors.isNotEmpty()) {
                         _paletteColors.value = (match.colors + ColorPalette.defaultPalette()).distinct().take(16)
                     }

@@ -62,6 +62,7 @@ fun HomeScreen(
     val isAmbient by viewModel.isAmbient.collectAsState()
     val calendar by viewModel.calendar.collectAsState()
     val faceMode by viewModel.faceMode.collectAsState()
+    val complicationState by viewModel.complicationState.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val items = pagerStateData.items
@@ -168,13 +169,14 @@ fun HomeScreen(
                             calendar = calendar,
                             isAmbient = isAmbient,
                             faceMode = faceMode,
+                            complicationState = complicationState,
                             modifier = Modifier
                                 .fillMaxSize(0.85f)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null
                                 ) {
-                                    viewModel.toggleFaceMode()
+                                    viewModel.cycleFaceMode(item.config.activeComplications)
                                 }
                         )
                     }

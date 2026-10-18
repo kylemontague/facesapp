@@ -51,7 +51,8 @@ class BusinessRenderer(private val context: Context) : TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode,
-        stepCount: Long
+        stepCount: Long,
+        complicationState: watch.facesapp.core.model.ComplicationState
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()
@@ -116,15 +117,19 @@ class BusinessRenderer(private val context: Context) : TemplateRenderer {
                 centerDotPaint.style = Paint.Style.FILL
             }
         } else {
-            // Date / Steps Display
+            // Complications Display (Date / Battery / Steps / Heart Rate / Calories)
             textPaint.typeface = FontProvider.getProximaLight(context)
             textPaint.textSize = width * 0.09f
             textPaint.color = config.getMinuteColor(isAmbient)
 
-            val text = if (faceMode == FaceMode.DATE) {
-                TimeUtils.formatDate(calendar.time, TimeUtils.SHORT_DATE)
-            } else {
-                "$stepCount Steps"
+            val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
+            val text = when (faceMode) {
+                FaceMode.DATE -> TimeUtils.formatDate(calendar.time, TimeUtils.SHORT_DATE)
+                FaceMode.BATTERY -> "${complicationState.batteryPercent}% Battery"
+                FaceMode.STEPS -> "$effectiveSteps Steps"
+                FaceMode.HEART_RATE -> "${complicationState.heartRateBpm} BPM"
+                FaceMode.CALORIES -> "${complicationState.caloriesBurned} kcal"
+                FaceMode.TIME -> ""
             }
             val textY = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
             canvas.drawText(text, centerX, textY, textPaint)

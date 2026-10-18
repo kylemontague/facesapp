@@ -114,15 +114,22 @@ class FacesWatchFaceService : WatchFaceService() {
             renderer = renderer
         )
 
-        // Interactive taps: Complications are automatically handled by the framework; background taps toggle Time/Date mode
+        // Read initial battery status
+        val batteryFilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+        val batteryIntent = applicationContext.registerReceiver(null, batteryFilter)
+        val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+        if (level >= 0 && scale > 0) {
+            val pct = (level * 100) / scale
+            renderer.complicationState = renderer.complicationState.copy(batteryPercent = pct)
+        }
+
+        // Interactive taps: Complications are automatically handled by the framework; background taps cycle through active complications
         watchFace.setTapListener(object : WatchFace.TapListener {
             override fun onTapEvent(tapType: Int, tapEvent: TapEvent, complicationSlot: ComplicationSlot?) {
                 if (tapType == TapType.UP && complicationSlot == null) {
-                    renderer.faceMode = when (renderer.faceMode) {
-                        FaceMode.TIME -> FaceMode.DATE
-                        FaceMode.DATE -> FaceMode.TIME
-                        FaceMode.STEPS -> FaceMode.TIME
-                    }
+                    val activeCycle = renderer.faceConfig.activeComplications
+                    renderer.faceMode = renderer.faceMode.next(activeCycle)
                     renderer.invalidate()
                 }
             }

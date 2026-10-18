@@ -68,6 +68,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _faceMode = MutableStateFlow(FaceMode.TIME)
     val faceMode: StateFlow<FaceMode> = _faceMode.asStateFlow()
 
+    private val _complicationState = MutableStateFlow(
+        watch.facesapp.core.model.ComplicationState(
+            batteryPercent = getBatteryPercentage(application),
+            stepCount = 7420L,
+            heartRateBpm = 72,
+            caloriesBurned = 420
+        )
+    )
+    val complicationState: StateFlow<watch.facesapp.core.model.ComplicationState> = _complicationState.asStateFlow()
+
     init {
         // 1 Hz live ticking clock
         viewModelScope.launch {
@@ -204,11 +214,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _isAmbient.value = !_isAmbient.value
     }
 
+    fun cycleFaceMode(activeComplications: List<FaceMode> = FaceMode.DEFAULT_CYCLE) {
+        _faceMode.value = _faceMode.value.next(activeComplications)
+    }
+
     fun toggleFaceMode() {
-        _faceMode.value = when (_faceMode.value) {
-            FaceMode.TIME -> FaceMode.DATE
-            FaceMode.DATE -> FaceMode.TIME
-            FaceMode.STEPS -> FaceMode.TIME
+        cycleFaceMode(FaceMode.DEFAULT_CYCLE)
+    }
+
+    private fun getBatteryPercentage(context: android.content.Context): Int {
+        return try {
+            val intent = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+            val level = intent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = intent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+            if (level >= 0 && scale > 0) (level * 100) / scale else 85
+        } catch (e: Exception) {
+            85
         }
     }
 

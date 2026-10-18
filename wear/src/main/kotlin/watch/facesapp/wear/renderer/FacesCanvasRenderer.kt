@@ -35,6 +35,7 @@ class FacesCanvasRenderer(
     private val reusableCalendar: java.util.Calendar = java.util.Calendar.getInstance()
     var faceConfig: FaceConfig = FaceConfig()
     var faceMode: FaceMode = FaceMode.TIME
+    var complicationState: watch.facesapp.core.model.ComplicationState = watch.facesapp.core.model.ComplicationState()
 
     override suspend fun createSharedAssets(): SharedAssets {
         return object : SharedAssets {
@@ -62,7 +63,8 @@ class FacesCanvasRenderer(
             calendar = reusableCalendar,
             isAmbient = isAmbient,
             shape = shape,
-            faceMode = faceMode
+            faceMode = faceMode,
+            complicationState = complicationState
         )
 
         // 2. Render live complication slots over watch face

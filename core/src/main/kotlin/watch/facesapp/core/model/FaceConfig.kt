@@ -40,6 +40,31 @@ data class FaceConfig(
         return colors.getOrElse(5) { defaultColorsForStyle(style).getOrElse(5) { 0xFFFFFFFF.toInt() } }
     }
 
+    /**
+     * Active complication tap cycle (defaults to [FaceMode.TIME, FaceMode.DATE]).
+     */
+    val activeComplications: List<FaceMode>
+        get() {
+            val raw = options["complications"]
+            if (raw.isNullOrBlank()) {
+                return FaceMode.DEFAULT_CYCLE
+            }
+            val parsed = raw.split(",").mapNotNull { FaceMode.fromId(it.trim()) }
+            if (parsed.isEmpty()) {
+                return FaceMode.DEFAULT_CYCLE
+            }
+            return if (FaceMode.TIME in parsed) {
+                listOf(FaceMode.TIME) + parsed.filter { it != FaceMode.TIME }
+            } else {
+                listOf(FaceMode.TIME) + parsed
+            }
+        }
+
+    fun withComplications(complications: List<FaceMode>): FaceConfig {
+        val serialized = complications.joinToString(",") { it.id }
+        return copy(options = options + ("complications" to serialized))
+    }
+
     companion object {
         fun defaultColorsForStyle(style: FaceStyle): List<Int> = style.template.defaultColors
     }

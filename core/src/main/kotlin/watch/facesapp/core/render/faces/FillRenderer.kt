@@ -39,7 +39,8 @@ class FillRenderer(private val context: Context) : TemplateRenderer {
         isAmbient: Boolean,
         shape: WatchShape,
         faceMode: FaceMode,
-        stepCount: Long
+        stepCount: Long,
+        complicationState: watch.facesapp.core.model.ComplicationState
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()
@@ -101,15 +102,20 @@ class FillRenderer(private val context: Context) : TemplateRenderer {
             textPaint.strokeWidth = (width * 0.005f).coerceAtLeast(2f)
         }
 
-        // Draw Time / Date / Steps text
+        // Draw Time / Date / Complications text
         textPaint.typeface = FontProvider.getProximaSemibold(context)
-        textPaint.textSize = width * 0.26f
 
+        val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
         val displayText = when (faceMode) {
             FaceMode.TIME -> TimeUtils.formatDigitalTime(calendar)
             FaceMode.DATE -> TimeUtils.formatDate(calendar.time, TimeUtils.UK_DATE)
-            FaceMode.STEPS -> "$stepCount"
+            FaceMode.BATTERY -> "${complicationState.batteryPercent}%"
+            FaceMode.STEPS -> "$effectiveSteps"
+            FaceMode.HEART_RATE -> "${complicationState.heartRateBpm} bpm"
+            FaceMode.CALORIES -> "${complicationState.caloriesBurned} kcal"
         }
+
+        textPaint.textSize = if (displayText.length > 5) width * 0.19f else width * 0.26f
 
         val textY = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
         canvas.drawText(displayText, centerX, textY, textPaint)
