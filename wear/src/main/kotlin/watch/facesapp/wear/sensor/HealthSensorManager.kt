@@ -29,12 +29,31 @@ class HealthSensorManager(
     private val savedDate = prefs.getString(KEY_SAVED_DATE, null)
 
     private var currentSteps: Long = if (savedDate == todayStr) prefs.getLong(KEY_TODAY_STEPS, 0L) else 0L
-    private var hasRealSteps: Boolean = savedDate == todayStr && prefs.contains(KEY_TODAY_STEPS)
+    private var hasRealSteps: Boolean = true
 
     private var currentHeartRate: Int = prefs.getInt(KEY_LAST_HEART_RATE, 0)
     private var hasRealHeartRate: Boolean = currentHeartRate > 0
 
     private var isListening = false
+
+    fun updateExternalSteps(steps: Long) {
+        currentSteps = steps
+        hasRealSteps = true
+        prefs.edit {
+            putString(KEY_SAVED_DATE, todayStr)
+                .putLong(KEY_TODAY_STEPS, steps)
+        }
+        notifyUpdate()
+    }
+
+    fun updateExternalHeartRate(bpm: Int) {
+        if (bpm > 0) {
+            currentHeartRate = bpm
+            hasRealHeartRate = true
+            prefs.edit { putInt(KEY_LAST_HEART_RATE, bpm) }
+            notifyUpdate()
+        }
+    }
 
     fun start() {
         if (isListening || sensorManager == null) return
@@ -158,9 +177,9 @@ class HealthSensorManager(
     }
 
     private fun notifyUpdate() {
-        val calories = if (hasRealSteps) (currentSteps * 0.04f).toInt() else null
-        val distance = if (hasRealSteps) currentSteps * 0.000762f else null
-        val activeMins = if (hasRealSteps) (currentSteps / 100).toInt().coerceAtLeast(0) else null
+        val calories = (currentSteps * 0.04f).toInt()
+        val distance = currentSteps * 0.000762f
+        val activeMins = (currentSteps / 100).toInt().coerceAtLeast(0)
 
         // Sunrise / Sunset calculation (based on current hour and day of year)
         val now = java.time.LocalTime.now()
@@ -174,7 +193,7 @@ class HealthSensorManager(
         }
 
         val newState = ComplicationState(
-            stepCount = if (hasRealSteps) currentSteps else null,
+            stepCount = currentSteps,
             heartRateBpm = if (hasRealHeartRate) currentHeartRate else null,
             caloriesBurned = calories,
             distanceKm = distance,

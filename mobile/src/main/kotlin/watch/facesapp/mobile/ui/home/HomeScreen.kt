@@ -22,6 +22,16 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import watch.facesapp.mobile.ui.theme.BorderWhite
 import watch.facesapp.mobile.ui.theme.FrostedWhite
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import watch.facesapp.mobile.data.sync.WearConnectionStatus
+import watch.facesapp.mobile.ui.components.WearStatusOverlay
+import watch.facesapp.mobile.ui.theme.QuicksandFontFamily
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -79,6 +89,9 @@ fun HomeScreen(
     val faceMode by viewModel.faceMode.collectAsState()
     val activeComplications by viewModel.activeComplications.collectAsState()
     val complicationState by viewModel.complicationState.collectAsState()
+    val wearStatus by viewModel.wearStatus.collectAsState()
+    val isCheckingWearStatus by viewModel.isCheckingWearStatus.collectAsState()
+    val showWearStatusOverlay by viewModel.showWearStatusOverlay.collectAsState()
 
     var showComplicationsSheet by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
@@ -112,11 +125,16 @@ fun HomeScreen(
     }
 
     // Mirror the currently centered watch face in the pager to the Wear OS device in real-time
-    LifecycleResumeEffect(pagerState.currentPage, items.isNotEmpty()) {
+    LaunchedEffect(pagerState.currentPage, items.isNotEmpty()) {
         val currentItem = items.getOrNull(pagerState.currentPage)
         if (currentItem != null) {
             viewModel.previewPagerFace(currentItem.config)
         }
+    }
+
+    // Verify Wear OS connection/active status only on app start or return to foreground
+    LifecycleResumeEffect(Unit) {
+        viewModel.checkWearStatus(showOverlayIfInactive = true)
         onPauseOrDispose {
         }
     }
@@ -243,6 +261,13 @@ fun HomeScreen(
                     tint = PureWhite
                 )
             }
+
+            // Wearable connection & active status chip
+            Spacer(modifier = Modifier.width(4.dp))
+            WearStatusChip(
+                status = wearStatus,
+                onClick = { viewModel.openWearStatusOverlay() }
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -440,6 +465,57 @@ fun HomeScreen(
                 onDismiss = { deleteTarget = null }
             )
         }
+
+        // 8. Wearable Connection & Active Watch Face Status Modal Overlay
+        AnimatedVisibility(
+            visible = showWearStatusOverlay,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            WearStatusOverlay(
+                status = wearStatus,
+                isChecking = isCheckingWearStatus,
+                onDismiss = { viewModel.dismissWearStatusOverlay() },
+                onCheckAgain = { viewModel.checkWearStatus(showOverlayIfInactive = true) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun WearStatusChip(
+    status: WearConnectionStatus,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isActive = status is WearConnectionStatus.ConnectedAndActive
+    val dotColor = if (isActive) Color(0xFF81C784) else Color(0xFFFFB74D)
+    val label = if (isActive) "Active" else "Inactive"
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+            .background(Color(0x33000000))
+            .border(BorderStroke(0.5.dp, Color(0x33FFFFFF)), shape = RoundedCornerShape(50))
+            .clickable { onClick() }
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(7.dp)
+                .clip(CircleShape)
+                .background(dotColor)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = label,
+            fontFamily = QuicksandFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = PureWhite,
+            letterSpacing = 0.5.sp
+        )
     }
 }
 

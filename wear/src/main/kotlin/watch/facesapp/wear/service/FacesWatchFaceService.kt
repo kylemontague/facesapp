@@ -1,8 +1,21 @@
 package watch.facesapp.wear.service
 
+import android.graphics.RectF
 import android.view.SurfaceHolder
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import androidx.wear.watchface.CanvasComplicationFactory
 import androidx.wear.watchface.ComplicationSlot
 import androidx.wear.watchface.ComplicationSlotsManager
+import androidx.wear.watchface.complications.ComplicationSlotBounds
+import androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy
+import androidx.wear.watchface.complications.SystemDataSources
+import androidx.wear.watchface.complications.data.ComplicationType
+import androidx.wear.watchface.complications.rendering.CanvasComplicationDrawable
+import androidx.wear.watchface.complications.rendering.ComplicationDrawable
 import androidx.wear.watchface.TapEvent
 import androidx.wear.watchface.TapType
 import androidx.wear.watchface.WatchFace
@@ -19,13 +32,53 @@ import watch.facesapp.wear.sensor.HealthSensorManager
 
 class FacesWatchFaceService : WatchFaceService() {
 
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var healthSensorManager: HealthSensorManager? = null
+    private var batteryReceiver: android.content.BroadcastReceiver? = null
 
     override fun createComplicationSlotsManager(
         currentUserStyleRepository: CurrentUserStyleRepository
     ): ComplicationSlotsManager {
+        val stepSlot = ComplicationSlot.createRoundRectComplicationSlotBuilder(
+            id = STEP_SLOT_ID,
+            canvasComplicationFactory = CanvasComplicationFactory { watchState, invalidateCallback ->
+                CanvasComplicationDrawable(
+                    ComplicationDrawable(this@FacesWatchFaceService),
+                    watchState,
+                    invalidateCallback
+                )
+            },
+            supportedTypes = listOf(
+                ComplicationType.SHORT_TEXT,
+                ComplicationType.RANGED_VALUE,
+                ComplicationType.GOAL_PROGRESS
+            ),
+            defaultDataSourcePolicy = DefaultComplicationDataSourcePolicy(
+                SystemDataSources.DATA_SOURCE_STEP_COUNT,
+                ComplicationType.SHORT_TEXT
+            ),
+            bounds = ComplicationSlotBounds(RectF(0f, 0f, 0.1f, 0.1f))
+        ).build()
+
+        val heartRateSlot = ComplicationSlot.createRoundRectComplicationSlotBuilder(
+            id = HEART_RATE_SLOT_ID,
+            canvasComplicationFactory = CanvasComplicationFactory { watchState, invalidateCallback ->
+                CanvasComplicationDrawable(
+                    ComplicationDrawable(this@FacesWatchFaceService),
+                    watchState,
+                    invalidateCallback
+                )
+            },
+            supportedTypes = listOf(
+                ComplicationType.SHORT_TEXT,
+                ComplicationType.RANGED_VALUE
+            ),
+            defaultDataSourcePolicy = DefaultComplicationDataSourcePolicy(),
+            bounds = ComplicationSlotBounds(RectF(0f, 0f, 0.1f, 0.1f))
+        ).build()
+
         return ComplicationSlotsManager(
-            emptyList(),
+            listOf(stepSlot, heartRateSlot),
             currentUserStyleRepository
         )
     }
@@ -49,6 +102,7 @@ class FacesWatchFaceService : WatchFaceService() {
         renderer.faceConfig = initialConfig
 
         activeRenderer = renderer
+        syncStatusToDataClient(applicationContext, true)
 
         val watchFace = WatchFace(
             watchFaceType = WatchFaceType.DIGITAL,
@@ -120,6 +174,71 @@ class FacesWatchFaceService : WatchFaceService() {
             }
         }
 
+        // Load Cached Calendar Event if previously received from companion phone
+        val calPrefs = applicationContext.getSharedPreferences("faces_calendar_prefs", android.content.Context.MODE_PRIVATE)
+        if (calPrefs.contains("title") && calPrefs.contains("minutes")) {
+            val savedTitle = calPrefs.getString("title", null)
+            val savedMins = calPrefs.getInt("minutes", 0)
+            if (!savedTitle.isNullOrBlank()) {
+                renderer.complicationState = renderer.complicationState.copy(
+                    nextEventTitle = savedTitle,
+                    nextEventMinutes = savedMins
+                )
+            }
+        }
+
+        // Register dynamic battery updates
+        val bReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: android.content.Context?, intent: android.content.Intent?) {
+                updateBattery()
+                if (renderer.faceMode == FaceMode.BATTERY) {
+                    renderer.invalidate()
+                }
+            }
+        }
+        batteryReceiver = bReceiver
+        applicationContext.registerReceiver(bReceiver, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+
+        // Listen to Wear OS system complication data sources (Steps & Heart Rate)
+        serviceScope.launch {
+            complicationSlotsManager[STEP_SLOT_ID]?.complicationData?.collect { data ->
+                val steps = parseStepCount(data)
+                if (steps != null) {
+                    healthSensorManager?.updateExternalSteps(steps)
+                    val calories = (steps * 0.04f).toInt()
+                    val distance = steps * 0.000762f
+                    val activeMins = (steps / 100).toInt()
+                    renderer.complicationState = renderer.complicationState.copy(
+                        stepCount = steps,
+                        caloriesBurned = calories,
+                        distanceKm = distance,
+                        activeMinutes = activeMins
+                    )
+                    if (renderer.faceMode in listOf(FaceMode.STEPS, FaceMode.CALORIES, FaceMode.DISTANCE, FaceMode.ACTIVE_MINUTES)) {
+                        renderer.invalidate()
+                    }
+                }
+            }
+        }
+
+        serviceScope.launch {
+            complicationSlotsManager[HEART_RATE_SLOT_ID]?.complicationData?.collect { data ->
+                val bpm = parseHeartRate(data)
+                if (bpm != null && bpm > 0) {
+                    healthSensorManager?.updateExternalHeartRate(bpm)
+                    renderer.complicationState = renderer.complicationState.copy(
+                        heartRateBpm = bpm
+                    )
+                    if (renderer.faceMode == FaceMode.HEART_RATE) {
+                        renderer.invalidate()
+                    }
+                }
+            }
+        }
+
+        // Check runtime sensor permissions
+        watch.facesapp.wear.permission.WearPermissionActivity.checkAndRequest(applicationContext)
+
         // Interactive taps: cycle through active complications in our custom rendered face
         watchFace.setTapListener(object : WatchFace.TapListener {
             override fun onTapEvent(tapType: Int, tapEvent: TapEvent, complicationSlot: ComplicationSlot?) {
@@ -158,6 +277,14 @@ class FacesWatchFaceService : WatchFaceService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        serviceScope.cancel()
+        batteryReceiver?.let {
+            try {
+                applicationContext.unregisterReceiver(it)
+            } catch (_: Exception) {}
+        }
+        batteryReceiver = null
+        syncStatusToDataClient(applicationContext, false)
         complicationRevertRunnable?.let { tapHandler.removeCallbacks(it) }
         complicationRevertRunnable = null
         healthSensorManager?.stop()
@@ -166,13 +293,54 @@ class FacesWatchFaceService : WatchFaceService() {
         activeRenderer = null
     }
 
+    private fun parseStepCount(data: androidx.wear.watchface.complications.data.ComplicationData): Long? {
+        return when (data) {
+            is androidx.wear.watchface.complications.data.ShortTextComplicationData -> {
+                val text = data.text.getTextAt(applicationContext.resources, java.time.Instant.now()).toString()
+                text.filter { it.isDigit() }.toLongOrNull()
+            }
+            is androidx.wear.watchface.complications.data.RangedValueComplicationData -> data.value.toLong()
+            is androidx.wear.watchface.complications.data.GoalProgressComplicationData -> data.value.toLong()
+            else -> null
+        }
+    }
+
+    private fun parseHeartRate(data: androidx.wear.watchface.complications.data.ComplicationData): Int? {
+        return when (data) {
+            is androidx.wear.watchface.complications.data.ShortTextComplicationData -> {
+                val text = data.text.getTextAt(applicationContext.resources, java.time.Instant.now()).toString()
+                text.filter { it.isDigit() }.toIntOrNull()
+            }
+            is androidx.wear.watchface.complications.data.RangedValueComplicationData -> data.value.toInt()
+            else -> null
+        }
+    }
+
     companion object {
+        const val STEP_SLOT_ID = 101
+        const val HEART_RATE_SLOT_ID = 102
         var activeRenderer: FacesCanvasRenderer? = null
         var activeHealthManager: HealthSensorManager? = null
         var isPreviewActive: Boolean = false
+        val isFaceActive: Boolean
+            get() = activeRenderer != null
+
         private var previewWakeLock: android.os.PowerManager.WakeLock? = null
         private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         private var autoRevertRunnable: Runnable? = null
+
+        fun syncStatusToDataClient(context: android.content.Context, isActive: Boolean) {
+            try {
+                val putDataMapReq = com.google.android.gms.wearable.PutDataMapRequest.create(WearMessageListener.PATH_WATCH_STATUS).apply {
+                    dataMap.putBoolean(WearMessageListener.KEY_IS_ACTIVE, isActive)
+                    dataMap.putLong(WearMessageListener.KEY_TIMESTAMP, System.currentTimeMillis())
+                }
+                val req = putDataMapReq.asPutDataRequest().setUrgent()
+                com.google.android.gms.wearable.Wearable.getDataClient(context).putDataItem(req)
+            } catch (e: Exception) {
+                android.util.Log.e("FacesWatchFaceService", "Failed to sync status to DataClient", e)
+            }
+        }
 
         fun onPermissionsGranted(context: android.content.Context) {
             activeHealthManager?.restart()

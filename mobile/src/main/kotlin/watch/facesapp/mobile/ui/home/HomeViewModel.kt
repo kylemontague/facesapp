@@ -85,16 +85,35 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     )
     val complicationState: StateFlow<watch.facesapp.core.model.ComplicationState> = _complicationState.asStateFlow()
 
-    init {
-        // 1 Hz live ticking clock
+    private val _wearStatus = MutableStateFlow<watch.facesapp.mobile.data.sync.WearConnectionStatus>(
+        watch.facesapp.mobile.data.sync.WearConnectionStatus.NotConnected()
+    )
+    val wearStatus: StateFlow<watch.facesapp.mobile.data.sync.WearConnectionStatus> = _wearStatus.asStateFlow()
+
+    private val _isCheckingWearStatus = MutableStateFlow(false)
+    val isCheckingWearStatus: StateFlow<Boolean> = _isCheckingWearStatus.asStateFlow()
+
+    private val _showWearStatusOverlay = MutableStateFlow(false)
+    val showWearStatusOverlay: StateFlow<Boolean> = _showWearStatusOverlay.asStateFlow()
+
+    private var hasDismissedOverlayThisSession = false
+
+    fun checkWearStatus(showOverlayIfInactive: Boolean = true) {
         viewModelScope.launch {
-            while (isActive) {
-                _calendar.value = Calendar.getInstance()
-                delay((if (_isAmbient.value) 10_000L else 1000L).milliseconds)
+            _isCheckingWearStatus.value = true
+            val status = syncManager.checkWearStatus()
+            _wearStatus.value = status
+            _isCheckingWearStatus.value = false
+            if (status is watch.facesapp.mobile.data.sync.WearConnectionStatus.ConnectedAndActive) {
+                _showWearStatusOverlay.value = false
+                refreshLiveComplications()
+            } else if (showOverlayIfInactive && !hasDismissedOverlayThisSession) {
+                _showWearStatusOverlay.value = true
             }
         }
+    }
 
-        // Live Weather & Calendar fetch and Wear OS synchronization
+    fun refreshLiveComplications() {
         viewModelScope.launch {
             try {
                 val weather = weatherManager.fetchCurrentWeather()
@@ -116,6 +135,29 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             } catch (_: Exception) {
             }
         }
+    }
+
+    fun dismissWearStatusOverlay() {
+        hasDismissedOverlayThisSession = true
+        _showWearStatusOverlay.value = false
+    }
+
+    fun openWearStatusOverlay() {
+        _showWearStatusOverlay.value = true
+        checkWearStatus(showOverlayIfInactive = true)
+    }
+
+    init {
+        // 1 Hz live ticking clock
+        viewModelScope.launch {
+            while (isActive) {
+                _calendar.value = Calendar.getInstance()
+                delay((if (_isAmbient.value) 10_000L else 1000L).milliseconds)
+            }
+        }
+
+        // Live Weather & Calendar fetch and Wear OS synchronization
+        refreshLiveComplications()
 
         // Database auto-seed safeguard (in case database was empty or after destructive migration)
         viewModelScope.launch(Dispatchers.IO) {

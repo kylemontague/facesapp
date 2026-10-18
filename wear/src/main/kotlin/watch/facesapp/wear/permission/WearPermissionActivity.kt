@@ -70,7 +70,21 @@ class WearPermissionActivity : Activity() {
                 val intent = Intent(context, WearPermissionActivity::class.java).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 }
-                context.startActivity(intent)
+                try {
+                    val pendingIntent = android.app.PendingIntent.getActivity(
+                        context,
+                        0,
+                        intent,
+                        android.app.PendingIntent.FLAG_IMMUTABLE or android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                    pendingIntent.send()
+                } catch (e: Exception) {
+                    try {
+                        context.startActivity(intent)
+                    } catch (e2: Exception) {
+                        android.util.Log.w("WearPermissionActivity", "Unable to start permission activity", e2)
+                    }
+                }
             }
         }
     }

@@ -103,8 +103,17 @@ class WearMessageListener : WearableListenerService() {
                 if (parts.size >= 2) {
                     val title = parts[0]
                     val minutes = parts[1].toIntOrNull() ?: 0
+                    getSharedPreferences("faces_calendar_prefs", MODE_PRIVATE).edit {
+                        putString("title", title).putInt("minutes", minutes)
+                    }
                     FacesWatchFaceService.updateCalendarEvent(title, minutes)
                 }
+            }
+            PATH_STATUS_REQUEST -> {
+                val isFaceActive = FacesWatchFaceService.isFaceActive
+                val reply = byteArrayOf(if (isFaceActive) 1 else 0)
+                com.google.android.gms.wearable.Wearable.getMessageClient(this@WearMessageListener)
+                    .sendMessage(messageEvent.sourceNodeId, PATH_STATUS_RESPONSE, reply)
             }
         }
     }
@@ -127,10 +136,15 @@ class WearMessageListener : WearableListenerService() {
         const val PATH_PREVIEW_PING = "/faces/preview/ping"
         const val PATH_WEATHER = "/faces/weather"
         const val PATH_CALENDAR = "/faces/calendar"
+        const val PATH_STATUS_REQUEST = "/faces/status/request"
+        const val PATH_STATUS_RESPONSE = "/faces/status/response"
+        const val PATH_WATCH_STATUS = "/faces/status"
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"
         const val KEY_COLORS = "colors"
         const val KEY_OPTIONS = "options"
+        const val KEY_IS_ACTIVE = "isActive"
+        const val KEY_TIMESTAMP = "timestamp"
         const val PREFS_NAME = "wear_face_prefs"
 
         fun parseOptions(raw: String): Map<String, String> {

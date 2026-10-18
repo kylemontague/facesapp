@@ -140,6 +140,75 @@ class WearSyncManager(context: Context) {
         }
     }
 
+    /**
+     * Checks if a Wear OS device is connected and whether the Faces watch face is active.
+     */
+    suspend fun checkWearStatus(): WearConnectionStatus = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val nodes = nodeClient.connectedNodes.await()
+            if (nodes.isEmpty()) {
+                Log.d(TAG, "checkWearStatus: No connected nodes found")
+                return@withContext WearConnectionStatus.NotConnected()
+            }
+
+            val primaryNode = nodes.first()
+            val deviceName = primaryNode.displayName.ifBlank { "Wear OS Watch" }
+
+            val responseDeferred = kotlinx.coroutines.CompletableDeferred<Boolean>()
+            val listener = com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener { event ->
+                if (event.path == PATH_STATUS_RESPONSE) {
+                    val isActive = event.data.isNotEmpty() && event.data[0] == 1.toByte()
+                    responseDeferred.complete(isActive)
+                }
+            }
+
+            messageClient.addListener(listener)
+            try {
+                messageClient.sendMessage(primaryNode.id, PATH_STATUS_REQUEST, ByteArray(0)).await()
+                val isActive = kotlinx.coroutines.withTimeoutOrNull(1500L) {
+                    responseDeferred.await()
+                }
+
+                if (isActive == true) {
+                    Log.d(TAG, "checkWearStatus: Node $deviceName is connected and Faces is active")
+                    WearConnectionStatus.ConnectedAndActive
+                } else if (isActive == false) {
+                    Log.d(TAG, "checkWearStatus: Node $deviceName is connected but Faces is inactive")
+                    WearConnectionStatus.FaceNotActive(deviceName)
+                } else {
+                    val dataActive = checkDataClientStatus()
+                    Log.d(TAG, "checkWearStatus: Ping timed out, DataClient fallback=$dataActive")
+                    if (dataActive == true) {
+                        WearConnectionStatus.ConnectedAndActive
+                    } else {
+                        WearConnectionStatus.FaceNotActive(deviceName)
+                    }
+                }
+            } finally {
+                messageClient.removeListener(listener)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "checkWearStatus: Error checking status", e)
+            WearConnectionStatus.NotConnected(e.message ?: "Connection check failed")
+        }
+    }
+
+    private suspend fun checkDataClientStatus(): Boolean? {
+        return try {
+            val uri = android.net.Uri.Builder().scheme(com.google.android.gms.wearable.PutDataRequest.WEAR_URI_SCHEME).path(PATH_WATCH_STATUS).build()
+            val dataItem = dataClient.getDataItem(uri).await() ?: return null
+            val dataMap = com.google.android.gms.wearable.DataMapItem.fromDataItem(dataItem).dataMap
+            val timestamp = dataMap.getLong(KEY_TIMESTAMP)
+            if (System.currentTimeMillis() - timestamp < 24 * 60 * 60 * 1000L) {
+                dataMap.getBoolean(KEY_IS_ACTIVE, false)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     private fun buildPreviewPayload(config: FaceConfig): String {
         val colorsStr = config.colors.joinToString(",")
         val optionsStr = config.options.entries.joinToString(";") { "${it.key}=${it.value}" }
@@ -155,11 +224,22 @@ class WearSyncManager(context: Context) {
         const val PATH_PREVIEW_PING = "/faces/preview/ping"
         const val PATH_WEATHER = "/faces/weather"
         const val PATH_CALENDAR = "/faces/calendar"
+        const val PATH_STATUS_REQUEST = "/faces/status/request"
+        const val PATH_STATUS_RESPONSE = "/faces/status/response"
+        const val PATH_WATCH_STATUS = "/faces/status"
 
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"
         const val KEY_COLORS = "colors"
         const val KEY_OPTIONS = "options"
         const val KEY_TIMESTAMP = "timestamp"
+        const val KEY_IS_ACTIVE = "isActive"
     }
+}
+
+sealed class WearConnectionStatus {
+    object Checking : WearConnectionStatus()
+    object ConnectedAndActive : WearConnectionStatus()
+    data class NotConnected(val message: String = "No Wear OS device connected") : WearConnectionStatus()
+    data class FaceNotActive(val deviceName: String = "Wear OS Watch") : WearConnectionStatus()
 }
