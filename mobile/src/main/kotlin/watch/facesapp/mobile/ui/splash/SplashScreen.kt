@@ -32,6 +32,7 @@ import watch.facesapp.mobile.ui.theme.LuxuryBlack
 import watch.facesapp.mobile.ui.theme.QuicksandFontFamily
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Modern Compose reproduction of the artisanal 2017 Faces splash screen.
@@ -57,14 +58,14 @@ fun SplashScreen(
     // Morphing watch face loader animation: 300ms per frame
     LaunchedEffect(Unit) {
         while (isActive) {
-            delay(300L)
+            delay(300L.milliseconds)
             currentFrameIndex = (currentFrameIndex + 1) % frames.size
         }
     }
 
     // Auto-transition to home after 1.8s (allowing 1.5 full animation cycles)
     LaunchedEffect(Unit) {
-        delay(1800L)
+        delay(1800L.milliseconds)
         onSplashComplete()
     }
 

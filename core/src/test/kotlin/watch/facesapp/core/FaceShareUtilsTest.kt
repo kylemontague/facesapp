@@ -64,4 +64,32 @@ class FaceShareUtilsTest {
         assertEquals(FaceStyle.PRISM_TIME, parsed!!.style)
         assertTrue(parsed.colors.isNotEmpty())
     }
+
+    @Test
+    fun testParseSixDigitHexColors() {
+        val url = "https://www.facesapp.watch/share?style=OUA_TIME&colors=FF0000,00FF00"
+        val parsed = FaceShareUtils.parseShareUri(url)
+        assertNotNull(parsed)
+        assertEquals(2, parsed!!.colors.size)
+        assertEquals(0xFFFF0000.toInt(), parsed.colors[0])
+        assertEquals(0xFF00FF00.toInt(), parsed.colors[1])
+    }
+
+    @Test
+    fun testClampMaxColorsToSixteen() {
+        val twentyHexes = (0 until 20).joinToString(",") { "%06X".format(it * 1000) }
+        val url = "https://www.facesapp.watch/share?style=OUA_TIME&colors=$twentyHexes"
+        val parsed = FaceShareUtils.parseShareUri(url)
+        assertNotNull(parsed)
+        assertEquals(16, parsed!!.colors.size)
+    }
+
+    @Test
+    fun testTruncateLongName() {
+        val longName = "A".repeat(100)
+        val url = "https://www.facesapp.watch/share?style=OUA_TIME&name=$longName"
+        val parsed = FaceShareUtils.parseShareUri(url)
+        assertNotNull(parsed)
+        assertEquals(50, parsed!!.name.length)
+    }
 }

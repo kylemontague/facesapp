@@ -6,6 +6,7 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import androidx.core.graphics.createBitmap
 
 object QrCodeGenerator {
 
@@ -35,7 +36,7 @@ object QrCodeGenerator {
                 }
             }
 
-            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val bitmap = createBitmap(width, height)
             bitmap.setPixels(pixels, 0, width, 0, 0, width, height)
             bitmap
         } catch (_: Exception) {

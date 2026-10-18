@@ -15,7 +15,11 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index(value = ["faceId"])]
+    indices = [
+        Index(value = ["faceId"]),
+        Index(value = ["wornAt"]),
+        Index(value = ["faceId", "wornAt"])
+    ]
 )
 data class FaceWearLogEntity(
     @PrimaryKey(autoGenerate = true)

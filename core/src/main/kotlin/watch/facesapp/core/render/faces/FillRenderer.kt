@@ -28,6 +28,7 @@ class FillRenderer(private val context: Context) {
     }
 
     private val clipPath = Path()
+    private val rectF = RectF()
 
     fun render(
         canvas: Canvas,
@@ -43,7 +44,7 @@ class FillRenderer(private val context: Context) {
         val centerY = bounds.exactCenterY()
         val width = bounds.width().toFloat()
         val height = bounds.height().toFloat()
-        val rectF = RectF(bounds)
+        rectF.set(bounds)
 
         val bgColor = config.getBackgroundColor(isAmbient)
         val accentColor = config.getAccentColor(isAmbient)

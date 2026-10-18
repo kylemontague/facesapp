@@ -4,8 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import androidx.core.graphics.ColorUtils
 import java.util.Random
+import androidx.core.graphics.createBitmap
 
 object Trianglify {
 
@@ -113,7 +113,7 @@ object Trianglify {
     ): Bitmap {
         val w = width.coerceAtLeast(1)
         val h = height.coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(w, h)
         val canvas = Canvas(bitmap)
 
         val points = generatePoints(w.toFloat(), h.toFloat(), seed = seed)

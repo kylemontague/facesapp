@@ -1,10 +1,6 @@
 package watch.facesapp.mobile.ui.customise
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,14 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -28,13 +21,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.mobile.sensor.ShakeDetector
 import watch.facesapp.mobile.ui.components.BottomVignette
 import watch.facesapp.mobile.ui.components.FacesPillButton
@@ -43,12 +33,8 @@ import watch.facesapp.mobile.ui.components.SwatchMarker
 import watch.facesapp.mobile.ui.components.TopInfoPill
 import watch.facesapp.mobile.ui.components.TopVignette
 import watch.facesapp.mobile.ui.components.WatchFacePreview
-import watch.facesapp.mobile.ui.theme.BorderWhite
-import watch.facesapp.mobile.ui.theme.FrostedPill
-import watch.facesapp.mobile.ui.theme.FrostedWhite
 import watch.facesapp.mobile.ui.theme.LuxuryBlack
 import watch.facesapp.mobile.ui.theme.PureWhite
-import watch.facesapp.mobile.ui.theme.QuicksandFontFamily
 import java.util.Calendar
 
 @Composable
@@ -132,10 +118,10 @@ fun CustomiseScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 2. Live Watchface Preview
+            val previewCalendar = remember { Calendar.getInstance() }
             WatchFacePreview(
                 config = config,
-                calendar = Calendar.getInstance(),
+                calendar = previewCalendar,
                 isAmbient = false,
                 bezelSize = 180.dp,
                 modifier = Modifier

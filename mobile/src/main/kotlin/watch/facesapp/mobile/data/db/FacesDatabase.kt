@@ -10,7 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [FaceEntity::class, FaceWearLogEntity::class], version = 3, exportSchema = false)
+@Database(entities = [FaceEntity::class, FaceWearLogEntity::class], version = 4, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class FacesDatabase : RoomDatabase() {
 
@@ -36,7 +36,7 @@ abstract class FacesDatabase : RoomDatabase() {
             }
         }
 
-        private class DatabaseCallback(private val context: Context) : RoomDatabase.Callback() {
+        private class DatabaseCallback(private val context: Context) : Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
                 seedDatabase(context)

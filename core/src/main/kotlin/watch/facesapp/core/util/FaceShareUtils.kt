@@ -84,25 +84,30 @@ object FaceShareUtils {
 
             val colorsParam = queryParams["colors"]
             val colors = if (!colorsParam.isNullOrBlank()) {
-                colorsParam.split(",").mapNotNull { hexStr ->
-                    try {
-                        hexStr.trim().toLong(16).toInt()
-                    } catch (_: Exception) {
-                        null
+                colorsParam.split(",")
+                    .take(16)
+                    .mapNotNull { hexStr ->
+                        val trimmed = hexStr.trim()
+                        try {
+                            when (trimmed.length) {
+                                6 -> ("FF$trimmed").toLong(16).toInt()
+                                8 -> trimmed.toLong(16).toInt()
+                                else -> null
+                            }
+                        } catch (_: Exception) {
+                            null
+                        }
                     }
-                }
             } else {
                 emptyList()
             }
 
-            val effectiveColors = if (colors.isNotEmpty()) {
-                colors
-            } else {
+            val effectiveColors = colors.ifEmpty {
                 FaceConfig.defaultColorsForStyle(style)
             }
 
             val nameParam = queryParams["name"]
-            val name = nameParam?.ifBlank { style.displayName } ?: style.displayName
+            val name = nameParam?.trim()?.take(50)?.ifBlank { style.displayName } ?: style.displayName
 
             SharedFaceData(
                 style = style,

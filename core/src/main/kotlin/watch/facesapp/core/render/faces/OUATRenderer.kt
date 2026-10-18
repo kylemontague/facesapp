@@ -32,6 +32,8 @@ class OUATRenderer(private val context: Context) {
         strokeCap = Paint.Cap.ROUND
     }
 
+    private val arcRect = RectF()
+
     fun render(
         canvas: Canvas,
         bounds: Rect,
@@ -80,7 +82,7 @@ class OUATRenderer(private val context: Context) {
             val radius = (width / 2f) * 0.9f
             val seconds = calendar.get(Calendar.SECOND)
             val angle = seconds * 6f
-            val arcRect = RectF(
+            arcRect.set(
                 centerX - radius,
                 centerY - radius,
                 centerX + radius,

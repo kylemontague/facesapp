@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import watch.facesapp.mobile.data.db.FaceWearLogEntity
-import watch.facesapp.mobile.ui.theme.BorderWhite
 import watch.facesapp.mobile.ui.theme.FrostedWhite
 import watch.facesapp.mobile.ui.theme.LuxuryBlack
 import watch.facesapp.mobile.ui.theme.ProximaNovaFontFamily

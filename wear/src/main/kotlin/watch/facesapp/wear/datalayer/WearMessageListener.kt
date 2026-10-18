@@ -9,6 +9,7 @@ import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
+import androidx.core.content.edit
 
 class WearMessageListener : WearableListenerService() {
 
@@ -57,12 +58,12 @@ class WearMessageListener : WearableListenerService() {
     }
 
     private fun saveConfigLocally(config: FaceConfig) {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.edit()
-            .putString(KEY_STYLE, config.style.id)
-            .putString(KEY_COLORS, config.colors.joinToString(","))
-            .putString(KEY_ID, config.id)
-            .apply()
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        prefs.edit {
+            putString(KEY_STYLE, config.style.id)
+                .putString(KEY_COLORS, config.colors.joinToString(","))
+                .putString(KEY_ID, config.id)
+        }
     }
 
     companion object {
@@ -74,7 +75,7 @@ class WearMessageListener : WearableListenerService() {
         const val PREFS_NAME = "wear_face_prefs"
 
         fun loadSavedConfig(context: Context): FaceConfig {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
             val styleId = prefs.getString(KEY_STYLE, FaceStyle.OUA_TIME.id) ?: FaceStyle.OUA_TIME.id
             val colorsStr = prefs.getString(KEY_COLORS, "") ?: ""
             val id = prefs.getString(KEY_ID, "") ?: ""

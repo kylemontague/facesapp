@@ -56,11 +56,13 @@ fun WatchFacePreview(
             contentScale = ContentScale.Fit
         )
 
+        val bounds = remember { Rect() }
+
         // Live Watch Canvas
         Canvas(modifier = Modifier.size(bezelSize)) {
             drawIntoCanvas { androidCanvas ->
                 val nativeCanvas = androidCanvas.nativeCanvas
-                val bounds = Rect(0, 0, size.width.toInt(), size.height.toInt())
+                bounds.set(0, 0, size.width.toInt(), size.height.toInt())
                 renderer.render(
                     canvas = nativeCanvas,
                     bounds = bounds,

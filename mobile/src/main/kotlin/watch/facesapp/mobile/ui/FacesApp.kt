@@ -2,11 +2,9 @@ package watch.facesapp.mobile.ui
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import watch.facesapp.mobile.ui.camera.CameraScreen
 import watch.facesapp.mobile.ui.customise.CustomiseScreen
 import watch.facesapp.mobile.ui.customise.CustomiseViewModel

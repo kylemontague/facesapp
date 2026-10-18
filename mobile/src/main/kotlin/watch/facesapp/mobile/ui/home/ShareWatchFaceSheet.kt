@@ -59,6 +59,7 @@ import watch.facesapp.mobile.ui.theme.QuicksandFontFamily
 import watch.facesapp.mobile.ui.theme.SubtitleGray
 import watch.facesapp.mobile.util.QrCodeGenerator
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,7 +88,7 @@ fun ShareWatchFaceSheet(
 
     LaunchedEffect(isCopied) {
         if (isCopied) {
-            delay(2500L)
+            delay(2500L.milliseconds)
             isCopied = false
         }
     }

@@ -1,6 +1,5 @@
 package watch.facesapp.core.util
 
-import android.graphics.Color
 import androidx.core.graphics.ColorUtils
 
 object ColorContrast {

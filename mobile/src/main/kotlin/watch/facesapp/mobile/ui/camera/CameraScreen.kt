@@ -1,7 +1,6 @@
 package watch.facesapp.mobile.ui.camera
 
 import android.Manifest
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -47,7 +46,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -122,7 +120,7 @@ fun CameraScreen(
             try {
                 val cameraProvider = cameraProviderFuture.get()
                 val preview = Preview.Builder().build().also {
-                    it.setSurfaceProvider(previewView.surfaceProvider)
+                    it.surfaceProvider = previewView.surfaceProvider
                 }
 
                 val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
@@ -193,7 +191,7 @@ fun CameraScreen(
                                 override fun onCaptureSuccess(image: ImageProxy) {
                                     val bitmap = try {
                                         image.toBitmap()
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         imageProxyToBitmapFallback(image)
                                     }
                                     image.close()

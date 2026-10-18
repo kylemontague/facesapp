@@ -35,8 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import watch.facesapp.mobile.data.db.FaceEntity
-import watch.facesapp.mobile.data.db.FaceWearLogEntity
 import watch.facesapp.mobile.ui.components.BottomVignette
 import watch.facesapp.mobile.ui.components.FacesPillButton
 import watch.facesapp.mobile.ui.components.TopInfoPill
@@ -44,9 +46,7 @@ import watch.facesapp.mobile.ui.components.TopVignette
 import watch.facesapp.mobile.ui.components.WatchFacePreview
 import watch.facesapp.mobile.ui.theme.LuxuryBlack
 import watch.facesapp.mobile.ui.theme.PureWhite
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -106,7 +106,7 @@ fun HomeScreen(
 
     LaunchedEffect(importBannerMessage) {
         if (importBannerMessage != null) {
-            delay(4000L)
+            delay(4000L.milliseconds)
             importBannerMessage = null
         }
     }

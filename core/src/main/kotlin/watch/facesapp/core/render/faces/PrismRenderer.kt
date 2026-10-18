@@ -14,6 +14,7 @@ import watch.facesapp.core.model.WatchShape
 import watch.facesapp.core.util.FontProvider
 import watch.facesapp.core.util.TimeUtils
 import java.util.Calendar
+import androidx.core.graphics.withSave
 
 class PrismRenderer(private val context: Context) {
 
@@ -26,6 +27,7 @@ class PrismRenderer(private val context: Context) {
     }
 
     private val clipPath = Path()
+    private val rectF = RectF()
 
     // Mesh bitmap cache
     private var cachedMeshBitmap: Bitmap? = null
@@ -46,74 +48,74 @@ class PrismRenderer(private val context: Context) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()
         val width = bounds.width().toFloat()
-        val height = bounds.height().toFloat()
-        val rectF = RectF(bounds)
+        rectF.set(bounds)
 
         // Clip to watch shape
-        canvas.save()
-        clipPath.reset()
-        if (shape == WatchShape.SQUARE) {
-            clipPath.addRect(rectF, Path.Direction.CW)
-        } else {
-            clipPath.addCircle(centerX, centerY, width / 2f, Path.Direction.CW)
-        }
-        canvas.clipPath(clipPath)
+        canvas.withSave {
+            clipPath.reset()
+            if (shape == WatchShape.SQUARE) {
+                clipPath.addRect(rectF, Path.Direction.CW)
+            } else {
+                clipPath.addCircle(centerX, centerY, width / 2f, Path.Direction.CW)
+            }
+            clipPath(clipPath)
 
-        if (!isAmbient) {
-            val meshColors = listOf(
-                config.getBackgroundColor(isAmbient = false),
-                config.getAccentColor(isAmbient = false),
-                config.getMeridianColor(isAmbient = false)
-            )
+            if (!isAmbient) {
+                val meshColors = listOf(
+                    config.getBackgroundColor(isAmbient = false),
+                    config.getAccentColor(isAmbient = false),
+                    config.getMeridianColor(isAmbient = false)
+                )
 
-            val w = bounds.width()
-            val h = bounds.height()
+                val w = bounds.width()
+                val h = bounds.height()
 
-            // Check if cached mesh can be reused
-            if (cachedMeshBitmap == null ||
-                cachedWidth != w ||
-                cachedHeight != h ||
-                cachedColors != meshColors
-            ) {
-                cachedMeshBitmap = Trianglify.renderToBitmap(w, h, meshColors)
-                cachedWidth = w
-                cachedHeight = h
-                cachedColors = meshColors
+                // Check if cached mesh can be reused
+                if (cachedMeshBitmap == null ||
+                    cachedWidth != w ||
+                    cachedHeight != h ||
+                    cachedColors != meshColors
+                ) {
+                    cachedMeshBitmap?.recycle()
+                    cachedMeshBitmap = Trianglify.renderToBitmap(w, h, meshColors)
+                    cachedWidth = w
+                    cachedHeight = h
+                    cachedColors = meshColors
+                }
+
+                cachedMeshBitmap?.let {
+                    drawBitmap(it, bounds.left.toFloat(), bounds.top.toFloat(), bgPaint)
+                }
+            } else {
+                // Ambient black
+                bgPaint.color = 0xFF000000.toInt()
+                drawPaint(bgPaint)
             }
 
-            cachedMeshBitmap?.let {
-                canvas.drawBitmap(it, bounds.left.toFloat(), bounds.top.toFloat(), bgPaint)
+            // Draw Digital Time / Date / Steps
+            textPaint.typeface = FontProvider.getProximaSemibold(context)
+            textPaint.textSize = width * 0.26f
+
+            val textColor = config.getHourColor(isAmbient)
+            textPaint.color = textColor
+
+            if (isAmbient) {
+                textPaint.style = Paint.Style.STROKE
+                textPaint.strokeWidth = (width * 0.005f).coerceAtLeast(2f)
+            } else {
+                textPaint.style = Paint.Style.FILL_AND_STROKE
+                textPaint.strokeWidth = 1f
             }
-        } else {
-            // Ambient black
-            bgPaint.color = 0xFF000000.toInt()
-            canvas.drawPaint(bgPaint)
+
+            val displayText = when (faceMode) {
+                FaceMode.TIME -> TimeUtils.formatDigitalTime(calendar)
+                FaceMode.DATE -> TimeUtils.formatDate(calendar.time, TimeUtils.UK_DATE)
+                FaceMode.STEPS -> "$stepCount"
+            }
+
+            val textY = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
+            drawText(displayText, centerX, textY, textPaint)
+
         }
-
-        // Draw Digital Time / Date / Steps
-        textPaint.typeface = FontProvider.getProximaSemibold(context)
-        textPaint.textSize = width * 0.26f
-
-        val textColor = config.getHourColor(isAmbient)
-        textPaint.color = textColor
-
-        if (isAmbient) {
-            textPaint.style = Paint.Style.STROKE
-            textPaint.strokeWidth = (width * 0.005f).coerceAtLeast(2f)
-        } else {
-            textPaint.style = Paint.Style.FILL_AND_STROKE
-            textPaint.strokeWidth = 1f
-        }
-
-        val displayText = when (faceMode) {
-            FaceMode.TIME -> TimeUtils.formatDigitalTime(calendar)
-            FaceMode.DATE -> TimeUtils.formatDate(calendar.time, TimeUtils.UK_DATE)
-            FaceMode.STEPS -> "$stepCount"
-        }
-
-        val textY = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
-        canvas.drawText(displayText, centerX, textY, textPaint)
-
-        canvas.restore()
     }
 }

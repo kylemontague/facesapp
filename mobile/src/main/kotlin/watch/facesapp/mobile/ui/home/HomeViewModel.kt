@@ -4,14 +4,6 @@ import android.app.Application
 import android.text.format.DateUtils
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import watch.facesapp.core.model.FaceConfig
-import watch.facesapp.core.model.FaceMode
-import watch.facesapp.core.model.FaceStyle
-import watch.facesapp.mobile.data.db.FaceEntity
-import watch.facesapp.mobile.data.db.FaceWearLogEntity
-import watch.facesapp.mobile.data.db.FacesDatabase
-import watch.facesapp.mobile.data.sync.WearSyncManager
-import watch.facesapp.mobile.data.db.FaceWearSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +15,15 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import watch.facesapp.core.model.FaceMode
+import watch.facesapp.core.model.FaceStyle
+import watch.facesapp.mobile.data.db.FaceEntity
+import watch.facesapp.mobile.data.db.FaceWearLogEntity
+import watch.facesapp.mobile.data.db.FaceWearSession
+import watch.facesapp.mobile.data.db.FacesDatabase
+import watch.facesapp.mobile.data.sync.WearSyncManager
 import java.util.Calendar
+import kotlin.time.Duration.Companion.milliseconds
 
 data class FaceStats(
     val faceId: String,
@@ -73,7 +73,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             while (isActive) {
                 _calendar.value = Calendar.getInstance()
-                delay(if (_isAmbient.value) 10_000L else 1000L)
+                delay((if (_isAmbient.value) 10_000L else 1000L).milliseconds)
             }
         }
 
@@ -89,6 +89,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Periodic ticker for relative time displays (every 30 seconds instead of 1 Hz)
+    private val periodicTicker: Flow<Long> = kotlinx.coroutines.flow.flow {
+        while (kotlinx.coroutines.currentCoroutineContext().isActive) {
+            emit(System.currentTimeMillis())
+            delay(30_000L)
+        }
+    }
+
     data class PagerStateData(
         val items: List<HomePagerItem> = emptyList(),
         val activeIndex: Int = 0,
@@ -98,9 +106,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val pagerStateData: StateFlow<PagerStateData> = combine(
         faceDao.getAllFaces(),
         faceDao.getAllWearSessions(),
-        _calendar
-    ) { faces, wearSessions, nowCal ->
-        val now = nowCal.timeInMillis
+        periodicTicker
+    ) { faces, wearSessions, now ->
         buildPagerItems(faces, wearSessions, now)
     }.stateIn(
         scope = viewModelScope,
@@ -113,7 +120,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         wearSessions: List<FaceWearSession>,
         now: Long
     ): PagerStateData {
-        val effectiveFaces = if (faces.isEmpty()) FaceEntity.createStockPresets() else faces
+        val effectiveFaces = faces.ifEmpty { FaceEntity.createStockPresets() }
 
         // Active face on user's wrist
         val activeEntity = effectiveFaces.firstOrNull { it.isCurrentOnWatch }
@@ -166,8 +173,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun getFaceStats(faceId: String): Flow<FaceStats> = faceDao.getAllWearLogs()
-        .combine(_calendar) { allLogs, cal ->
-            val now = cal.timeInMillis
+        .combine(periodicTicker) { allLogs, now ->
             val faceLogs = allLogs.filter { it.faceId == faceId }
             val wearCount = faceLogs.size
             val totalDuration = faceLogs.sumOf { log ->

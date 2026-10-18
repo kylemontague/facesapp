@@ -31,11 +31,12 @@ class FacesCanvasRenderer(
     clearWithBackgroundTintBeforeRenderingHighlightLayer = false
 ) {
     private val coreRenderer = WatchRenderer(context)
+    private val reusableCalendar: java.util.Calendar = java.util.Calendar.getInstance()
     var faceConfig: FaceConfig = FaceConfig()
     var faceMode: FaceMode = FaceMode.TIME
 
-    override suspend fun createSharedAssets(): Renderer.SharedAssets {
-        return object : Renderer.SharedAssets {
+    override suspend fun createSharedAssets(): SharedAssets {
+        return object : SharedAssets {
             override fun onDestroy() = Unit
         }
     }
@@ -44,18 +45,19 @@ class FacesCanvasRenderer(
         canvas: Canvas,
         bounds: Rect,
         zonedDateTime: ZonedDateTime,
-        sharedAssets: Renderer.SharedAssets
+        sharedAssets: SharedAssets
     ) {
         val isAmbient = renderParameters.drawMode == DrawMode.AMBIENT
         val shape = if (context.resources.configuration.isScreenRound) WatchShape.ROUND else WatchShape.SQUARE
 
-        val calendar = GregorianCalendar.from(zonedDateTime)
+        reusableCalendar.timeInMillis = zonedDateTime.toInstant().toEpochMilli()
+        reusableCalendar.timeZone = java.util.TimeZone.getTimeZone(zonedDateTime.zone)
 
         coreRenderer.render(
             canvas = canvas,
             bounds = bounds,
             config = faceConfig,
-            calendar = calendar,
+            calendar = reusableCalendar,
             isAmbient = isAmbient,
             shape = shape,
             faceMode = faceMode
@@ -66,7 +68,7 @@ class FacesCanvasRenderer(
         canvas: Canvas,
         bounds: Rect,
         zonedDateTime: ZonedDateTime,
-        sharedAssets: Renderer.SharedAssets
+        sharedAssets: SharedAssets
     ) {
         // Unused for Canvas watchface without complication slots
     }
