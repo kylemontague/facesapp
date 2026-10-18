@@ -94,7 +94,7 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
         }
 
         // 4. Resolve text values
-        val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
+        val effectiveSteps = if (stepCount > 0L) stepCount else (complicationState.stepCount ?: 0L)
         val (hourText, minuteLines) = when (faceMode) {
             FaceMode.TIME -> {
                 val h = calendar.get(Calendar.HOUR)
@@ -107,7 +107,7 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
                 Pair(month, day.split(" ").filter { it.isNotBlank() })
             }
             FaceMode.BATTERY -> {
-                val words = NumbersToWords.convert(complicationState.batteryPercent)
+                val words = NumbersToWords.convert(complicationState.batteryPercent ?: 0)
                 Pair(words, listOf("percent", "battery"))
             }
             FaceMode.STEPS -> {
@@ -115,12 +115,35 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
                 Pair(words, listOf("steps"))
             }
             FaceMode.HEART_RATE -> {
-                val words = NumbersToWords.convert(complicationState.heartRateBpm)
+                val words = NumbersToWords.convert(complicationState.heartRateBpm ?: 0)
                 Pair(words, listOf("beats per", "minute"))
             }
             FaceMode.CALORIES -> {
-                val words = NumbersToWords.convert(complicationState.caloriesBurned)
+                val words = NumbersToWords.convert(complicationState.caloriesBurned ?: 0)
                 Pair(words, listOf("calories", "burned"))
+            }
+            FaceMode.DISTANCE -> {
+                val dist = complicationState.distanceKm ?: 0f
+                val kmInt = dist.toInt()
+                val kmFrac = ((dist - kmInt) * 10).toInt().coerceIn(0, 9)
+                val kmWords = if (kmFrac > 0) "${NumbersToWords.convert(kmInt)} point ${NumbersToWords.convert(kmFrac)}" else NumbersToWords.convert(kmInt)
+                Pair(kmWords, listOf("kilometers"))
+            }
+            FaceMode.WEATHER -> {
+                val tempWords = NumbersToWords.convert(complicationState.weatherTempC ?: 0)
+                Pair(tempWords, listOf("degrees", (complicationState.weatherCondition ?: "sunny").lowercase()))
+            }
+            FaceMode.NEXT_EVENT -> {
+                val minsWords = NumbersToWords.convert(complicationState.nextEventMinutes ?: 0)
+                Pair((complicationState.nextEventTitle ?: "event").lowercase(), listOf("in", minsWords, "minutes"))
+            }
+            FaceMode.SUNRISE_SUNSET -> {
+                val eventWord = if (complicationState.sunriseSunsetIsSunset) "sunset" else "sunrise"
+                Pair(eventWord, listOf((complicationState.sunriseSunsetSummary ?: "18:00").lowercase()))
+            }
+            FaceMode.ACTIVE_MINUTES -> {
+                val words = NumbersToWords.convert(complicationState.activeMinutes ?: 0)
+                Pair(words, listOf("active", "minutes"))
             }
         }
 

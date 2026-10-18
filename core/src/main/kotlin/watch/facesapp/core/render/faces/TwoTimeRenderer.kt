@@ -113,7 +113,7 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
             linePaint.strokeWidth = (width * 0.006f).coerceAtLeast(2f)
 
             // 3. Resolve display strings
-            val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
+            val effectiveSteps = if (stepCount > 0L) stepCount else (complicationState.stepCount ?: 0L)
             val (topText, bottomText) = when (faceMode) {
                 FaceMode.TIME -> {
                     val hourStr = TimeUtils.formatTwoDigitHour(calendar)
@@ -129,7 +129,7 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
                 }
 
                 FaceMode.BATTERY -> {
-                    Pair("${complicationState.batteryPercent}%", "battery")
+                    Pair("${complicationState.batteryPercent ?: 0}%", "battery")
                 }
 
                 FaceMode.STEPS -> {
@@ -142,11 +142,33 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
                 }
 
                 FaceMode.HEART_RATE -> {
-                    Pair("${complicationState.heartRateBpm}", "bpm")
+                    Pair("${complicationState.heartRateBpm ?: 0}", "bpm")
                 }
 
                 FaceMode.CALORIES -> {
-                    Pair("${complicationState.caloriesBurned}", "kcal")
+                    Pair("${complicationState.caloriesBurned ?: 0}", "kcal")
+                }
+
+                FaceMode.DISTANCE -> {
+                    Pair(String.format(Locale.US, "%.1f", complicationState.distanceKm ?: 0f), "km")
+                }
+
+                FaceMode.WEATHER -> {
+                    Pair("${complicationState.weatherTempC ?: 0}°", (complicationState.weatherCondition ?: "sunny").lowercase())
+                }
+
+                FaceMode.NEXT_EVENT -> {
+                    Pair("${complicationState.nextEventMinutes ?: 0}m", (complicationState.nextEventTitle ?: "event").lowercase())
+                }
+
+                FaceMode.SUNRISE_SUNSET -> {
+                    val label = if (complicationState.sunriseSunsetIsSunset) "sunset" else "sunrise"
+                    val summary = (complicationState.sunriseSunsetSummary ?: "18:00").replace("Sunset ", "").replace("Sunrise ", "")
+                    Pair(summary, label)
+                }
+
+                FaceMode.ACTIVE_MINUTES -> {
+                    Pair("${complicationState.activeMinutes ?: 0}", "active")
                 }
             }
 

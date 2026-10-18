@@ -13,8 +13,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import watch.facesapp.core.model.FaceConfig
 import watch.facesapp.core.model.FaceMode
 import watch.facesapp.core.model.FaceStyle
 import watch.facesapp.mobile.data.db.FaceEntity
@@ -23,6 +25,8 @@ import watch.facesapp.mobile.data.db.FaceWearSession
 import watch.facesapp.mobile.data.db.FacesDatabase
 import watch.facesapp.mobile.data.prefs.ComplicationsRepository
 import watch.facesapp.mobile.data.sync.WearSyncManager
+import watch.facesapp.mobile.data.weather.WeatherManager
+import watch.facesapp.mobile.data.calendar.CalendarManager
 import java.util.Calendar
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -60,6 +64,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val faceDao = db.faceDao()
     private val syncManager = WearSyncManager(application)
     private val complicationsRepo = ComplicationsRepository.getInstance(application)
+    private val weatherManager = WeatherManager(application)
+    private val calendarManager = CalendarManager(application)
 
     val activeComplications: StateFlow<List<FaceMode>> = complicationsRepo.activeComplications
 
@@ -74,10 +80,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _complicationState = MutableStateFlow(
         watch.facesapp.core.model.ComplicationState(
-            batteryPercent = getBatteryPercentage(application),
-            stepCount = 7420L,
-            heartRateBpm = 72,
-            caloriesBurned = 420
+            batteryPercent = getBatteryPercentage(application)
         )
     )
     val complicationState: StateFlow<watch.facesapp.core.model.ComplicationState> = _complicationState.asStateFlow()
@@ -88,6 +91,29 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             while (isActive) {
                 _calendar.value = Calendar.getInstance()
                 delay((if (_isAmbient.value) 10_000L else 1000L).milliseconds)
+            }
+        }
+
+        // Live Weather & Calendar fetch and Wear OS synchronization
+        viewModelScope.launch {
+            try {
+                val weather = weatherManager.fetchCurrentWeather()
+                val event = calendarManager.getNextEvent()
+                if (weather != null) {
+                    _complicationState.value = _complicationState.value.copy(
+                        weatherTempC = weather.tempC,
+                        weatherCondition = weather.condition
+                    )
+                    syncManager.syncWeather(weather.tempC, weather.condition)
+                }
+                if (event != null) {
+                    _complicationState.value = _complicationState.value.copy(
+                        nextEventTitle = event.title,
+                        nextEventMinutes = event.minutesUntil
+                    )
+                    syncManager.syncCalendarEvent(event.title, event.minutesUntil)
+                }
+            } catch (_: Exception) {
             }
         }
 
@@ -206,6 +232,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
 
+    fun previewPagerFace(config: FaceConfig) {
+        viewModelScope.launch {
+            val configWithComplications = config.withComplications(complicationsRepo.activeComplications.value)
+            syncManager.sendPreviewUpdate(configWithComplications)
+        }
+    }
+
     fun wearAgain(entity: FaceEntity) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
@@ -247,8 +280,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         _isAmbient.value = !_isAmbient.value
     }
 
+    private var complicationRevertJob: Job? = null
+
     fun cycleFaceMode(activeComplications: List<FaceMode> = complicationsRepo.activeComplications.value) {
-        _faceMode.value = _faceMode.value.next(activeComplications)
+        _faceMode.value = _faceMode.value.nextAvailable(activeComplications, _complicationState.value)
+        complicationRevertJob?.cancel()
+        if (_faceMode.value != FaceMode.TIME) {
+            complicationRevertJob = viewModelScope.launch {
+                delay(5000L)
+                _faceMode.value = FaceMode.TIME
+            }
+        }
     }
 
     fun toggleFaceMode() {

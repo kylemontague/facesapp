@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -185,8 +187,17 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         syncPreview()
     }
 
+    private var previewModeRevertJob: Job? = null
+
     fun cyclePreviewMode() {
         _previewFaceMode.value = _previewFaceMode.value.next(complicationsRepo.activeComplications.value)
+        previewModeRevertJob?.cancel()
+        if (_previewFaceMode.value != watch.facesapp.core.model.FaceMode.TIME) {
+            previewModeRevertJob = viewModelScope.launch {
+                delay(5000L)
+                _previewFaceMode.value = watch.facesapp.core.model.FaceMode.TIME
+            }
+        }
     }
 
     fun initializeWithPalette(colors: List<Int>) {
@@ -299,6 +310,19 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    fun startPreviewSession() {
+        viewModelScope.launch {
+            syncManager.startPreviewSession()
+            syncManager.sendPreviewUpdate(currentConfig.value)
+        }
+    }
+
+    fun stopPreviewSession() {
+        viewModelScope.launch {
+            syncManager.stopPreviewSession()
+        }
+    }
+
     private fun syncPreview() {
         viewModelScope.launch {
             syncManager.sendPreviewUpdate(currentConfig.value)
@@ -310,16 +334,22 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
             val config = currentConfig.value
             val now = System.currentTimeMillis()
             faceDao.clearCurrentOnWatch()
+            val configWithUniversalComplications = config.withComplications(complicationsRepo.activeComplications.value)
             val entity = FaceEntity.fromFaceConfig(
-                config = config,
+                config = configWithUniversalComplications,
                 name = config.style.displayName,
                 lastWornAt = now,
                 isCurrentOnWatch = true
             )
             faceDao.insertFace(entity)
             faceDao.recordWearFace(entity.id, now)
-            syncManager.syncCurrentFace(config)
+            syncManager.syncCurrentFace(configWithUniversalComplications)
             onSaved()
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopPreviewSession()
     }
 }

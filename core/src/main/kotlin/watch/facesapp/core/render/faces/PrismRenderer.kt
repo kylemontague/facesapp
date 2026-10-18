@@ -107,17 +107,22 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
                 textPaint.strokeWidth = 1f
             }
 
-            val effectiveSteps = if (stepCount > 0L) stepCount else complicationState.stepCount
+            val effectiveSteps = if (stepCount > 0L) stepCount else (complicationState.stepCount ?: 0L)
             val displayText = when (faceMode) {
                 FaceMode.TIME -> TimeUtils.formatDigitalTime(calendar)
                 FaceMode.DATE -> TimeUtils.formatDate(calendar.time, TimeUtils.UK_DATE)
-                FaceMode.BATTERY -> "${complicationState.batteryPercent}%"
+                FaceMode.BATTERY -> "${complicationState.batteryPercent ?: 0}%"
                 FaceMode.STEPS -> "$effectiveSteps"
-                FaceMode.HEART_RATE -> "${complicationState.heartRateBpm} bpm"
-                FaceMode.CALORIES -> "${complicationState.caloriesBurned} kcal"
+                FaceMode.HEART_RATE -> "${complicationState.heartRateBpm ?: 0} bpm"
+                FaceMode.CALORIES -> "${complicationState.caloriesBurned ?: 0} kcal"
+                FaceMode.DISTANCE -> String.format(java.util.Locale.US, "%.1f km", complicationState.distanceKm ?: 0f)
+                FaceMode.WEATHER -> "${complicationState.weatherTempC ?: 0}°"
+                FaceMode.NEXT_EVENT -> "${complicationState.nextEventMinutes ?: 0}m"
+                FaceMode.SUNRISE_SUNSET -> complicationState.sunriseSunsetSummary ?: ""
+                FaceMode.ACTIVE_MINUTES -> "${complicationState.activeMinutes ?: 0}m"
             }
 
-            textPaint.textSize = if (displayText.length > 5) width * 0.19f else width * 0.26f
+            textPaint.textSize = if (displayText.length > 7) width * 0.15f else if (displayText.length > 5) width * 0.19f else width * 0.26f
 
             val textY = centerY - (textPaint.descent() + textPaint.ascent()) / 2f
             drawText(displayText, centerX, textY, textPaint)

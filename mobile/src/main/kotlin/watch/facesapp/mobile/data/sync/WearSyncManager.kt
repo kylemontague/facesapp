@@ -59,15 +59,88 @@ class WearSyncManager(context: Context) {
         }
     }
 
+    /**
+     * Wakes up the watch face and requests interactive active display mode for live customization.
+     */
+    suspend fun startPreviewSession(): Result<Unit> {
+        return runCatching {
+            val nodes = nodeClient.connectedNodes.await()
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_PREVIEW_START, ByteArray(0)).await()
+            }
+            Log.d(TAG, "Sent preview start signal to ${nodes.size} node(s)")
+            Unit
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to send preview start signal to Wear OS", e)
+        }
+    }
+
+    /**
+     * Releases the wake lock on the watch and lets it return to its normal ambient/sleep cycle.
+     */
+    suspend fun stopPreviewSession(): Result<Unit> {
+        return runCatching {
+            val nodes = nodeClient.connectedNodes.await()
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_PREVIEW_STOP, ByteArray(0)).await()
+            }
+            Log.d(TAG, "Sent preview stop signal to ${nodes.size} node(s)")
+            Unit
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to send preview stop signal to Wear OS", e)
+        }
+    }
+
+    /**
+     * Synchronizes live weather temperature and condition to connected Wear OS watch.
+     */
+    suspend fun syncWeather(tempC: Int, condition: String): Result<Unit> {
+        return runCatching {
+            val nodes = nodeClient.connectedNodes.await()
+            val payload = "$tempC|$condition"
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_WEATHER, bytes).await()
+            }
+            Log.d(TAG, "Sent live weather ($tempC°C, $condition) to ${nodes.size} node(s)")
+            Unit
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to send weather update to Wear OS", e)
+        }
+    }
+
+    /**
+     * Synchronizes next calendar appointment title and minutes until event to connected Wear OS watch.
+     */
+    suspend fun syncCalendarEvent(title: String, minutesUntil: Int): Result<Unit> {
+        return runCatching {
+            val nodes = nodeClient.connectedNodes.await()
+            val payload = "$title|$minutesUntil"
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_CALENDAR, bytes).await()
+            }
+            Log.d(TAG, "Sent calendar event ($title in ${minutesUntil}m) to ${nodes.size} node(s)")
+            Unit
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to send calendar update to Wear OS", e)
+        }
+    }
+
     private fun buildPreviewPayload(config: FaceConfig): String {
         val colorsStr = config.colors.joinToString(",")
-        return "${config.style.id}|$colorsStr"
+        val optionsStr = config.options.entries.joinToString(";") { "${it.key}=${it.value}" }
+        return "${config.style.id}|$colorsStr|$optionsStr"
     }
 
     companion object {
         private const val TAG = "WearSyncManager"
         const val PATH_CURRENT_FACE = "/faces/current"
         const val PATH_PREVIEW_FACE = "/faces/preview"
+        const val PATH_PREVIEW_START = "/faces/preview/start"
+        const val PATH_PREVIEW_STOP = "/faces/preview/stop"
+        const val PATH_WEATHER = "/faces/weather"
+        const val PATH_CALENDAR = "/faces/calendar"
 
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"

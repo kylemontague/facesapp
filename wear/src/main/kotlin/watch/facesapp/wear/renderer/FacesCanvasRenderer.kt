@@ -52,6 +52,10 @@ class FacesCanvasRenderer(
         val isAmbient = renderParameters.drawMode == DrawMode.AMBIENT
         val shape = if (context.resources.configuration.isScreenRound) WatchShape.ROUND else WatchShape.SQUARE
 
+        if (isAmbient && faceMode != FaceMode.TIME) {
+            faceMode = FaceMode.TIME
+        }
+
         reusableCalendar.timeInMillis = zonedDateTime.toInstant().toEpochMilli()
         reusableCalendar.timeZone = java.util.TimeZone.getTimeZone(zonedDateTime.zone)
 

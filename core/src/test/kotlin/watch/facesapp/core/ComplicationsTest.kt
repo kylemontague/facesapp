@@ -90,4 +90,52 @@ class ComplicationsTest {
             config.activeComplications
         )
     }
+
+    @Test
+    fun testAllComplicationsIncludeNewTypes() {
+        assertTrue(FaceMode.ALL_COMPLICATIONS.contains(FaceMode.DISTANCE))
+        assertTrue(FaceMode.ALL_COMPLICATIONS.contains(FaceMode.WEATHER))
+        assertTrue(FaceMode.ALL_COMPLICATIONS.contains(FaceMode.NEXT_EVENT))
+        assertTrue(FaceMode.ALL_COMPLICATIONS.contains(FaceMode.SUNRISE_SUNSET))
+        assertTrue(FaceMode.ALL_COMPLICATIONS.contains(FaceMode.ACTIVE_MINUTES))
+        assertEquals(11, FaceMode.ALL_COMPLICATIONS.size)
+    }
+
+    @Test
+    fun testNextAvailableSkipsUninitializedComplications() {
+        val cycle = listOf(FaceMode.TIME, FaceMode.DATE, FaceMode.BATTERY, FaceMode.STEPS, FaceMode.HEART_RATE, FaceMode.WEATHER)
+        // Only battery has live reading (80%); steps, heart rate, and weather are null (never initialized)
+        val state = watch.facesapp.core.model.ComplicationState(
+            batteryPercent = 80,
+            stepCount = null,
+            heartRateBpm = null,
+            weatherTempC = null
+        )
+
+        // TIME -> DATE -> BATTERY -> TIME (skipping STEPS, HEART_RATE, WEATHER)
+        val mode1 = FaceMode.TIME.nextAvailable(cycle, state)
+        assertEquals(FaceMode.DATE, mode1)
+
+        val mode2 = mode1.nextAvailable(cycle, state)
+        assertEquals(FaceMode.BATTERY, mode2)
+
+        val mode3 = mode2.nextAvailable(cycle, state)
+        assertEquals(FaceMode.TIME, mode3)
+    }
+
+    @Test
+    fun testNextAvailableIncludesComplicationOnceLiveValueArrives() {
+        val cycle = listOf(FaceMode.TIME, FaceMode.DATE, FaceMode.BATTERY, FaceMode.STEPS)
+        // Now steps receives live value 1250L
+        val stateWithSteps = watch.facesapp.core.model.ComplicationState(
+            batteryPercent = 80,
+            stepCount = 1250L
+        )
+
+        val mode1 = FaceMode.BATTERY.nextAvailable(cycle, stateWithSteps)
+        assertEquals(FaceMode.STEPS, mode1)
+
+        val mode2 = mode1.nextAvailable(cycle, stateWithSteps)
+        assertEquals(FaceMode.TIME, mode2)
+    }
 }

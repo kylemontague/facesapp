@@ -30,9 +30,14 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Straighten
+import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -82,6 +87,11 @@ private fun FaceMode.icon(): ImageVector = when (this) {
     FaceMode.STEPS -> Icons.AutoMirrored.Filled.DirectionsWalk
     FaceMode.HEART_RATE -> Icons.Default.Favorite
     FaceMode.CALORIES -> Icons.Default.LocalFireDepartment
+    FaceMode.DISTANCE -> Icons.Default.Straighten
+    FaceMode.WEATHER -> Icons.Default.WbSunny
+    FaceMode.NEXT_EVENT -> Icons.Default.Event
+    FaceMode.SUNRISE_SUNSET -> Icons.Default.WbTwilight
+    FaceMode.ACTIVE_MINUTES -> Icons.Default.Timer
 }
 
 private fun FaceMode.description(): String = when (this) {
@@ -91,6 +101,11 @@ private fun FaceMode.description(): String = when (this) {
     FaceMode.STEPS -> "Daily step count tracker"
     FaceMode.HEART_RATE -> "Heart rate in beats per minute"
     FaceMode.CALORIES -> "Estimated active energy burned"
+    FaceMode.DISTANCE -> "Total daily distance traveled"
+    FaceMode.WEATHER -> "Current temperature and forecast"
+    FaceMode.NEXT_EVENT -> "Upcoming calendar appointment"
+    FaceMode.SUNRISE_SUNSET -> "Local sunrise and sunset cycle"
+    FaceMode.ACTIVE_MINUTES -> "Active movement time tracker"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

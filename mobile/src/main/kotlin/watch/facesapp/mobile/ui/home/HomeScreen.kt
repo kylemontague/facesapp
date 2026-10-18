@@ -38,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -107,6 +108,16 @@ fun HomeScreen(
                 lastAlignedIndex = targetIndex
                 pagerState.scrollToPage(targetIndex)
             }
+        }
+    }
+
+    // Mirror the currently centered watch face in the pager to the Wear OS device in real-time
+    LifecycleResumeEffect(pagerState.currentPage, items.isNotEmpty()) {
+        val currentItem = items.getOrNull(pagerState.currentPage)
+        if (currentItem != null) {
+            viewModel.previewPagerFace(currentItem.config)
+        }
+        onPauseOrDispose {
         }
     }
 

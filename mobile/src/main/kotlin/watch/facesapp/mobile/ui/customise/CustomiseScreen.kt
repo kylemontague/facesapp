@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -68,6 +69,14 @@ fun CustomiseScreen(
     val previewFaceMode by viewModel.previewFaceMode.collectAsState()
     val contrastGuardMode by viewModel.contrastGuardMode.collectAsState()
     val swatchContrastStatuses by viewModel.swatchContrastStatuses.collectAsState()
+
+    // Start real-time preview session on watch and keep watch screen awake while customizing
+    DisposableEffect(Unit) {
+        viewModel.startPreviewSession()
+        onDispose {
+            // Note: Preview session lifecycle is maintained while MainActivity is active
+        }
+    }
 
     val shakeDetector = remember(context) { ShakeDetector(context) }
 

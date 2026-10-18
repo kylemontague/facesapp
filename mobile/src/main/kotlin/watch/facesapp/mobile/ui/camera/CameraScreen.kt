@@ -1,6 +1,7 @@
 package watch.facesapp.mobile.ui.camera
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -10,6 +11,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -25,15 +27,19 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -57,6 +63,7 @@ import watch.facesapp.mobile.camera.PaletteExtractor
 import watch.facesapp.mobile.ui.components.BottomVignette
 import watch.facesapp.mobile.ui.components.FacesPillButton
 import watch.facesapp.mobile.ui.components.TopVignette
+import watch.facesapp.mobile.ui.theme.FrostedWhite
 import watch.facesapp.mobile.ui.theme.LuxuryBlack
 import watch.facesapp.mobile.ui.theme.ProximaNovaFontFamily
 import watch.facesapp.mobile.ui.theme.PureWhite
@@ -83,11 +90,29 @@ fun CameraScreen(
     }
 
     var permissionRequestedOnce by remember { mutableStateOf(false) }
+    var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         hasCameraPermission = isGranted
+    }
+
+    // Photo Gallery Picker (Visual Media Contract)
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val bitmap = decodeSampledBitmapFromUri(context, uri)
+                if (bitmap != null) {
+                    val colors = PaletteExtractor.extract16Colors(bitmap)
+                    onPhotoCaptured(colors)
+                }
+            } catch (e: Exception) {
+                Log.e("CameraScreen", "Failed to load photo from gallery", e)
+            }
+        }
     }
 
     // Auto-request permission on screen entry if not yet granted
@@ -111,8 +136,8 @@ fun CameraScreen(
             .build()
     }
 
-    // Bind camera when permission is confirmed and lifecycle is ready
-    LaunchedEffect(hasCameraPermission, lifecycleOwner) {
+    // Bind camera when permission is confirmed, lifecycle is ready, or lens is switched
+    LaunchedEffect(hasCameraPermission, lifecycleOwner, lensFacing) {
         if (!hasCameraPermission) return@LaunchedEffect
 
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -123,7 +148,10 @@ fun CameraScreen(
                     it.surfaceProvider = previewView.surfaceProvider
                 }
 
-                val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
+                val requestedSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+                val cameraSelector = if (cameraProvider.hasCamera(requestedSelector)) {
+                    requestedSelector
+                } else if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
                     CameraSelector.DEFAULT_BACK_CAMERA
                 } else if (cameraProvider.hasCamera(CameraSelector.DEFAULT_FRONT_CAMERA)) {
                     CameraSelector.DEFAULT_FRONT_CAMERA
@@ -172,40 +200,95 @@ fun CameraScreen(
                 )
             }
 
-            // Bottom Vignette & Shutter Button
+            // Bottom Vignette
             BottomVignette(modifier = Modifier.align(Alignment.BottomCenter))
 
-            Box(
+            // Action Bar: Gallery, Shutter, Switch Camera
+            Row(
                 modifier = Modifier
+                    .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 48.dp)
-                    .size(76.dp)
-                    .border(BorderStroke(3.dp, PureWhite), CircleShape)
-                    .padding(6.dp)
-                    .clip(CircleShape)
-                    .background(PureWhite)
-                    .clickable {
-                        imageCapture.takePicture(
-                            ContextCompat.getMainExecutor(context),
-                            object : ImageCapture.OnImageCapturedCallback() {
-                                override fun onCaptureSuccess(image: ImageProxy) {
-                                    val bitmap = try {
-                                        image.toBitmap()
-                                    } catch (_: Exception) {
-                                        imageProxyToBitmapFallback(image)
-                                    }
-                                    image.close()
-                                    val colors = PaletteExtractor.extract16Colors(bitmap)
-                                    onPhotoCaptured(colors)
-                                }
+                    .padding(horizontal = 40.dp, vertical = 48.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 1. Photo Gallery Picker Button
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(FrostedWhite)
+                        .border(BorderStroke(1.dp, PureWhite.copy(alpha = 0.5f)), CircleShape)
+                        .clickable {
+                            galleryLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoLibrary,
+                        contentDescription = "Choose from Gallery",
+                        tint = PureWhite,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
 
-                                override fun onError(exception: ImageCaptureException) {
-                                    Log.e("CameraScreen", "Photo capture failed", exception)
+                // 2. Shutter Button
+                Box(
+                    modifier = Modifier
+                        .size(76.dp)
+                        .border(BorderStroke(3.dp, PureWhite), CircleShape)
+                        .padding(6.dp)
+                        .clip(CircleShape)
+                        .background(PureWhite)
+                        .clickable {
+                            imageCapture.takePicture(
+                                ContextCompat.getMainExecutor(context),
+                                object : ImageCapture.OnImageCapturedCallback() {
+                                    override fun onCaptureSuccess(image: ImageProxy) {
+                                        val bitmap = try {
+                                            image.toBitmap()
+                                        } catch (_: Exception) {
+                                            imageProxyToBitmapFallback(image)
+                                        }
+                                        image.close()
+                                        val colors = PaletteExtractor.extract16Colors(bitmap)
+                                        onPhotoCaptured(colors)
+                                    }
+
+                                    override fun onError(exception: ImageCaptureException) {
+                                        Log.e("CameraScreen", "Photo capture failed", exception)
+                                    }
                                 }
+                            )
+                        }
+                )
+
+                // 3. Switch Camera Button (Front / Rear)
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(FrostedWhite)
+                        .border(BorderStroke(1.dp, PureWhite.copy(alpha = 0.5f)), CircleShape)
+                        .clickable {
+                            lensFacing = if (lensFacing == CameraSelector.LENS_FACING_BACK) {
+                                CameraSelector.LENS_FACING_FRONT
+                            } else {
+                                CameraSelector.LENS_FACING_BACK
                             }
-                        )
-                    }
-            )
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cameraswitch,
+                        contentDescription = "Switch Camera",
+                        tint = PureWhite,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         } else {
             // Permission Rationale / Request State (Dark Luxury Aesthetic)
             TopVignette(modifier = Modifier.align(Alignment.TopCenter))
@@ -250,7 +333,7 @@ fun CameraScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Faces needs access to your camera to extract 16-color palettes from photos of your surroundings.",
+                    text = "Faces extracts 16-color palettes from photos of your surroundings, or you can choose an existing photo from your gallery.",
                     fontFamily = ProximaNovaFontFamily,
                     fontSize = 14.sp,
                     color = SubtitleGray,
@@ -270,7 +353,18 @@ fun CameraScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 FacesPillButton(
-                    text = "Open Settings",
+                    text = "Select from Photo Gallery",
+                    onClick = {
+                        galleryLauncher.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                FacesPillButton(
+                    text = "Open App Settings",
                     onClick = {
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                             data = Uri.fromParts("package", context.packageName, null)
@@ -280,6 +374,30 @@ fun CameraScreen(
                 )
             }
         }
+    }
+}
+
+private fun decodeSampledBitmapFromUri(context: Context, uri: Uri, targetSize: Int = 1000): Bitmap? {
+    val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    context.contentResolver.openInputStream(uri)?.use { stream ->
+        BitmapFactory.decodeStream(stream, null, boundsOptions)
+    }
+    val width = boundsOptions.outWidth
+    val height = boundsOptions.outHeight
+    if (width <= 0 || height <= 0) return null
+
+    var inSampleSize = 1
+    val maxDim = maxOf(width, height)
+    while (maxDim / inSampleSize > targetSize) {
+        inSampleSize *= 2
+    }
+
+    val decodeOptions = BitmapFactory.Options().apply {
+        this.inSampleSize = inSampleSize
+        inPreferredConfig = Bitmap.Config.ARGB_8888
+    }
+    return context.contentResolver.openInputStream(uri)?.use { stream ->
+        BitmapFactory.decodeStream(stream, null, decodeOptions)
     }
 }
 

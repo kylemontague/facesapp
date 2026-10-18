@@ -7,12 +7,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import watch.facesapp.mobile.ui.theme.FacesTheme
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import watch.facesapp.mobile.data.sync.WearSyncManager
+import watch.facesapp.mobile.ui.theme.FacesTheme
 
 class MainActivity : ComponentActivity() {
 
     private val deepLinkUriState = MutableStateFlow<Uri?>(null)
+    private val syncManager by lazy { WearSyncManager(applicationContext) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +32,20 @@ class MainActivity : ComponentActivity() {
                     onClearDeepLink = { deepLinkUriState.value = null }
                 )
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        lifecycleScope.launch {
+            syncManager.startPreviewSession()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        lifecycleScope.launch {
+            syncManager.stopPreviewSession()
         }
     }
 

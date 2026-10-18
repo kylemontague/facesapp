@@ -49,22 +49,59 @@ class WearMessageListener : WearableListenerService() {
     }
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
-        if (messageEvent.path == PATH_PREVIEW_FACE) {
-            val payload = String(messageEvent.data, Charsets.UTF_8)
-            val parts = payload.split("|")
-            if (parts.isNotEmpty()) {
-                val styleId = parts[0]
-                val colors = if (parts.size > 1 && parts[1].isNotBlank()) {
-                    parts[1].split(",").mapNotNull { it.trim().toIntOrNull() }
-                } else {
-                    FaceConfig.defaultColorsForStyle(FaceStyle.fromId(styleId))
-                }
+        when (messageEvent.path) {
+            PATH_PREVIEW_START -> {
+                FacesWatchFaceService.wakeUpForPreview(applicationContext)
+            }
+            PATH_PREVIEW_STOP -> {
+                FacesWatchFaceService.releasePreviewWakeLock(applicationContext)
+            }
+            PATH_PREVIEW_FACE -> {
+                FacesWatchFaceService.wakeUpForPreview(applicationContext)
+                val payload = String(messageEvent.data, Charsets.UTF_8)
+                val parts = payload.split("|")
+                if (parts.isNotEmpty()) {
+                    val styleId = parts[0]
+                    val colors = if (parts.size > 1 && parts[1].isNotBlank()) {
+                        parts[1].split(",").mapNotNull { it.trim().toIntOrNull() }
+                    } else {
+                        FaceConfig.defaultColorsForStyle(FaceStyle.fromId(styleId))
+                    }
 
-                val previewConfig = FaceConfig(
-                    style = FaceStyle.fromId(styleId),
-                    colors = colors
-                )
-                FacesWatchFaceService.updateConfig(previewConfig)
+                    val optionsMap = if (parts.size > 2 && parts[2].isNotBlank()) {
+                        parseOptions(parts[2])
+                    } else {
+                        emptyMap()
+                    }
+
+                    val previewConfig = FaceConfig(
+                        style = FaceStyle.fromId(styleId),
+                        colors = colors,
+                        options = optionsMap
+                    )
+                    FacesWatchFaceService.updateConfig(previewConfig)
+                }
+            }
+            PATH_WEATHER -> {
+                val payload = String(messageEvent.data, Charsets.UTF_8)
+                val parts = payload.split("|")
+                if (parts.size >= 2) {
+                    val temp = parts[0].toIntOrNull() ?: 21
+                    val condition = parts[1]
+                    getSharedPreferences("faces_weather_prefs", MODE_PRIVATE).edit {
+                        putInt("temp", temp).putString("condition", condition)
+                    }
+                    FacesWatchFaceService.updateWeather(temp, condition)
+                }
+            }
+            PATH_CALENDAR -> {
+                val payload = String(messageEvent.data, Charsets.UTF_8)
+                val parts = payload.split("|")
+                if (parts.size >= 2) {
+                    val title = parts[0]
+                    val minutes = parts[1].toIntOrNull() ?: 0
+                    FacesWatchFaceService.updateCalendarEvent(title, minutes)
+                }
             }
         }
     }
@@ -82,6 +119,10 @@ class WearMessageListener : WearableListenerService() {
     companion object {
         const val PATH_CURRENT_FACE = "/faces/current"
         const val PATH_PREVIEW_FACE = "/faces/preview"
+        const val PATH_PREVIEW_START = "/faces/preview/start"
+        const val PATH_PREVIEW_STOP = "/faces/preview/stop"
+        const val PATH_WEATHER = "/faces/weather"
+        const val PATH_CALENDAR = "/faces/calendar"
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"
         const val KEY_COLORS = "colors"
