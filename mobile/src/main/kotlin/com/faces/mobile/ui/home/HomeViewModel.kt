@@ -36,6 +36,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _calendar = MutableStateFlow(Calendar.getInstance())
     val calendar: StateFlow<Calendar> = _calendar.asStateFlow()
 
+    private val _faceMode = MutableStateFlow(com.faces.core.model.FaceMode.TIME)
+    val faceMode: StateFlow<com.faces.core.model.FaceMode> = _faceMode.asStateFlow()
+
     init {
         // Live 1 Hz ticking clock
         viewModelScope.launch {
@@ -48,6 +51,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleAmbientMode() {
         _isAmbient.value = !_isAmbient.value
+    }
+
+    fun toggleFaceMode() {
+        _faceMode.value = when (_faceMode.value) {
+            com.faces.core.model.FaceMode.TIME -> com.faces.core.model.FaceMode.DATE
+            com.faces.core.model.FaceMode.DATE -> com.faces.core.model.FaceMode.TIME
+            com.faces.core.model.FaceMode.STEPS -> com.faces.core.model.FaceMode.TIME
+        }
     }
 
     fun toggleFavorite(face: FaceEntity) {

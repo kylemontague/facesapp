@@ -2,6 +2,8 @@ package com.faces.mobile.ui.home
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +47,7 @@ fun HomeScreen(
     val faces by viewModel.faces.collectAsState()
     val isAmbient by viewModel.isAmbient.collectAsState()
     val calendar by viewModel.calendar.collectAsState()
+    val faceMode by viewModel.faceMode.collectAsState()
 
     val pagerState = rememberPagerState(
         initialPage = 0,
@@ -90,7 +93,15 @@ fun HomeScreen(
                             config = faceEntity.toFaceConfig(),
                             calendar = calendar,
                             isAmbient = isAmbient,
-                            modifier = Modifier.fillMaxSize(0.85f)
+                            faceMode = faceMode,
+                            modifier = Modifier
+                                .fillMaxSize(0.85f)
+                                .clickable(
+                                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    viewModel.toggleFaceMode()
+                                }
                         )
                     }
                 }
