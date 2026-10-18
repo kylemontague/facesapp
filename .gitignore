@@ -6,6 +6,9 @@ build/
 # Local SDK and machine configurations
 local.properties
 local.properties.*
+keystore.properties
+*.jks
+*.keystore
 
 # Android Studio & IntelliJ IDEA
 .idea/

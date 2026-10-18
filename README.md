@@ -253,6 +253,23 @@ Clone the repository and build both Mobile and Wear OS debug packages:
 ./gradlew :wear:installDebug
 ```
 
+### Building Signed Release App Bundles (.aab)
+
+To generate release-ready Android App Bundles for Google Play:
+
+```bash
+# Set up keystore, keystore.properties, fingerprints, and build signed bundles
+./scripts/setup_release_signing.sh --build
+```
+
+This script:
+1. Creates `faces-release.jks` with a secure random password (or accepts an existing password).
+2. Generates `keystore.properties` (gitignored).
+3. Prints the **SHA-256** and **SHA-1** fingerprints for Google Play App Signing & Digital Asset Links.
+4. Produces signed production App Bundles:
+   - **Phone**: `mobile/build/outputs/bundle/release/mobile-release.aab`
+   - **Wear OS**: `wear/build/outputs/bundle/release/wear-release.aab`
+
 ---
 
 ## 🎮 Watch Face Modes & Interactions
