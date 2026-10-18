@@ -32,6 +32,14 @@ Snap a photo, extract a rich 16-color chromatic palette, customize beautifully c
 - 🌙 **OLED-Optimized Ambient Mode**:
   - Deep black AMOLED background (`#000000`) to maximize battery life and eliminate screen burn-in.
   - Minimalist hollow-stroke typography and automatic second hand/arc suppression.
+- ⌚ **Hybrid Complications Architecture**:
+  - **Host Complications**: 3 live configurable complication slots (Left for steps, Right for battery, Bottom for date/events) seamlessly layered over custom rendering with intelligent tap routing.
+  - **Complication Provider**: Exposes current Faces design and style names to any Wear OS watch face via `FacesComplicationDataSourceService`.
+- 🔗 **Universal Web Deep-Linking & QR Sharing**:
+  - Share creations instantly via QR code and web links (`https://facesapp.watch/share?s=...&c=...`).
+  - Deep link receiver automatically decodes palettes and generates shared templates on connected devices.
+- 📱 **Adaptive Icons & Material You**:
+  - Edge-to-edge dark luxury launcher icons with Android 13+ dynamic wallpaper theme tinting.
 - 🖤 **Luxury Dark Aesthetic**:
   - Deep black foundation (`#080a0d`), frosted glass translucent surfaces (`#33ffffff`), crisp white borders, and paired typography (**Quicksand Bold** & **Proxima Nova**).
 
@@ -53,15 +61,21 @@ graph TD
 
     subgraph CoreLib [":core (Shared Kotlin Library)"]
         Domain["Domain Models<br/>(FaceConfig, FaceStyle, ColorPalette)"]
-        Renderer["WatchRenderer Engine<br/>(OUAT, Business, Fill, TwoTime, Prism)"]
+        Registry["TemplateRegistry & FaceTemplate<br/>(Single Source of Truth)"]
+        Renderer["WatchRenderer Engine<br/>(Cached Dynamic Dispatch)"]
         Mesh["Trianglify Mesh Generator<br/>(Delaunay Triangulation)"]
         Res["Assets & Fonts<br/>(Quicksand, ProximaNova, Straps)"]
+        Domain --> Registry
+        Registry --> Renderer
     end
 
     subgraph WearApp [":wear (Standalone Wear OS App)"]
         WFService["FacesWatchFaceService<br/>(AndroidX Watchface API)"]
+        Complications["ComplicationSlotsManager<br/>(Left, Right, Bottom Slots)"]
+        CompProvider["FacesComplicationDataSourceService<br/>(Exposes Face to System)"]
         WFRenderer["FacesCanvasRenderer<br/>(CanvasRenderer2 Adapter)"]
         DataListener["WearMessageListener<br/>(WearableListenerService)"]
+        WFService --> Complications
         WFService --> WFRenderer
         DataListener --> WFService
     end
@@ -74,9 +88,123 @@ graph TD
 
 | Module | Description | Technologies |
 | :--- | :--- | :--- |
-| [**:core**](file:///Users/jvqc8/Documents/Development/Faces-V2/Faces/core) | Shared domain logic, watch rendering math, Delaunay mesh generator, and vector assets. | 100% Kotlin, AndroidX Canvas, Coroutines |
+| [**:core**](file:///Users/jvqc8/Documents/Development/Faces-V2/Faces/core) | Shared domain logic, watch rendering math, `TemplateRegistry`, Delaunay mesh generator, and vector assets. | 100% Kotlin, AndroidX Canvas, Coroutines |
 | [**:mobile**](file:///Users/jvqc8/Documents/Development/Faces-V2/Faces/mobile) | Handheld companion application for face browsing, camera capture, customization, and syncing. | Jetpack Compose, CameraX, Room DB, SensorManager |
-| [**:wear**](file:///Users/jvqc8/Documents/Development/Faces-V2/Faces/wear) | Standalone Wear OS watch face application. | `androidx.wear.watchface`, Wearable Data Layer |
+| [**:wear**](file:///Users/jvqc8/Documents/Development/Faces-V2/Faces/wear) | Standalone Wear OS watch face application with complication host and provider services. | `androidx.wear.watchface`, Wearable Data Layer |
+
+---
+
+## 🧩 Adding New Watch Face Templates
+
+Faces uses a **plugin-style template architecture**. Adding a new watch face design requires **only creating 1 template definition class and 1 renderer**—no edits to `WatchRenderer`, `CustomiseViewModel`, or database tables are necessary.
+
+### 1. Create the Renderer (`TemplateRenderer`)
+
+In `core/src/main/kotlin/watch/facesapp/core/render/faces/`:
+
+```kotlin
+package watch.facesapp.core.render.faces
+
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Rect
+import watch.facesapp.core.model.FaceConfig
+import watch.facesapp.core.model.FaceMode
+import watch.facesapp.core.model.WatchShape
+import watch.facesapp.core.render.TemplateRenderer
+import java.util.Calendar
+
+class BauhausRenderer(private val context: Context) : TemplateRenderer {
+
+    private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+    private val handPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { strokeCap = Paint.Cap.ROUND }
+
+    override fun render(
+        canvas: Canvas,
+        bounds: Rect,
+        config: FaceConfig,
+        calendar: Calendar,
+        isAmbient: Boolean,
+        shape: WatchShape,
+        faceMode: FaceMode,
+        stepCount: Long
+    ) {
+        val centerX = bounds.exactCenterX()
+        val centerY = bounds.exactCenterY()
+        val radius = bounds.width() / 2f
+
+        // Access colors by role index or convenience getters
+        bgPaint.color = config.getBackgroundColor(isAmbient)
+        if (shape == WatchShape.SQUARE) canvas.drawRect(bounds, bgPaint)
+        else canvas.drawCircle(centerX, centerY, radius, bgPaint)
+
+        // Read optional configuration toggles (e.g., config.options["tick_style"])
+        val showSeconds = config.options["show_seconds"] != "false"
+        // ... draw watch dial, hands, numerals
+    }
+}
+```
+
+### 2. Define the Template Specification (`FaceTemplate`)
+
+In `core/src/main/kotlin/watch/facesapp/core/template/`:
+
+```kotlin
+package watch.facesapp.core.template
+
+import android.content.Context
+import watch.facesapp.core.model.ColorRoleDefinition
+import watch.facesapp.core.model.FaceTemplate
+import watch.facesapp.core.model.TemplateOption
+import watch.facesapp.core.render.TemplateRenderer
+import watch.facesapp.core.render.faces.BauhausRenderer
+
+object BauhausTemplate : FaceTemplate {
+    override val id: String = "BAUHAUS_TIME"
+    override val displayName: String = "Bauhaus Minimal"
+    override val description: String = "Clean geometric Bauhaus dial with custom tick styles."
+
+    // Declare any number of customizable color roles
+    override val colorRoles: List<ColorRoleDefinition> = listOf(
+        ColorRoleDefinition("BG", "Dial Background", 0xFF080A0D.toInt()),
+        ColorRoleDefinition("HR", "Hour Hand", 0xFFFFFFFF.toInt()),
+        ColorRoleDefinition("MIN", "Minute Hand", 0xFFE0E0E0.toInt()),
+        ColorRoleDefinition("ACC", "Accent Ring", 0xFFFF453A.toInt())
+    )
+
+    // Declare extensible settings (booleans, choices)
+    override val options: List<TemplateOption<*>> = listOf(
+        TemplateOption.BooleanOption(
+            key = "show_seconds",
+            displayName = "Second Hand",
+            defaultValue = true,
+            description = "Toggles active ticking second hand."
+        ),
+        TemplateOption.ChoiceOption(
+            key = "tick_style",
+            displayName = "Tick Style",
+            defaultValue = "lines",
+            choices = listOf("none", "dots", "lines", "numbers")
+        )
+    )
+
+    override fun createRenderer(context: Context): TemplateRenderer = BauhausRenderer(context)
+}
+```
+
+### 3. Register the Template
+
+Register your template with `TemplateRegistry`:
+
+```kotlin
+TemplateRegistry.register(BauhausTemplate)
+```
+
+That's it!
+- The **Mobile Customizer** automatically adapts its swatch grid to the template's color roles and options.
+- The **Mobile Carousel & Wear OS Renderer** automatically instantiate and cache `BauhausRenderer` when selected.
+- The **Wear OS Data Layer** syncs colors and options automatically.
 
 ---
 
