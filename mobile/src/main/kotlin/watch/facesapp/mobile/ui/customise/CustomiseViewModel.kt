@@ -66,7 +66,7 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _selectedRole = MutableStateFlow(ColorRole.BACKGROUND)
     val selectedRole: StateFlow<ColorRole> = _selectedRole.asStateFlow()
 
-    private val _contrastGuardMode = MutableStateFlow(watch.facesapp.core.model.ContrastGuardMode.HARD)
+    private val _contrastGuardMode = MutableStateFlow(watch.facesapp.core.model.ContrastGuardMode.SOFT)
     val contrastGuardMode: StateFlow<watch.facesapp.core.model.ContrastGuardMode> = _contrastGuardMode.asStateFlow()
 
     data class ContrastEvaluation(

@@ -53,9 +53,12 @@ fun WatchFacePreview(
         Image(
             painter = painterResource(id = strapRes),
             contentDescription = "Watch Strap",
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize(0.84f)
+                .align(Alignment.Center),
             contentScale = ContentScale.Fit
         )
+
 
         val bounds = remember { Rect() }
 

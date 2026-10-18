@@ -1,6 +1,7 @@
 package watch.facesapp.mobile.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,11 +26,14 @@ import watch.facesapp.mobile.ui.theme.QuicksandFontFamily
 
 @Composable
 fun FacesPillButton(
-    text: String,
+    text: String = "",
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    containerColor: Color = FrostedWhite,
+    contentColor: Color = PureWhite,
+    borderColor: Color = BorderWhite
 ) {
     Button(
         onClick = onClick,
@@ -36,32 +41,41 @@ fun FacesPillButton(
         enabled = enabled,
         shape = RoundedCornerShape(4.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = FrostedWhite,
-            contentColor = PureWhite,
-            disabledContainerColor = FrostedWhite.copy(alpha = 0.15f),
-            disabledContentColor = PureWhite.copy(alpha = 0.4f)
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = containerColor.copy(alpha = 0.15f),
+            disabledContentColor = contentColor.copy(alpha = 0.4f)
         ),
-        border = BorderStroke(1.dp, BorderWhite.copy(alpha = if (enabled) 1f else 0.4f)),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp)
+        border = BorderStroke(1.dp, borderColor.copy(alpha = if (enabled) 1f else 0.4f)),
+        contentPadding = if (text.isNotBlank()) {
+            PaddingValues(horizontal = 24.dp, vertical = 8.dp)
+        } else {
+            PaddingValues(0.dp)
+        }
     ) {
         Row(
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = null,
+                    contentDescription = text.ifBlank { "Action" },
                     tint = PureWhite
                 )
+            }
+            if (icon != null && text.isNotBlank()) {
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            Text(
-                text = text.uppercase(),
-                fontFamily = QuicksandFontFamily,
-                fontSize = 15.sp,
-                letterSpacing = 1.2.sp,
-                color = PureWhite
-            )
+            if (text.isNotBlank()) {
+                Text(
+                    text = text.uppercase(),
+                    fontFamily = QuicksandFontFamily,
+                    fontSize = 15.sp,
+                    letterSpacing = 1.2.sp,
+                    color = PureWhite
+                )
+            }
         }
     }
 }

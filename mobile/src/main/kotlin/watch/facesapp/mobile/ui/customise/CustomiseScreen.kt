@@ -34,12 +34,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import watch.facesapp.core.model.ContrastGuardMode
-import watch.facesapp.mobile.ui.theme.FrostedPill
 import watch.facesapp.mobile.sensor.ShakeDetector
 import watch.facesapp.mobile.ui.components.BottomVignette
 import watch.facesapp.mobile.ui.components.FacesPillButton
@@ -72,7 +68,6 @@ fun CustomiseScreen(
     val previewFaceMode by viewModel.previewFaceMode.collectAsState()
     val contrastGuardMode by viewModel.contrastGuardMode.collectAsState()
     val swatchContrastStatuses by viewModel.swatchContrastStatuses.collectAsState()
-    val isConstraintRelaxed by viewModel.isConstraintRelaxed.collectAsState()
 
     val shakeDetector = remember(context) { ShakeDetector(context) }
 
@@ -110,31 +105,53 @@ fun CustomiseScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
-                        tint = PureWhite
-                    )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = PureWhite
+                        )
+                    }
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
 
                 TopInfoPill(
                     text = style.displayName
                 )
 
-                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val isGuardOn = contrastGuardMode == ContrastGuardMode.HARD
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        viewModel.toggleContrastGuardMode()
+                    }) {
+                        Icon(
+                            painter = painterResource(
+                                id = if (isGuardOn) watch.facesapp.core.R.drawable.contrast_24 else watch.facesapp.core.R.drawable.contrast_rtl_off_24
+                            ),
+                            contentDescription = if (isGuardOn) "Contrast Guard Enabled" else "Contrast Guard Disabled",
+                            tint = if (isGuardOn) PureWhite else PureWhite.copy(alpha = 0.5f)
+                        )
+                    }
 
-                IconButton(onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    viewModel.shuffleAssignments()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Shuffle,
-                        contentDescription = "Shuffle Palette",
-                        tint = PureWhite
-                    )
+                    IconButton(onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        viewModel.shuffleAssignments()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Shuffle,
+                            contentDescription = "Shuffle Palette",
+                            tint = PureWhite
+                        )
+                    }
                 }
             }
 
@@ -165,71 +182,8 @@ fun CustomiseScreen(
                 fontSize = 10.sp,
                 color = SubtitleGray,
                 letterSpacing = 1.sp,
-                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
             )
-
-            // Role Indicator & Contrast Guard Toggle Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp, start = 4.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "ROLE: ",
-                        fontFamily = QuicksandFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        color = SubtitleGray,
-                        letterSpacing = 1.sp
-                    )
-                    Text(
-                        text = selectedRole.displayName.uppercase(),
-                        fontFamily = QuicksandFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        color = PureWhite,
-                        letterSpacing = 1.sp
-                    )
-                }
-
-                val guardLabel = when {
-                    isConstraintRelaxed -> "GUARD: RELAXED"
-                    contrastGuardMode == ContrastGuardMode.HARD -> "GUARD: STRICT"
-                    else -> "GUARD: SOFT"
-                }
-                val guardColor = when {
-                    isConstraintRelaxed -> Color(0xFFFFB300)
-                    contrastGuardMode == ContrastGuardMode.HARD -> PureWhite
-                    else -> SubtitleGray
-                }
-
-                Box(
-                    modifier = Modifier
-                        .background(FrostedPill, shape = RoundedCornerShape(4.dp))
-                        .border(
-                            BorderStroke(0.5.dp, guardColor.copy(alpha = 0.5f)),
-                            shape = RoundedCornerShape(4.dp)
-                        )
-                        .clickable {
-                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                            viewModel.toggleContrastGuardMode()
-                        }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = guardLabel,
-                        fontFamily = QuicksandFontFamily,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.8.sp,
-                        color = guardColor
-                    )
-                }
-            }
 
             // 3. 4x4 Swatch Grid with drag-to-reassign, contrast filtering and snap-to-grid
             SwatchGrid(

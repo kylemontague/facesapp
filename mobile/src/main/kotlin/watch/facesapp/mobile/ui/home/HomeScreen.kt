@@ -1,15 +1,27 @@
 package watch.facesapp.mobile.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import watch.facesapp.mobile.ui.theme.BorderWhite
+import watch.facesapp.mobile.ui.theme.FrostedWhite
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -68,6 +80,7 @@ fun HomeScreen(
     val complicationState by viewModel.complicationState.collectAsState()
 
     var showComplicationsSheet by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     val coroutineScope = rememberCoroutineScope()
     val items = pagerStateData.items
@@ -99,6 +112,7 @@ fun HomeScreen(
 
     // Share modal state
     var shareTarget by remember { mutableStateOf<FaceEntity?>(null) }
+    var deleteTarget by remember { mutableStateOf<FaceEntity?>(null) }
     var importBannerMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(deepLinkUri) {
@@ -221,25 +235,6 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Center Pill: Displays "On yer wrist", relative time ago (e.g. "1 day ago"), or template name
-            val pillText = currentItem?.title ?: "Faces"
-            TopInfoPill(
-                text = pillText,
-                modifier = Modifier.clickable {
-                    when (currentItem) {
-                        is HomePagerItem.HistoricalFace -> {
-                            timelineTarget = Pair(currentItem.entity.id, currentItem.entity.name)
-                        }
-                        is HomePagerItem.ActiveFace -> {
-                            timelineTarget = Pair(currentItem.entity.id, currentItem.entity.name)
-                        }
-                        else -> Unit
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
             // Action icons based on face type
             when (currentItem) {
                 is HomePagerItem.HistoricalFace -> {
@@ -268,7 +263,7 @@ fun HomeScreen(
 
                         // Delete from history
                         IconButton(
-                            onClick = { viewModel.deleteFace(currentItem.entity.id) }
+                            onClick = { deleteTarget = currentItem.entity }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -320,16 +315,38 @@ fun HomeScreen(
         }
 
         // 3. Bottom Vignette Scrim & Contextual Action Buttons
-        BottomVignette(modifier = Modifier.align(Alignment.BottomCenter))
+        BottomVignette(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            height = 180.dp
+        )
 
-        Box(
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp, vertical = 32.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Pill: Displays "On yer wrist!", relative time ago (e.g. "1 day ago"), or template name
+            val pillText = currentItem?.title ?: "Faces"
+            TopInfoPill(
+                text = pillText,
+                modifier = Modifier.clickable {
+                    when (currentItem) {
+                        is HomePagerItem.HistoricalFace -> {
+                            timelineTarget = Pair(currentItem.entity.id, currentItem.entity.name)
+                        }
+                        is HomePagerItem.ActiveFace -> {
+                            timelineTarget = Pair(currentItem.entity.id, currentItem.entity.name)
+                        }
+                        else -> Unit
+                    }
+                }
+            )
+
             when (currentItem) {
                 is HomePagerItem.HistoricalFace -> {
+                    Spacer(modifier = Modifier.height(16.dp))
                     // Historical watches: Can only be assigned as active ("WEAR AGAIN")
                     FacesPillButton(
                         text = "Wear Again",
@@ -343,28 +360,28 @@ fun HomeScreen(
                     )
                 }
                 is HomePagerItem.ActiveFace -> {
-                    // Watch is currently active on wrist — no customize or snap photo buttons shown
+                    // Watch is currently active on wrist — pill shows "On yer wrist!"
                 }
                 is HomePagerItem.TemplateFace -> {
-                    // Base template: Select and customize or snap photo
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        FacesPillButton(
-                            text = "Customise",
-                            onClick = {
-                                onNavigateToCustomise(currentItem.style.id)
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-
-                        FacesPillButton(
-                            text = "Snap Photo",
-                            icon = Icons.Default.CameraAlt,
-                            onClick = {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // Base template: Centered large camera shutter button
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(FrostedWhite)
+                            .border(BorderStroke(1.5.dp, BorderWhite), CircleShape)
+                            .clickable {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onNavigateToCamera(currentItem.style.id)
                             },
-                            modifier = Modifier.weight(1f)
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Snap photo to create watch face",
+                            tint = PureWhite,
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 }
@@ -399,5 +416,19 @@ fun HomeScreen(
                 onDismiss = { showComplicationsSheet = false }
             )
         }
+
+        // 7. Delete Watch Face Confirmation Modal
+        if (deleteTarget != null) {
+            DeleteWatchFaceSheet(
+                face = deleteTarget!!,
+                onConfirmDelete = {
+                    val idToDelete = deleteTarget!!.id
+                    deleteTarget = null
+                    viewModel.deleteFace(idToDelete)
+                },
+                onDismiss = { deleteTarget = null }
+            )
+        }
     }
 }
+

@@ -15,16 +15,15 @@ object FillTemplate : FaceTemplate {
 
     override val colorRoles: List<ColorRoleDefinition> = listOf(
         ColorRoleDefinition("BG", "Background", 0xFF89C4BB.toInt()),
-        ColorRoleDefinition("ACC", "Fill Accent", 0xFFCDE9E6.toInt()),
-        ColorRoleDefinition("TXT", "Time Text", 0xFFFFFFFF.toInt())
+        ColorRoleDefinition("ACC", "Fill Accent", 0xFFCDE9E6.toInt())
     )
 
     override val contrastConstraints: List<ContrastConstraint> = listOf(
         ContrastConstraint(
-            foregroundRole = "TXT",
+            foregroundRole = "ACC",
             backgroundRole = "BG",
-            minRatio = 3.0,
-            description = "Time text against background"
+            minRatio = 1.2,
+            description = "Fill accent against background"
         )
     )
 
