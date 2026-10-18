@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
@@ -34,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.faces.mobile.data.db.FaceEntity
 import com.faces.mobile.data.db.FaceWearLogEntity
 import com.faces.mobile.ui.components.BottomVignette
 import com.faces.mobile.ui.components.FacesPillButton
@@ -42,6 +44,7 @@ import com.faces.mobile.ui.components.TopVignette
 import com.faces.mobile.ui.components.WatchFacePreview
 import com.faces.mobile.ui.theme.LuxuryBlack
 import com.faces.mobile.ui.theme.PureWhite
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 
@@ -51,6 +54,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     onNavigateToCamera: (String) -> Unit,
     onNavigateToCustomise: (String) -> Unit,
+    deepLinkUri: android.net.Uri? = null,
+    onClearDeepLink: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val pagerStateData by viewModel.pagerStateData.collectAsState()
@@ -83,6 +88,26 @@ fun HomeScreen(
                 lastAlignedIndex = targetIndex
                 pagerState.scrollToPage(targetIndex)
             }
+        }
+    }
+
+    // Share modal state
+    var shareTarget by remember { mutableStateOf<FaceEntity?>(null) }
+    var importBannerMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(deepLinkUri) {
+        if (deepLinkUri != null) {
+            viewModel.importSharedFace(deepLinkUri) { imported ->
+                importBannerMessage = "Imported '${imported.name}' to your wrist!"
+                onClearDeepLink()
+            }
+        }
+    }
+
+    LaunchedEffect(importBannerMessage) {
+        if (importBannerMessage != null) {
+            delay(4000L)
+            importBannerMessage = null
         }
     }
 
@@ -202,31 +227,79 @@ fun HomeScreen(
             // Action icons based on face type
             when (currentItem) {
                 is HomePagerItem.HistoricalFace -> {
-                    IconButton(
-                        onClick = { viewModel.deleteFace(currentItem.entity.id) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Face",
-                            tint = PureWhite.copy(alpha = 0.7f)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Favorite toggle
+                        IconButton(
+                            onClick = { viewModel.toggleFavorite(currentItem.entity.id, currentItem.entity.isFavorite) }
+                        ) {
+                            Icon(
+                                imageVector = if (currentItem.entity.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite Face",
+                                tint = if (currentItem.entity.isFavorite) Color(0xFFD93550) else PureWhite
+                            )
+                        }
+
+                        // Share creation via QR code / link
+                        IconButton(
+                            onClick = { shareTarget = currentItem.entity }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share Face",
+                                tint = PureWhite
+                            )
+                        }
+
+                        // Delete from history
+                        IconButton(
+                            onClick = { viewModel.deleteFace(currentItem.entity.id) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Face",
+                                tint = PureWhite.copy(alpha = 0.7f)
+                            )
+                        }
                     }
                 }
                 is HomePagerItem.ActiveFace -> {
-                    IconButton(
-                        onClick = { viewModel.toggleFavorite(currentItem.entity.id, currentItem.entity.isFavorite) }
-                    ) {
-                        Icon(
-                            imageVector = if (currentItem.entity.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Favorite Face",
-                            tint = if (currentItem.entity.isFavorite) Color(0xFFD93550) else PureWhite
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { viewModel.toggleFavorite(currentItem.entity.id, currentItem.entity.isFavorite) }
+                        ) {
+                            Icon(
+                                imageVector = if (currentItem.entity.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Favorite Face",
+                                tint = if (currentItem.entity.isFavorite) Color(0xFFD93550) else PureWhite
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { shareTarget = currentItem.entity }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Share Face",
+                                tint = PureWhite
+                            )
+                        }
                     }
                 }
                 else -> {
                     // Placeholder spacing for symmetrical layout
                     Box(modifier = Modifier.padding(24.dp))
                 }
+            }
+        }
+
+        // Deep Link Import Notification Banner
+        if (importBannerMessage != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 96.dp)
+            ) {
+                TopInfoPill(text = importBannerMessage!!)
             }
         }
 
@@ -290,6 +363,14 @@ fun HomeScreen(
                 wearLogs = wearLogs,
                 stats = faceStats,
                 onDismiss = { timelineTarget = null }
+            )
+        }
+
+        // 5. Share Watch Face Bottom Sheet Modal
+        if (shareTarget != null) {
+            ShareWatchFaceSheet(
+                face = shareTarget!!,
+                onDismiss = { shareTarget = null }
             )
         }
     }

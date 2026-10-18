@@ -15,13 +15,16 @@ import com.faces.mobile.ui.home.HomeViewModel
 import com.faces.mobile.ui.splash.SplashScreen
 
 @Composable
-fun FacesApp() {
+fun FacesApp(
+    deepLinkUri: android.net.Uri? = null,
+    onClearDeepLink: () -> Unit = {}
+) {
     val navController = rememberNavController()
     val customiseViewModel: CustomiseViewModel = viewModel()
 
     NavHost(
         navController = navController,
-        startDestination = "splash"
+        startDestination = if (deepLinkUri != null) "home" else "splash"
     ) {
         composable("splash") {
             SplashScreen(
@@ -44,7 +47,9 @@ fun FacesApp() {
                 onNavigateToCustomise = { templateStyleId ->
                     customiseViewModel.setFixedTemplate(templateStyleId)
                     navController.navigate("customise")
-                }
+                },
+                deepLinkUri = deepLinkUri,
+                onClearDeepLink = onClearDeepLink
             )
         }
 

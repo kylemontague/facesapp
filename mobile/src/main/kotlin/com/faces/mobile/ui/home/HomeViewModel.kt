@@ -220,4 +220,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getWearLogsForFace(faceId: String): Flow<List<FaceWearLogEntity>> =
         faceDao.getWearLogsForFace(faceId)
+
+    fun importSharedFace(uri: android.net.Uri, onImported: ((FaceEntity) -> Unit)? = null) {
+        val sharedData = com.faces.core.util.FaceShareUtils.parseShareUri(uri) ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            val entity = FaceEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                style = sharedData.style,
+                colors = sharedData.colors,
+                name = sharedData.name,
+                isFavorite = false,
+                createdAt = System.currentTimeMillis(),
+                lastWornAt = System.currentTimeMillis(),
+                isCurrentOnWatch = true
+            )
+            faceDao.insertFace(entity)
+            faceDao.recordWearFace(entity.id, entity.lastWornAt ?: System.currentTimeMillis())
+            syncManager.syncCurrentFace(entity.toFaceConfig())
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                onImported?.invoke(entity)
+            }
+        }
+    }
 }

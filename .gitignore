@@ -1,26 +1,49 @@
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
-.DS_Store
+# Built-in Gradle & Android build outputs
+.gradle/
+build/
+**/build/
 
-# Ignore build files
-/build
-/app/build
-/androidngnstack/build
+# Local SDK and machine configurations
+local.properties
+local.properties.*
 
-/captures
-
-# Built application files
-*.apk
-*.ap_
-
-# files for the dex VM
-*.dex
-
-# Java class files
-*.class
-
-# Android Studio files
+# Android Studio & IntelliJ IDEA
+.idea/
 *.iml
-.idea
+*.iws
+*.ipr
+out/
+.navigation/
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Kotlin incremental cache
+.kotlin/
+*.kotlin_module
+
+# Built application and library artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.aar
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Captures, dumps and profiling
+captures/
+*.hprof
+*.prof
+*.profm
+
+# Log files and crash dumps
+*.log
+hs_err_pid*
+replay_pid*
+.gradletasknamecache
