@@ -169,6 +169,7 @@ class FacesWatchFaceService : WatchFaceService() {
     companion object {
         var activeRenderer: FacesCanvasRenderer? = null
         var activeHealthManager: HealthSensorManager? = null
+        var isPreviewActive: Boolean = false
         private var previewWakeLock: android.os.PowerManager.WakeLock? = null
         private val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
         private var autoRevertRunnable: Runnable? = null
@@ -177,9 +178,25 @@ class FacesWatchFaceService : WatchFaceService() {
             activeHealthManager?.restart()
         }
 
+        fun refreshPreviewHeartbeat(context: android.content.Context) {
+            if (isPreviewActive) {
+                scheduleAutoRevert(context)
+            }
+        }
+
+        fun scheduleAutoRevert(context: android.content.Context) {
+            autoRevertRunnable?.let { mainHandler.removeCallbacks(it) }
+            val runnable = Runnable {
+                releasePreviewWakeLock(context)
+            }
+            autoRevertRunnable = runnable
+            mainHandler.postDelayed(runnable, 6000L) // Revert after 6s of inactivity/disconnect
+        }
+
         @Synchronized
-        fun wakeUpForPreview(context: android.content.Context, timeoutMs: Long = 30_000L) {
+        fun wakeUpForPreview(context: android.content.Context, timeoutMs: Long = 10_000L) {
             try {
+                isPreviewActive = true
                 val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as? android.os.PowerManager ?: return
                 if (previewWakeLock == null) {
                     @Suppress("DEPRECATION")
@@ -194,13 +211,8 @@ class FacesWatchFaceService : WatchFaceService() {
                 }
                 previewWakeLock?.acquire(timeoutMs)
 
-                // Schedule auto-revert if no new preview updates arrive
-                autoRevertRunnable?.let { mainHandler.removeCallbacks(it) }
-                val runnable = Runnable {
-                    revertToSavedConfig(context)
-                }
-                autoRevertRunnable = runnable
-                mainHandler.postDelayed(runnable, timeoutMs + 2000L)
+                // Schedule auto-revert if no new preview updates or heartbeats arrive
+                scheduleAutoRevert(context)
             } catch (e: Exception) {
                 android.util.Log.e("FacesWatchFaceService", "Failed to acquire preview wake lock", e)
             }
@@ -211,6 +223,7 @@ class FacesWatchFaceService : WatchFaceService() {
             try {
                 autoRevertRunnable?.let { mainHandler.removeCallbacks(it) }
                 autoRevertRunnable = null
+                isPreviewActive = false
                 if (previewWakeLock?.isHeld == true) {
                     previewWakeLock?.release()
                 }
@@ -222,6 +235,7 @@ class FacesWatchFaceService : WatchFaceService() {
 
         fun revertToSavedConfig(context: android.content.Context) {
             try {
+                isPreviewActive = false
                 val savedConfig = WearMessageListener.loadSavedConfig(context)
                 updateConfig(savedConfig)
             } catch (e: Exception) {

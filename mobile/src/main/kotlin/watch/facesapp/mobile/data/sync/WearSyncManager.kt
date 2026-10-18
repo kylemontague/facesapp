@@ -127,6 +127,19 @@ class WearSyncManager(context: Context) {
         }
     }
 
+    /**
+     * Transmits a lightweight keep-alive ping to reset the watch preview auto-revert timer.
+     */
+    suspend fun sendPreviewPing(): Result<Unit> {
+        return runCatching {
+            val nodes = nodeClient.connectedNodes.await()
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_PREVIEW_PING, ByteArray(0)).await()
+            }
+            Unit
+        }
+    }
+
     private fun buildPreviewPayload(config: FaceConfig): String {
         val colorsStr = config.colors.joinToString(",")
         val optionsStr = config.options.entries.joinToString(";") { "${it.key}=${it.value}" }
@@ -139,6 +152,7 @@ class WearSyncManager(context: Context) {
         const val PATH_PREVIEW_FACE = "/faces/preview"
         const val PATH_PREVIEW_START = "/faces/preview/start"
         const val PATH_PREVIEW_STOP = "/faces/preview/stop"
+        const val PATH_PREVIEW_PING = "/faces/preview/ping"
         const val PATH_WEATHER = "/faces/weather"
         const val PATH_CALENDAR = "/faces/calendar"
 

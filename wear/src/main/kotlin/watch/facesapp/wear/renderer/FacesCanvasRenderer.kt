@@ -52,8 +52,13 @@ class FacesCanvasRenderer(
         val isAmbient = renderParameters.drawMode == DrawMode.AMBIENT
         val shape = if (context.resources.configuration.isScreenRound) WatchShape.ROUND else WatchShape.SQUARE
 
-        if (isAmbient && faceMode != FaceMode.TIME) {
-            faceMode = FaceMode.TIME
+        if (isAmbient) {
+            if (faceMode != FaceMode.TIME) {
+                faceMode = FaceMode.TIME
+            }
+            if (watch.facesapp.wear.service.FacesWatchFaceService.isPreviewActive) {
+                watch.facesapp.wear.service.FacesWatchFaceService.releasePreviewWakeLock(context)
+            }
         }
 
         reusableCalendar.timeInMillis = zonedDateTime.toInstant().toEpochMilli()

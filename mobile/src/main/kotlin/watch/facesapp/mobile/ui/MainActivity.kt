@@ -9,6 +9,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import watch.facesapp.mobile.data.sync.WearSyncManager
 import watch.facesapp.mobile.ui.theme.FacesTheme
@@ -17,6 +20,7 @@ class MainActivity : ComponentActivity() {
 
     private val deepLinkUriState = MutableStateFlow<Uri?>(null)
     private val syncManager by lazy { WearSyncManager(applicationContext) }
+    private var previewHeartbeatJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,10 +44,19 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             syncManager.startPreviewSession()
         }
+        previewHeartbeatJob?.cancel()
+        previewHeartbeatJob = lifecycleScope.launch {
+            while (isActive) {
+                delay(3000L)
+                syncManager.sendPreviewPing()
+            }
+        }
     }
 
     override fun onPause() {
         super.onPause()
+        previewHeartbeatJob?.cancel()
+        previewHeartbeatJob = null
         lifecycleScope.launch {
             syncManager.stopPreviewSession()
         }

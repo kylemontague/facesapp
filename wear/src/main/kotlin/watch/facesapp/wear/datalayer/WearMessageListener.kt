@@ -56,6 +56,9 @@ class WearMessageListener : WearableListenerService() {
             PATH_PREVIEW_STOP -> {
                 FacesWatchFaceService.releasePreviewWakeLock(applicationContext)
             }
+            PATH_PREVIEW_PING -> {
+                FacesWatchFaceService.refreshPreviewHeartbeat(applicationContext)
+            }
             PATH_PREVIEW_FACE -> {
                 FacesWatchFaceService.wakeUpForPreview(applicationContext)
                 val payload = String(messageEvent.data, Charsets.UTF_8)
@@ -121,6 +124,7 @@ class WearMessageListener : WearableListenerService() {
         const val PATH_PREVIEW_FACE = "/faces/preview"
         const val PATH_PREVIEW_START = "/faces/preview/start"
         const val PATH_PREVIEW_STOP = "/faces/preview/stop"
+        const val PATH_PREVIEW_PING = "/faces/preview/ping"
         const val PATH_WEATHER = "/faces/weather"
         const val PATH_CALENDAR = "/faces/calendar"
         const val KEY_ID = "id"
