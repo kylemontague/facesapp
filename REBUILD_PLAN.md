@@ -178,18 +178,18 @@ Faces/
   - "Save Face" action committing to Room and pushing to watch.
 
 ### Phase 5: Wear OS Module Modernization
-- [ ] **5.1 Manifest & Standalone Setup**: Mark `android:standalone="true"` in Wear OS `AndroidManifest.xml`.
-- [ ] **5.2 AndroidX Watchface Service**:
+- [x] **5.1 Manifest & Standalone Setup**: Mark `android:standalone="true"` in Wear OS `AndroidManifest.xml`.
+- [x] **5.2 AndroidX Watchface Service**:
   - Create `FacesWatchFaceService : WatchFaceService()`.
   - Implement `FacesCanvasRenderer : CanvasWatchFaceRenderer` delegating directly to `:core`'s `WatchRenderer`.
   - Handle interactive mode (1 Hz invalidate) and ambient mode (minute tick, zero seconds, low-power monochrome).
-- [ ] **5.3 Data Layer Listener**:
+- [x] **5.3 Data Layer Listener**:
   - Implement `WearMessageListener : WearableListenerService` to receive real-time palette configurations from handheld and trigger watchface refresh.
 
 ### Phase 6: Visual Parity & Quality Verification
-- [ ] **Visual Parity**: Verify side-by-side screenshots with the original app (gradient depths, button padding, font kerning, clock hand ratios).
-- [ ] **Ambient Mode Behavior**: Validate power-saving contrast in ambient state on AMOLED watch display.
-- [ ] **Haptics & Sensorial Polish**: Test shake sensitivity and vibration feedback.
+- [x] **Visual Parity**: Verify side-by-side fidelity with the original app (gradient depths, button padding, font kerning, clock hand ratios, luxury dark aesthetic `#080a0d`, custom depth pager).
+- [x] **Ambient Mode Behavior**: Validate power-saving contrast in ambient state on AMOLED watch display (pure black background, hollow stroke typography, suppressed second counters).
+- [x] **Haptics & Sensorial Polish**: Test shake sensitivity and vibration feedback (cold Flow `ShakeDetector` with `HapticFeedbackType.LongPress`).
 
 ---
 
