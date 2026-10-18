@@ -22,6 +22,7 @@ class WearSyncManager(context: Context) {
                 dataMap.putString(KEY_ID, config.id)
                 dataMap.putString(KEY_STYLE, config.style.id)
                 dataMap.putIntegerArrayList(KEY_COLORS, ArrayList(config.colors))
+                dataMap.putString(KEY_OPTIONS, config.options.entries.joinToString(";") { "${it.key}=${it.value}" })
                 dataMap.putLong(KEY_TIMESTAMP, System.currentTimeMillis())
             }
 
@@ -71,6 +72,7 @@ class WearSyncManager(context: Context) {
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"
         const val KEY_COLORS = "colors"
+        const val KEY_OPTIONS = "options"
         const val KEY_TIMESTAMP = "timestamp"
     }
 }

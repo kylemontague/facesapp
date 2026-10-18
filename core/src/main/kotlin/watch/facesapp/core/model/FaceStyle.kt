@@ -7,6 +7,10 @@ enum class FaceStyle(val id: String, val displayName: String) {
     TWO_TIME("TWO_TIME", "Two Time"),
     PRISM_TIME("PRISM_TIME", "Space-Time Prism");
 
+    val template: FaceTemplate
+        get() = watch.facesapp.core.template.TemplateRegistry.get(id)
+            ?: watch.facesapp.core.template.TemplateRegistry.defaultTemplate
+
     companion object {
         fun fromId(id: String): FaceStyle =
             entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: OUA_TIME

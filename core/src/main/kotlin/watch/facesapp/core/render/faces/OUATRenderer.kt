@@ -11,9 +11,10 @@ import watch.facesapp.core.model.WatchShape
 import watch.facesapp.core.util.FontProvider
 import watch.facesapp.core.util.NumbersToWords
 import watch.facesapp.core.util.TimeUtils
+import watch.facesapp.core.render.TemplateRenderer
 import java.util.Calendar
 
-class OUATRenderer(private val context: Context) {
+class OUATRenderer(private val context: Context) : TemplateRenderer {
 
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -34,15 +35,15 @@ class OUATRenderer(private val context: Context) {
 
     private val arcRect = RectF()
 
-    fun render(
+    override fun render(
         canvas: Canvas,
         bounds: Rect,
         config: FaceConfig,
         calendar: Calendar,
         isAmbient: Boolean,
         shape: WatchShape,
-        faceMode: FaceMode = FaceMode.TIME,
-        stepCount: Long = 0L
+        faceMode: FaceMode,
+        stepCount: Long
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()

@@ -15,8 +15,9 @@ import watch.facesapp.core.util.FontProvider
 import watch.facesapp.core.util.TimeUtils
 import java.util.Calendar
 import androidx.core.graphics.withSave
+import watch.facesapp.core.render.TemplateRenderer
 
-class PrismRenderer(private val context: Context) {
+class PrismRenderer(private val context: Context) : TemplateRenderer {
 
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -35,15 +36,15 @@ class PrismRenderer(private val context: Context) {
     private var cachedWidth: Int = 0
     private var cachedHeight: Int = 0
 
-    fun render(
+    override fun render(
         canvas: Canvas,
         bounds: Rect,
         config: FaceConfig,
         calendar: Calendar,
         isAmbient: Boolean,
         shape: WatchShape,
-        faceMode: FaceMode = FaceMode.TIME,
-        stepCount: Long = 0L
+        faceMode: FaceMode,
+        stepCount: Long
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()

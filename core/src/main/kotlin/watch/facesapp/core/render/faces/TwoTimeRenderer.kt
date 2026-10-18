@@ -16,9 +16,10 @@ import watch.facesapp.core.util.NumbersToWords
 import watch.facesapp.core.util.TimeUtils
 import java.util.Calendar
 import androidx.core.graphics.withSave
+import watch.facesapp.core.render.TemplateRenderer
 import java.util.Locale
 
-class TwoTimeRenderer(private val context: Context) {
+class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
 
     private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -40,15 +41,15 @@ class TwoTimeRenderer(private val context: Context) {
     private val clipPath = Path()
     private val rectF = RectF()
 
-    fun render(
+    override fun render(
         canvas: Canvas,
         bounds: Rect,
         config: FaceConfig,
         calendar: Calendar,
         isAmbient: Boolean,
         shape: WatchShape,
-        faceMode: FaceMode = FaceMode.TIME,
-        stepCount: Long = 0L
+        faceMode: FaceMode,
+        stepCount: Long
     ) {
         val centerX = bounds.exactCenterX()
         val centerY = bounds.exactCenterY()

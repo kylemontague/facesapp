@@ -26,4 +26,20 @@ class Converters {
     fun toFaceStyle(id: String?): FaceStyle {
         return FaceStyle.fromId(id ?: "")
     }
+
+    @TypeConverter
+    fun fromOptionsMap(options: Map<String, String>?): String {
+        if (options.isNullOrEmpty()) return ""
+        return options.entries.joinToString(";") { "${it.key}=${it.value}" }
+    }
+
+    @TypeConverter
+    fun toOptionsMap(data: String?): Map<String, String> {
+        if (data.isNullOrBlank()) return emptyMap()
+        return data.split(";")
+            .mapNotNull { entry ->
+                val parts = entry.split("=", limit = 2)
+                if (parts.size == 2) parts[0] to parts[1] else null
+            }.toMap()
+    }
 }

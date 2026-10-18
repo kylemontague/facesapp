@@ -110,4 +110,13 @@ class FaceEntityTest {
 
         assertEquals(style, deserialized)
     }
+
+    @Test
+    fun testOptionsMapConverter() {
+        val options = mapOf("show_seconds" to "true", "timezone" to "Europe/London", "theme" to "dark")
+        val serialized = converters.fromOptionsMap(options)
+        val deserialized = converters.toOptionsMap(serialized)
+
+        assertEquals(options, deserialized)
+    }
 }

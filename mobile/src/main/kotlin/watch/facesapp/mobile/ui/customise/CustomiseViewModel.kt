@@ -23,16 +23,17 @@ enum class ColorRole(val code: String, val displayName: String) {
     HOUR("HR", "Hour"),
     MINUTE("MIN", "Minute"),
     SECOND("SEC", "Second"),
-    ACCENT("ACC", "Accent")
+    ACCENT("ACC", "Accent"),
+    TEXT("TXT", "Text");
+
+    companion object {
+        fun fromCode(code: String): ColorRole =
+            entries.firstOrNull { it.code.equals(code, ignoreCase = true) } ?: BACKGROUND
+    }
 }
 
-fun FaceStyle.requiredRoles(): List<ColorRole> = when (this) {
-    FaceStyle.FILL_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.ACCENT)
-    FaceStyle.OUA_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.HOUR, ColorRole.SECOND)
-    FaceStyle.TWO_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.ACCENT, ColorRole.HOUR)
-    FaceStyle.BUSINESS_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.HOUR, ColorRole.MINUTE, ColorRole.SECOND)
-    FaceStyle.PRISM_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.ACCENT, ColorRole.SECOND, ColorRole.HOUR)
-}
+fun FaceStyle.requiredRoles(): List<ColorRole> =
+    template.colorRoles.map { ColorRole.fromCode(it.code) }
 
 class CustomiseViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -46,6 +47,9 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _paletteColors = MutableStateFlow(ColorPalette.defaultPalette())
     val paletteColors: StateFlow<List<Int>> = _paletteColors.asStateFlow()
 
+    private val _options = MutableStateFlow<Map<String, String>>(emptyMap())
+    val options: StateFlow<Map<String, String>> = _options.asStateFlow()
+
     // Map each required ColorRole to an index (0..15) into paletteColors
     private val _roleAssignments = MutableStateFlow(
         FaceStyle.OUA_TIME.requiredRoles().mapIndexed { index, role -> role to index }.toMap()
@@ -55,24 +59,21 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _selectedRole = MutableStateFlow(ColorRole.BACKGROUND)
     val selectedRole: StateFlow<ColorRole> = _selectedRole.asStateFlow()
 
-    val currentConfig: StateFlow<FaceConfig> = combine(_style, _paletteColors, _roleAssignments) { st, pal, roles ->
-        val bgIdx = roles[ColorRole.BACKGROUND] ?: 0
-        val hrIdx = roles[ColorRole.HOUR] ?: 1
-        val minIdx = roles[ColorRole.MINUTE] ?: 2
-        val secIdx = roles[ColorRole.SECOND] ?: 3
-        val accIdx = roles[ColorRole.ACCENT] ?: 4
-        val resolvedColors = listOf(
-            pal.getOrElse(bgIdx) { 0xFF080A0D.toInt() },  // index 0: Background
-            pal.getOrElse(hrIdx) { 0xFFFFFFFF.toInt() },  // index 1: Hour
-            pal.getOrElse(minIdx) { 0xFF55EE45.toInt() }, // index 2: Minute
-            pal.getOrElse(secIdx) { 0xFF3C797F.toInt() }, // index 3: Second
-            pal.getOrElse(accIdx) { 0xFFCDE9E6.toInt() }, // index 4: Accent
-            pal.getOrElse(secIdx) { 0xFFCDE9E6.toInt() }  // index 5: Meridian
-        )
+    val currentConfig: StateFlow<FaceConfig> = combine(_style, _paletteColors, _roleAssignments, _options) { st, pal, roles, opts ->
+        val resolvedColors = st.template.colorRoles.map { def ->
+            val role = ColorRole.fromCode(def.code)
+            val swatchIdx = roles[role]
+            if (swatchIdx != null) {
+                pal.getOrElse(swatchIdx) { def.defaultColor }
+            } else {
+                def.defaultColor
+            }
+        }
         FaceConfig(
             id = UUID.randomUUID().toString(),
             style = st,
-            colors = resolvedColors
+            colors = resolvedColors,
+            options = opts
         )
     }.stateIn(
         scope = viewModelScope,
@@ -88,7 +89,12 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         val roles = st.requiredRoles()
         val assignments = roles.mapIndexed { idx, role -> role to idx }.toMap()
         _roleAssignments.value = assignments
-        _selectedRole.value = roles.first()
+        _selectedRole.value = roles.firstOrNull() ?: ColorRole.BACKGROUND
+    }
+
+    fun setOption(key: String, value: String) {
+        _options.value = _options.value + (key to value)
+        syncPreview()
     }
 
     fun initializeWithPalette(colors: List<Int>) {

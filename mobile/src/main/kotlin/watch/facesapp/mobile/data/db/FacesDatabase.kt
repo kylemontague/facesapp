@@ -10,7 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [FaceEntity::class, FaceWearLogEntity::class], version = 4, exportSchema = false)
+@Database(entities = [FaceEntity::class, FaceWearLogEntity::class], version = 5, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class FacesDatabase : RoomDatabase() {
 

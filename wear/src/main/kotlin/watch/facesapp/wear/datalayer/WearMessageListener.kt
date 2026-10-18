@@ -23,11 +23,14 @@ class WearMessageListener : WearableListenerService() {
                     val styleId = dataMap.getString(KEY_STYLE) ?: FaceStyle.OUA_TIME.id
                     val colorList = dataMap.getIntegerArrayList(KEY_COLORS) ?: arrayListOf()
                     val id = dataMap.getString(KEY_ID) ?: ""
+                    val optionsStr = dataMap.getString(KEY_OPTIONS) ?: ""
+                    val optionsMap = parseOptions(optionsStr)
 
                     val newConfig = FaceConfig(
                         id = id,
                         style = FaceStyle.fromId(styleId),
-                        colors = colorList
+                        colors = colorList,
+                        options = optionsMap
                     )
 
                     saveConfigLocally(newConfig)
@@ -71,6 +74,7 @@ class WearMessageListener : WearableListenerService() {
         prefs.edit {
             putString(KEY_STYLE, config.style.id)
                 .putString(KEY_COLORS, config.colors.joinToString(","))
+                .putString(KEY_OPTIONS, config.options.entries.joinToString(";") { "${it.key}=${it.value}" })
                 .putString(KEY_ID, config.id)
         }
     }
@@ -81,12 +85,22 @@ class WearMessageListener : WearableListenerService() {
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"
         const val KEY_COLORS = "colors"
+        const val KEY_OPTIONS = "options"
         const val PREFS_NAME = "wear_face_prefs"
+
+        fun parseOptions(raw: String): Map<String, String> {
+            if (raw.isBlank()) return emptyMap()
+            return raw.split(";").mapNotNull { entry ->
+                val parts = entry.split("=", limit = 2)
+                if (parts.size == 2) parts[0] to parts[1] else null
+            }.toMap()
+        }
 
         fun loadSavedConfig(context: Context): FaceConfig {
             val prefs = context.getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
             val styleId = prefs.getString(KEY_STYLE, FaceStyle.OUA_TIME.id) ?: FaceStyle.OUA_TIME.id
             val colorsStr = prefs.getString(KEY_COLORS, "") ?: ""
+            val optionsStr = prefs.getString(KEY_OPTIONS, "") ?: ""
             val id = prefs.getString(KEY_ID, "") ?: ""
 
             val colors = if (colorsStr.isNotBlank()) {
@@ -98,7 +112,8 @@ class WearMessageListener : WearableListenerService() {
             return FaceConfig(
                 id = id,
                 style = FaceStyle.fromId(styleId),
-                colors = colors
+                colors = colors,
+                options = parseOptions(optionsStr)
             )
         }
     }

@@ -12,6 +12,7 @@ data class FaceEntity(
     val id: String = UUID.randomUUID().toString(),
     val style: FaceStyle = FaceStyle.OUA_TIME,
     val colors: List<Int> = emptyList(),
+    val options: Map<String, String> = emptyMap(),
     val name: String = style.displayName,
     val isFavorite: Boolean = false,
     val createdAt: Long = System.currentTimeMillis(),
@@ -22,6 +23,7 @@ data class FaceEntity(
         id = id,
         style = style,
         colors = colors,
+        options = options,
         isFavorite = isFavorite,
         createdAt = createdAt
     )
@@ -36,6 +38,7 @@ data class FaceEntity(
             id = config.id,
             style = config.style,
             colors = config.colors,
+            options = config.options,
             name = name,
             isFavorite = config.isFavorite,
             createdAt = config.createdAt,
