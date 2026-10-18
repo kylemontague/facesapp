@@ -3,7 +3,7 @@ package com.faces.mobile.ui.home
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +14,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Visibility
@@ -21,13 +22,19 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
+import com.faces.mobile.data.db.FaceWearLogEntity
 import com.faces.mobile.ui.components.BottomVignette
 import com.faces.mobile.ui.components.FacesPillButton
 import com.faces.mobile.ui.components.TopInfoPill
@@ -35,38 +42,80 @@ import com.faces.mobile.ui.components.TopVignette
 import com.faces.mobile.ui.components.WatchFacePreview
 import com.faces.mobile.ui.theme.LuxuryBlack
 import com.faces.mobile.ui.theme.PureWhite
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
-    onNavigateToCamera: () -> Unit,
+    onNavigateToCamera: (String) -> Unit,
     onNavigateToCustomise: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val faces by viewModel.faces.collectAsState()
+    val pagerStateData by viewModel.pagerStateData.collectAsState()
     val isAmbient by viewModel.isAmbient.collectAsState()
     val calendar by viewModel.calendar.collectAsState()
     val faceMode by viewModel.faceMode.collectAsState()
 
+    val coroutineScope = rememberCoroutineScope()
+    val items = pagerStateData.items
+
     val pagerState = rememberPagerState(
-        initialPage = 0,
-        pageCount = { faces.size.coerceAtLeast(1) }
+        initialPage = pagerStateData.activeIndex.coerceAtLeast(0),
+        pageCount = { items.size.coerceAtLeast(1) }
     )
+
+    // Ensure scroll aligns to the active watch face on initial load,
+    // and whenever the active watch face updates (e.g. after creating/saving a new face or wearing again).
+    var lastActiveFaceId by remember { mutableStateOf<String?>(null) }
+    var lastAlignedIndex by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(pagerStateData.activeFaceId, pagerStateData.activeIndex, items.isNotEmpty()) {
+        val currentActiveId = pagerStateData.activeFaceId
+        val targetIndex = pagerStateData.activeIndex
+        if (currentActiveId != null && items.isNotEmpty() && targetIndex in items.indices) {
+            if (currentActiveId != lastActiveFaceId) {
+                lastActiveFaceId = currentActiveId
+                lastAlignedIndex = targetIndex
+                pagerState.scrollToPage(targetIndex)
+            } else if (lastAlignedIndex == 0 && targetIndex > 0 && !pagerState.isScrollInProgress) {
+                // When historical wear sessions finish loading from Room on startup, adjust to active index
+                lastAlignedIndex = targetIndex
+                pagerState.scrollToPage(targetIndex)
+            }
+        }
+    }
+
+    // Timeline modal sheet state
+    var timelineTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // Pair(faceId, faceName)
+    val wearLogs by remember(timelineTarget) {
+        if (timelineTarget != null) {
+            viewModel.getWearLogsForFace(timelineTarget!!.first)
+        } else {
+            flowOf(emptyList())
+        }
+    }.collectAsState(initial = emptyList())
+    val faceStats by remember(timelineTarget) {
+        if (timelineTarget != null) {
+            viewModel.getFaceStats(timelineTarget!!.first)
+        } else {
+            flowOf(FaceStats("", 0, 0))
+        }
+    }.collectAsState(initial = FaceStats("", 0, 0))
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(LuxuryBlack)
     ) {
-        // 1. Horizontal Pager with depth transformation
-        if (faces.isNotEmpty()) {
+        // 1. Horizontal Pager with 0.75x depth transformation
+        if (items.isNotEmpty()) {
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
-                val faceEntity = faces.getOrNull(page)
-                if (faceEntity != null) {
+                val item = items.getOrNull(page)
+                if (item != null) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -90,14 +139,14 @@ fun HomeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         WatchFacePreview(
-                            config = faceEntity.toFaceConfig(),
+                            config = item.config,
                             calendar = calendar,
                             isAmbient = isAmbient,
                             faceMode = faceMode,
                             modifier = Modifier
                                 .fillMaxSize(0.85f)
                                 .clickable(
-                                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                    interactionSource = remember { MutableInteractionSource() },
                                     indication = null
                                 ) {
                                     viewModel.toggleFaceMode()
@@ -108,8 +157,10 @@ fun HomeScreen(
             }
         }
 
-        // 2. Top Vignette Scrim & Status Controls
+        // 2. Top Vignette Scrim & Controls
         TopVignette(modifier = Modifier.align(Alignment.TopCenter))
+
+        val currentItem = items.getOrNull(pagerState.currentPage)
 
         Row(
             modifier = Modifier
@@ -129,51 +180,116 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            val currentFace = faces.getOrNull(pagerState.currentPage)
-            TopInfoPill(text = currentFace?.name ?: "Faces")
+            // Center Pill: Displays "On yer wrist", relative time ago (e.g. "1 day ago"), or template name
+            val pillText = currentItem?.title ?: "Faces"
+            TopInfoPill(
+                text = pillText,
+                modifier = Modifier.clickable {
+                    when (currentItem) {
+                        is HomePagerItem.HistoricalFace -> {
+                            timelineTarget = Pair(currentItem.entity.id, currentItem.entity.name)
+                        }
+                        is HomePagerItem.ActiveFace -> {
+                            timelineTarget = Pair(currentItem.entity.id, currentItem.entity.name)
+                        }
+                        else -> Unit
+                    }
+                }
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Favorite button
-            IconButton(
-                onClick = { currentFace?.let { viewModel.toggleFavorite(it) } }
-            ) {
-                Icon(
-                    imageVector = if (currentFace?.isFavorite == true) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = "Favorite Face",
-                    tint = if (currentFace?.isFavorite == true) Color(0xFFD93550) else PureWhite
-                )
+            // Action icons based on face type
+            when (currentItem) {
+                is HomePagerItem.HistoricalFace -> {
+                    IconButton(
+                        onClick = { viewModel.deleteFace(currentItem.entity.id) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Face",
+                            tint = PureWhite.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                is HomePagerItem.ActiveFace -> {
+                    IconButton(
+                        onClick = { viewModel.toggleFavorite(currentItem.entity.id, currentItem.entity.isFavorite) }
+                    ) {
+                        Icon(
+                            imageVector = if (currentItem.entity.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Favorite Face",
+                            tint = if (currentItem.entity.isFavorite) Color(0xFFD93550) else PureWhite
+                        )
+                    }
+                }
+                else -> {
+                    // Placeholder spacing for symmetrical layout
+                    Box(modifier = Modifier.padding(24.dp))
+                }
             }
         }
 
-        // 3. Bottom Vignette Scrim & Action Buttons
+        // 3. Bottom Vignette Scrim & Contextual Action Buttons
         BottomVignette(modifier = Modifier.align(Alignment.BottomCenter))
 
-        Row(
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .fillMaxWidth()
         ) {
-            val currentFace = faces.getOrNull(pagerState.currentPage)
+            when (currentItem) {
+                is HomePagerItem.HistoricalFace -> {
+                    // Historical watches: Can only be assigned as active ("WEAR AGAIN")
+                    FacesPillButton(
+                        text = "Wear Again",
+                        onClick = {
+                            viewModel.wearAgain(currentItem.entity)
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(pagerStateData.activeIndex)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                is HomePagerItem.ActiveFace -> {
+                    // Watch is currently active on wrist — no customize or snap photo buttons shown
+                }
+                is HomePagerItem.TemplateFace -> {
+                    // Base template: Select and customize or snap photo
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        FacesPillButton(
+                            text = "Customise",
+                            onClick = {
+                                onNavigateToCustomise(currentItem.style.id)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
 
-            FacesPillButton(
-                text = "Customise",
-                onClick = {
-                    currentFace?.let {
-                        onNavigateToCustomise(it.id)
+                        Spacer(modifier = Modifier.padding(horizontal = 8.dp))
+
+                        FacesPillButton(
+                            text = "Snap Photo",
+                            icon = Icons.Default.CameraAlt,
+                            onClick = {
+                                onNavigateToCamera(currentItem.style.id)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                },
-                modifier = Modifier.weight(1f)
-            )
+                }
+                null -> Unit
+            }
+        }
 
-            Spacer(modifier = Modifier.padding(horizontal = 8.dp))
-
-            FacesPillButton(
-                text = "Snap Photo",
-                icon = Icons.Default.CameraAlt,
-                onClick = onNavigateToCamera,
-                modifier = Modifier.weight(1f)
+        // 4. Wear Timeline Bottom Sheet Modal
+        if (timelineTarget != null) {
+            WearTimelineSheet(
+                faceName = timelineTarget!!.second,
+                wearLogs = wearLogs,
+                stats = faceStats,
+                onDismiss = { timelineTarget = null }
             )
         }
     }

@@ -163,16 +163,19 @@ Faces/
 - [x] **4.2 Home Carousel (`HomeScreen`)**:
   - `HorizontalPager` with custom `graphicsLayer` depth transition (0.75 scale down + fade).
   - Centered watchstrap graphic with custom Compose `Canvas` rendering the live ticking watchface via `WatchRenderer`.
-  - Top information pill displaying relative time ("10 minutes ago", "On yer wrist!", "Faces").
-  - Actions: Ambient / Screen On mode switch, Favorite toggle, Delete, Customize / Select Face.
+  - Top information pill displaying relative wear time ("10 minutes ago", "On yer wrist!", template titles) with interactive Wear Timeline modal sheet.
+  - Familiar Faces wear session timeline: starts on active watch on wrist, swiping left walks backwards chronologically through wear sessions (`wear_logs` with `wornAt` and `wornUntil`), allowing multiple instances of the same watch face in the timeline to preserve chronological order history.
+  - Popularity & duration metrics: tracks total times worn (`COUNT(*)`) and total time active (`SUM(duration)`), highlighting "★ Most Worn" face.
+  - Auto-scroll to active: saving a new watch face or wearing a historical face automatically navigates the pager directly to the "On yer wrist!" active page.
 - [x] **4.3 Camera Experience (`CameraScreen`)**:
   - CameraX `PreviewView` embedded in Compose.
   - Circular shutter button with tap-to-capture.
   - On capture: downsample bitmap, compute `Palette`, extract 16 sorted vibrant swatches, navigate to Customize screen.
 - [x] **4.4 Customize & Swatch Screen (`CustomiseScreen`)**:
   - Background: Photo with Gaussian blur and desaturation (`RenderEffect` / `ColorFilter`).
-  - 4x4 circular swatch grid with animated marker indicators (Background, Hour, Minute, Second, Accent).
-  - Tap / Drag interaction to reassign colors.
+  - Fixed template: Locks to the template chosen from the home timeline pager with `TopInfoPill` header, disabling template switching inside customizer.
+  - Template-specific markers: Only the exact color variables needed by the active template have selection discs (e.g. 2 for Filling Time, 3 for OUAT & Two Time, 4 for Business & Prism); redundant discs and selection pills are removed.
+  - Tactile drag-to-reassign: Continuous pointer tracking with magnetic snap-to-grid, 1.18x spring pop scale, haptic clicks, and realtime live preview updates.
   - Shake detection via `SensorManager` Flow: trigger haptic feedback and re-randomize color assignments.
   - Live preview syncing to Wear OS / local preview.
   - "Save Face" action committing to Room and pushing to watch.

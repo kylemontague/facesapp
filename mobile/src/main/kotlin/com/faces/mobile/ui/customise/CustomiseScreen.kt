@@ -40,6 +40,7 @@ import com.faces.mobile.ui.components.BottomVignette
 import com.faces.mobile.ui.components.FacesPillButton
 import com.faces.mobile.ui.components.SwatchGrid
 import com.faces.mobile.ui.components.SwatchMarker
+import com.faces.mobile.ui.components.TopInfoPill
 import com.faces.mobile.ui.components.TopVignette
 import com.faces.mobile.ui.components.WatchFacePreview
 import com.faces.mobile.ui.theme.BorderWhite
@@ -75,10 +76,13 @@ fun CustomiseScreen(
         }
     }
 
-    val markers = remember(roleAssignments) {
-        roleAssignments.map { (role, index) ->
-            SwatchMarker(role = role.code, colorIndex = index)
-        }
+    val markers = remember(roleAssignments, style) {
+        val required = style.requiredRoles()
+        roleAssignments
+            .filter { (role, _) -> role in required }
+            .map { (role, index) ->
+                SwatchMarker(role = role, colorIndex = index)
+            }
     }
 
     Box(
@@ -92,7 +96,7 @@ fun CustomiseScreen(
                 .padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Top Bar
+            // 1. Top Bar with fixed template title pill
             Spacer(modifier = Modifier.height(36.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -108,6 +112,12 @@ fun CustomiseScreen(
 
                 Spacer(modifier = Modifier.weight(1f))
 
+                TopInfoPill(
+                    text = style.displayName
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
                 IconButton(onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     viewModel.shuffleAssignments()
@@ -120,40 +130,9 @@ fun CustomiseScreen(
                 }
             }
 
-            // 2. Face Style Selector Pills
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FaceStyle.entries.forEach { s ->
-                    val isSelected = s == style
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(if (isSelected) PureWhite else FrostedPill)
-                            .border(
-                                width = 1.dp,
-                                color = if (isSelected) BorderWhite else BorderWhite.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(20.dp)
-                            )
-                            .clickable { viewModel.setStyle(s) }
-                            .padding(horizontal = 14.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = s.displayName,
-                            fontFamily = QuicksandFontFamily,
-                            fontSize = 12.sp,
-                            color = if (isSelected) LuxuryBlack else PureWhite
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(20.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 3. Live Watchface Preview
+            // 2. Live Watchface Preview
             WatchFacePreview(
                 config = config,
                 calendar = Calendar.getInstance(),
@@ -164,47 +143,16 @@ fun CustomiseScreen(
                     .height(230.dp)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 4. Role Selection Tabs (Which color part are we changing?)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ColorRole.entries.forEach { role ->
-                    val isSelected = role == selectedRole
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(if (isSelected) FrostedWhite else FrostedPill)
-                            .border(
-                                width = 1.dp,
-                                color = if (isSelected) BorderWhite else BorderWhite.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(6.dp)
-                            )
-                            .clickable { viewModel.selectRole(role) }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = "${role.code}: ${role.displayName}",
-                            fontFamily = QuicksandFontFamily,
-                            fontSize = 11.sp,
-                            color = PureWhite
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 5. 4x4 Swatch Grid
+            // 3. 4x4 Swatch Grid with drag-to-reassign and snap-to-grid
             SwatchGrid(
                 paletteColors = paletteColors,
                 markers = markers,
+                selectedRole = selectedRole,
+                onRoleSelected = { role -> viewModel.selectRole(role) },
+                onRoleAssigned = { role, index -> viewModel.assignRoleToSwatch(role, index) },
                 onSwatchClick = { index ->
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     viewModel.assignCurrentRoleToSwatch(index)
                 },
                 modifier = Modifier.weight(1f, fill = false)

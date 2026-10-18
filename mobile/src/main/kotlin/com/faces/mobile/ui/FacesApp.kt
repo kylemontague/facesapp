@@ -12,6 +12,7 @@ import com.faces.mobile.ui.customise.CustomiseScreen
 import com.faces.mobile.ui.customise.CustomiseViewModel
 import com.faces.mobile.ui.home.HomeScreen
 import com.faces.mobile.ui.home.HomeViewModel
+import com.faces.mobile.ui.splash.SplashScreen
 
 @Composable
 fun FacesApp() {
@@ -20,15 +21,28 @@ fun FacesApp() {
 
     NavHost(
         navController = navController,
-        startDestination = "home"
+        startDestination = "splash"
     ) {
+        composable("splash") {
+            SplashScreen(
+                onSplashComplete = {
+                    navController.navigate("home") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable("home") {
             val homeViewModel: HomeViewModel = viewModel()
             HomeScreen(
                 viewModel = homeViewModel,
-                onNavigateToCamera = { navController.navigate("camera") },
-                onNavigateToCustomise = { faceId ->
-                    customiseViewModel.loadExistingFace(faceId)
+                onNavigateToCamera = { templateStyleId ->
+                    customiseViewModel.setFixedTemplate(templateStyleId)
+                    navController.navigate("camera")
+                },
+                onNavigateToCustomise = { templateStyleId ->
+                    customiseViewModel.setFixedTemplate(templateStyleId)
                     navController.navigate("customise")
                 }
             )

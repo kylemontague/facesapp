@@ -26,6 +26,14 @@ enum class ColorRole(val code: String, val displayName: String) {
     ACCENT("ACC", "Accent")
 }
 
+fun FaceStyle.requiredRoles(): List<ColorRole> = when (this) {
+    FaceStyle.FILL_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.ACCENT)
+    FaceStyle.OUA_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.HOUR, ColorRole.SECOND)
+    FaceStyle.TWO_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.ACCENT, ColorRole.HOUR)
+    FaceStyle.BUSINESS_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.HOUR, ColorRole.MINUTE, ColorRole.SECOND)
+    FaceStyle.PRISM_TIME -> listOf(ColorRole.BACKGROUND, ColorRole.ACCENT, ColorRole.SECOND, ColorRole.HOUR)
+}
+
 class CustomiseViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = FacesDatabase.getInstance(application)
@@ -38,15 +46,9 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     private val _paletteColors = MutableStateFlow(ColorPalette.defaultPalette())
     val paletteColors: StateFlow<List<Int>> = _paletteColors.asStateFlow()
 
-    // Map each ColorRole to an index (0..15) into paletteColors
+    // Map each required ColorRole to an index (0..15) into paletteColors
     private val _roleAssignments = MutableStateFlow(
-        mapOf(
-            ColorRole.BACKGROUND to 0,
-            ColorRole.HOUR to 1,
-            ColorRole.MINUTE to 2,
-            ColorRole.SECOND to 3,
-            ColorRole.ACCENT to 4
-        )
+        FaceStyle.OUA_TIME.requiredRoles().mapIndexed { index, role -> role to index }.toMap()
     )
     val roleAssignments: StateFlow<Map<ColorRole, Int>> = _roleAssignments.asStateFlow()
 
@@ -54,13 +56,18 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     val selectedRole: StateFlow<ColorRole> = _selectedRole.asStateFlow()
 
     val currentConfig: StateFlow<FaceConfig> = combine(_style, _paletteColors, _roleAssignments) { st, pal, roles ->
+        val bgIdx = roles[ColorRole.BACKGROUND] ?: 0
+        val hrIdx = roles[ColorRole.HOUR] ?: 1
+        val minIdx = roles[ColorRole.MINUTE] ?: 2
+        val secIdx = roles[ColorRole.SECOND] ?: 3
+        val accIdx = roles[ColorRole.ACCENT] ?: 4
         val resolvedColors = listOf(
-            pal.getOrElse(roles[ColorRole.BACKGROUND] ?: 0) { 0xFF080A0D.toInt() },
-            pal.getOrElse(roles[ColorRole.HOUR] ?: 1) { 0xFFFFFFFF.toInt() },
-            pal.getOrElse(roles[ColorRole.MINUTE] ?: 2) { 0xFF55EE45.toInt() },
-            pal.getOrElse(roles[ColorRole.SECOND] ?: 3) { 0xFF3C797F.toInt() },
-            pal.getOrElse(roles[ColorRole.ACCENT] ?: 4) { 0xFFCDE9E6.toInt() },
-            pal.getOrElse(roles[ColorRole.HOUR] ?: 1) { 0xFFFFFFFF.toInt() }
+            pal.getOrElse(bgIdx) { 0xFF080A0D.toInt() },  // index 0: Background
+            pal.getOrElse(hrIdx) { 0xFFFFFFFF.toInt() },  // index 1: Hour
+            pal.getOrElse(minIdx) { 0xFF55EE45.toInt() }, // index 2: Minute
+            pal.getOrElse(secIdx) { 0xFF3C797F.toInt() }, // index 3: Second
+            pal.getOrElse(accIdx) { 0xFFCDE9E6.toInt() }, // index 4: Accent
+            pal.getOrElse(secIdx) { 0xFFCDE9E6.toInt() }  // index 5: Meridian
         )
         FaceConfig(
             id = UUID.randomUUID().toString(),
@@ -73,6 +80,17 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         initialValue = FaceConfig()
     )
 
+    init {
+        initAssignmentsForStyle(_style.value)
+    }
+
+    private fun initAssignmentsForStyle(st: FaceStyle) {
+        val roles = st.requiredRoles()
+        val assignments = roles.mapIndexed { idx, role -> role to idx }.toMap()
+        _roleAssignments.value = assignments
+        _selectedRole.value = roles.first()
+    }
+
     fun initializeWithPalette(colors: List<Int>) {
         if (colors.isNotEmpty()) {
             _paletteColors.value = colors
@@ -80,17 +98,34 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun loadExistingFace(faceId: String) {
+    fun setFixedTemplate(styleIdOrName: String) {
+        val styleMatch = FaceStyle.entries.firstOrNull {
+            it.id.equals(styleIdOrName, ignoreCase = true) || it.name.equals(styleIdOrName, ignoreCase = true)
+        } ?: FaceStyle.OUA_TIME
+        _style.value = styleMatch
+        _paletteColors.value = ColorPalette.defaultPalette()
+        initAssignmentsForStyle(styleMatch)
+        shuffleAssignments()
+    }
+
+    fun loadExistingFace(faceIdOrStyleId: String) {
+        val styleMatch = FaceStyle.entries.firstOrNull { it.id.equals(faceIdOrStyleId, ignoreCase = true) }
+        if (styleMatch != null) {
+            setFixedTemplate(styleMatch.id)
+            return
+        }
         viewModelScope.launch {
-            val face = faceDao.getAllFaces()
-            // find by id
-            face.collect { list ->
-                val match = list.firstOrNull { it.id == faceId }
+            faceDao.getFaceById(faceIdOrStyleId).collect { match ->
                 if (match != null) {
                     _style.value = match.style
                     if (match.colors.isNotEmpty()) {
                         _paletteColors.value = (match.colors + ColorPalette.defaultPalette()).distinct().take(16)
                     }
+                    val roles = match.style.requiredRoles()
+                    val assignments = roles.mapIndexed { idx, role -> role to idx }.toMap()
+                    _roleAssignments.value = assignments
+                    _selectedRole.value = roles.first()
+                    syncPreview()
                 }
             }
         }
@@ -98,6 +133,7 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setStyle(newStyle: FaceStyle) {
         _style.value = newStyle
+        initAssignmentsForStyle(newStyle)
         syncPreview()
     }
 
@@ -105,22 +141,26 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
         _selectedRole.value = role
     }
 
-    fun assignCurrentRoleToSwatch(swatchIndex: Int) {
+    fun assignRoleToSwatch(role: ColorRole, swatchIndex: Int) {
         val updated = _roleAssignments.value.toMutableMap()
-        updated[_selectedRole.value] = swatchIndex
+        updated[role] = swatchIndex.coerceIn(0, 15)
         _roleAssignments.value = updated
+        _selectedRole.value = role
         syncPreview()
     }
 
+    fun assignCurrentRoleToSwatch(swatchIndex: Int) {
+        assignRoleToSwatch(_selectedRole.value, swatchIndex)
+    }
+
     fun shuffleAssignments() {
+        val roles = _style.value.requiredRoles()
         val availableIndices = (0 until minOf(16, _paletteColors.value.size)).shuffled()
-        _roleAssignments.value = mapOf(
-            ColorRole.BACKGROUND to availableIndices.getOrElse(0) { 0 },
-            ColorRole.HOUR to availableIndices.getOrElse(1) { 1 },
-            ColorRole.MINUTE to availableIndices.getOrElse(2) { 2 },
-            ColorRole.SECOND to availableIndices.getOrElse(3) { 3 },
-            ColorRole.ACCENT to availableIndices.getOrElse(4) { 4 }
-        )
+        val updated = mutableMapOf<ColorRole, Int>()
+        roles.forEachIndexed { index, role ->
+            updated[role] = availableIndices.getOrElse(index) { index }
+        }
+        _roleAssignments.value = updated
         syncPreview()
     }
 
@@ -133,8 +173,15 @@ class CustomiseViewModel(application: Application) : AndroidViewModel(applicatio
     fun saveFace(onSaved: () -> Unit) {
         viewModelScope.launch {
             val config = currentConfig.value
-            val entity = FaceEntity.fromFaceConfig(config, name = config.style.displayName)
+            val now = System.currentTimeMillis()
+            val entity = FaceEntity.fromFaceConfig(
+                config = config,
+                name = config.style.displayName,
+                lastWornAt = now,
+                isCurrentOnWatch = true
+            )
             faceDao.insertFace(entity)
+            faceDao.recordWearFace(entity.id, now)
             syncManager.syncCurrentFace(config)
             onSaved()
         }

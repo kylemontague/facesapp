@@ -10,7 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [FaceEntity::class], version = 1, exportSchema = false)
+@Database(entities = [FaceEntity::class, FaceWearLogEntity::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class FacesDatabase : RoomDatabase() {
 
@@ -22,12 +22,13 @@ abstract class FacesDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): FacesDatabase {
             return INSTANCE ?: synchronized(this) {
+                val appContext = context.applicationContext
                 val instance = Room.databaseBuilder(
-                    context.applicationContext,
+                    appContext,
                     FacesDatabase::class.java,
                     "faces_database"
                 )
-                    .addCallback(DatabaseCallback())
+                    .addCallback(DatabaseCallback(appContext))
                     .fallbackToDestructiveMigration()
                     .build()
                 INSTANCE = instance
@@ -35,12 +36,30 @@ abstract class FacesDatabase : RoomDatabase() {
             }
         }
 
-        private class DatabaseCallback : RoomDatabase.Callback() {
+        private class DatabaseCallback(private val context: Context) : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
-                INSTANCE?.let { database ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        database.faceDao().insertFaces(FaceEntity.createStockPresets())
+                seedDatabase(context)
+            }
+
+            override fun onDestructiveMigration(db: SupportSQLiteDatabase) {
+                super.onDestructiveMigration(db)
+                seedDatabase(context)
+            }
+
+            private fun seedDatabase(context: Context) {
+                CoroutineScope(Dispatchers.IO).launch {
+                    val database = getInstance(context)
+                    val presets = FaceEntity.createStockPresets()
+                    database.faceDao().insertFaces(presets)
+                    // Seed initial wear log for the active stock face
+                    presets.firstOrNull { it.isCurrentOnWatch }?.let { activeFace ->
+                        database.faceDao().insertWearLog(
+                            FaceWearLogEntity(
+                                faceId = activeFace.id,
+                                wornAt = activeFace.lastWornAt ?: System.currentTimeMillis()
+                            )
+                        )
                     }
                 }
             }
