@@ -50,3 +50,6 @@ captures/
 hs_err_pid*
 replay_pid*
 .gradletasknamecache
+
+# agents files
+AGENTS.md
