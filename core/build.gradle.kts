@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.faces.core"
+    namespace = "watch.facesapp.core"
     compileSdk = 34
 
     defaultConfig {

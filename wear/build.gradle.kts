@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "slurpp.faces.wear"
+    namespace = "watch.facesapp.wear"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "slurpp.faces"
+        applicationId = "watch.facesapp"
         minSdk = 26
         targetSdk = 34
         versionCode = 5

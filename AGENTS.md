@@ -46,25 +46,25 @@ Faces/
 │   └── libs.versions.toml      # Single source of truth for dependencies and plugins
 ├── core/                       # Shared Kotlin library (:core)
 │   ├── src/main/kotlin/
-│   │   ├── com/faces/core/
+│   │   ├── watch/facesapp/core/
 │   │   │   ├── model/         # FaceConfig, FaceStyle, ColorPalette, FaceMode
 │   │   │   ├── render/        # WatchRenderer (Canvas/DrawScope engine for all 5 faces)
 │   │   │   ├── mesh/          # Trianglify mesh generator for Prism face
-│   │   │   └── util/          # TimeUtils, NumbersToWords, ColorContrast
+│   │   │   └── util/          # TimeUtils, NumbersToWords, ColorContrast, FaceShareUtils
 │   │   └── res/               # Fonts (Quicksand, ProximaNova), SVGs, strap drawables
 ├── mobile/                     # Phone Application (:mobile)
 │   ├── src/main/kotlin/
-│   │   ├── com/faces/mobile/
-│   │   │   ├── data/          # Room DB (FaceEntity, FaceDao), WearSyncRepository
+│   │   ├── watch/facesapp/mobile/
+│   │   │   ├── data/          # Room DB (FaceEntity, FaceWearLogEntity, FaceDao), WearSyncManager
 │   │   │   ├── camera/        # CameraX integration & Palette extraction
 │   │   │   ├── sensor/        # ShakeDetector Flow with HapticFeedback
 │   │   │   └── ui/            # Jetpack Compose UI
-│   │   │       ├── home/      # Depth carousel, strap mockup, ambient toggle
-│   │   │       ├── customise/ # Blurred backdrop, 4x4 swatch grid, marker assignment
+│   │   │       ├── home/      # Depth carousel, strap mockup, timeline & share sheets
+│   │   │       ├── customise/ # Blurred backdrop, 4x4 swatch grid, drag-to-assign
 │   │   │       └── theme/     # FacesTheme (Color, Typeface, Gradients)
 └── wear/                       # Standalone Wear OS Watch Face (:wear)
     ├── src/main/kotlin/
-    │   └── com/faces/wear/
+    │   └── watch/facesapp/wear/
     │       ├── service/       # WatchFaceService (AndroidX Watchface API)
     │       ├── renderer/      # CanvasWatchFaceRenderer adapter using :core renderer
     │       └── datalayer/     # WearableListenerService for real-time sync
