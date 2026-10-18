@@ -43,3 +43,5 @@ int drawable watch_strap_square 0x0
 int font proximanova_light 0x0
 int font proximanova_semibold 0x0
 int font quicksand_bold 0x0
+int raw round_watch_paths 0x0
+int raw square_watch_paths 0x0

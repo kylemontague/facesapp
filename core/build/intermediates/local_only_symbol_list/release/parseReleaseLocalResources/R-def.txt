@@ -45,3 +45,5 @@ drawable watch_strap_square
 font proximanova_light
 font proximanova_semibold
 font quicksand_bold
+raw round_watch_paths
+raw square_watch_paths
