@@ -156,20 +156,20 @@ Faces/
   - Serialise `CustomFace` payload via Kotlinx Serialization or Moshi to transmit current face configuration to Wear OS.
 
 ### Phase 4: Mobile Handheld UI in Jetpack Compose
-- [ ] **4.1 Design System & Theme**:
+- [x] **4.1 Design System & Theme**:
   - `FacesTheme`: Black background (`#080a0d`), frosted glass tokens (`#33ffffff`), font definitions for Quicksand and Proxima Nova.
   - `FacesPillButton`: Translucent rounded button matching `button_transparent.xml`.
   - `VignetteOverlays`: Top and bottom gradient scrims matching `top_gradient.xml` and `bottom_gradient.xml`.
-- [ ] **4.2 Home Carousel (`HomeScreen`)**:
+- [x] **4.2 Home Carousel (`HomeScreen`)**:
   - `HorizontalPager` with custom `graphicsLayer` depth transition (0.75 scale down + fade).
   - Centered watchstrap graphic with custom Compose `Canvas` rendering the live ticking watchface via `WatchRenderer`.
   - Top information pill displaying relative time ("10 minutes ago", "On yer wrist!", "Faces").
   - Actions: Ambient / Screen On mode switch, Favorite toggle, Delete, Customize / Select Face.
-- [ ] **4.3 Camera Experience (`CameraScreen`)**:
+- [x] **4.3 Camera Experience (`CameraScreen`)**:
   - CameraX `PreviewView` embedded in Compose.
   - Circular shutter button with tap-to-capture.
   - On capture: downsample bitmap, compute `Palette`, extract 16 sorted vibrant swatches, navigate to Customize screen.
-- [ ] **4.4 Customize & Swatch Screen (`CustomiseScreen`)**:
+- [x] **4.4 Customize & Swatch Screen (`CustomiseScreen`)**:
   - Background: Photo with Gaussian blur and desaturation (`RenderEffect` / `ColorFilter`).
   - 4x4 circular swatch grid with animated marker indicators (Background, Hour, Minute, Second, Accent).
   - Tap / Drag interaction to reassign colors.
