@@ -22,8 +22,23 @@ class MainActivity : ComponentActivity() {
     private val syncManager by lazy { WearSyncManager(applicationContext) }
     private var previewHeartbeatJob: Job? = null
 
+    private val activityRecognitionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { /* Permission granted or denied: PhoneHealthManager automatically listens or uses cached fallback */ }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(
+                    this,
+                    android.Manifest.permission.ACTIVITY_RECOGNITION
+                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) {
+                activityRecognitionLauncher.launch(android.Manifest.permission.ACTIVITY_RECOGNITION)
+            }
+        }
+
         intent?.data?.let { uri ->
             deepLinkUriState.value = uri
         }

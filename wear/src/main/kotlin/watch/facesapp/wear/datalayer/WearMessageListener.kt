@@ -109,6 +109,26 @@ class WearMessageListener : WearableListenerService() {
                     FacesWatchFaceService.updateCalendarEvent(title, minutes)
                 }
             }
+            PATH_HEALTH -> {
+                val payload = String(messageEvent.data, Charsets.UTF_8)
+                val parts = payload.split("|")
+                if (parts.isNotEmpty()) {
+                    val steps = parts[0].toLongOrNull() ?: 0L
+                    val bpm = parts.getOrNull(1)?.toIntOrNull().takeIf { (it ?: 0) > 0 }
+                    val calories = parts.getOrNull(2)?.toIntOrNull() ?: (steps * 0.04f).toInt()
+                    val distance = parts.getOrNull(3)?.toFloatOrNull() ?: (steps * 0.000762f)
+                    val activeMins = parts.getOrNull(4)?.toIntOrNull() ?: (steps / 100).toInt()
+                    getSharedPreferences("faces_health_prefs", MODE_PRIVATE).edit {
+                        putString("saved_date", java.time.LocalDate.now().toString())
+                        putLong("today_steps", steps)
+                        putInt("calories", calories)
+                        putFloat("distance", distance)
+                        putInt("active_mins", activeMins)
+                        if (bpm != null) putInt("last_heart_rate", bpm)
+                    }
+                    FacesWatchFaceService.updateHealthFromPhone(steps, bpm, calories, distance, activeMins)
+                }
+            }
             PATH_STATUS_REQUEST -> {
                 val isFaceActive = FacesWatchFaceService.isFaceActive
                 val reply = byteArrayOf(if (isFaceActive) 1 else 0)
@@ -136,6 +156,7 @@ class WearMessageListener : WearableListenerService() {
         const val PATH_PREVIEW_PING = "/faces/preview/ping"
         const val PATH_WEATHER = "/faces/weather"
         const val PATH_CALENDAR = "/faces/calendar"
+        const val PATH_HEALTH = "/faces/health"
         const val PATH_STATUS_REQUEST = "/faces/status/request"
         const val PATH_STATUS_RESPONSE = "/faces/status/response"
         const val PATH_WATCH_STATUS = "/faces/status"

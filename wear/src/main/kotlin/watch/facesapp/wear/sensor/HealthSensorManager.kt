@@ -181,6 +181,14 @@ class HealthSensorManager(
         val distance = currentSteps * 0.000762f
         val activeMins = (currentSteps / 100).toInt().coerceAtLeast(0)
 
+        prefs.edit {
+            putString(KEY_SAVED_DATE, todayStr)
+            putLong(KEY_TODAY_STEPS, currentSteps)
+            putInt("calories", calories)
+            putFloat("distance", distance)
+            putInt("active_mins", activeMins)
+        }
+
         // Sunrise / Sunset calculation (based on current hour and day of year)
         val now = java.time.LocalTime.now()
         val currentHour = now.hour

@@ -128,6 +128,65 @@ class WearSyncManager(context: Context) {
     }
 
     /**
+     * Synchronizes live health metrics (steps, heart rate, calories, distance, active minutes) to connected Wear OS watch.
+     */
+    suspend fun syncHealth(
+        steps: Long,
+        bpm: Int? = null,
+        calories: Int? = null,
+        distance: Float? = null,
+        activeMins: Int? = null
+    ): Result<Unit> {
+        return runCatching {
+            val nodes = nodeClient.connectedNodes.await()
+            val effectiveCalories = calories ?: (steps * 0.04f).toInt()
+            val effectiveDistance = distance ?: (steps * 0.000762f)
+            val effectiveActiveMins = activeMins ?: (steps / 100).toInt()
+            val payload = "$steps|${bpm ?: 0}|$effectiveCalories|$effectiveDistance|$effectiveActiveMins"
+            val bytes = payload.toByteArray(Charsets.UTF_8)
+            for (node in nodes) {
+                messageClient.sendMessage(node.id, PATH_HEALTH, bytes).await()
+            }
+            Log.d(TAG, "Sent health update ($payload) to ${nodes.size} node(s)")
+            Unit
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to send health update to Wear OS", e)
+        }
+    }
+
+    private var healthListener: com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener? = null
+
+    /**
+     * Registers a listener for live health updates (steps, heart rate, calories, distance) transmitted from the watch.
+     */
+    fun setHealthUpdateListener(onHealthReceived: (steps: Long, bpm: Int?, calories: Int?, distance: Float?, activeMins: Int?) -> Unit) {
+        removeHealthUpdateListener()
+        val listener = com.google.android.gms.wearable.MessageClient.OnMessageReceivedListener { event ->
+            if (event.path == PATH_HEALTH) {
+                val payload = String(event.data, Charsets.UTF_8)
+                val parts = payload.split("|")
+                if (parts.isNotEmpty()) {
+                    val steps = parts[0].toLongOrNull() ?: 0L
+                    val bpm = parts.getOrNull(1)?.toIntOrNull().takeIf { (it ?: 0) > 0 }
+                    val calories = parts.getOrNull(2)?.toIntOrNull() ?: (steps * 0.04f).toInt()
+                    val distance = parts.getOrNull(3)?.toFloatOrNull() ?: (steps * 0.000762f)
+                    val activeMins = parts.getOrNull(4)?.toIntOrNull() ?: (steps / 100).toInt()
+                    onHealthReceived(steps, bpm, calories, distance, activeMins)
+                }
+            }
+        }
+        healthListener = listener
+        messageClient.addListener(listener)
+    }
+
+    fun removeHealthUpdateListener() {
+        healthListener?.let {
+            messageClient.removeListener(it)
+            healthListener = null
+        }
+    }
+
+    /**
      * Transmits a lightweight keep-alive ping to reset the watch preview auto-revert timer.
      */
     suspend fun sendPreviewPing(): Result<Unit> {
@@ -227,6 +286,7 @@ class WearSyncManager(context: Context) {
         const val PATH_STATUS_REQUEST = "/faces/status/request"
         const val PATH_STATUS_RESPONSE = "/faces/status/response"
         const val PATH_WATCH_STATUS = "/faces/status"
+        const val PATH_HEALTH = "/faces/health"
 
         const val KEY_ID = "id"
         const val KEY_STYLE = "style"

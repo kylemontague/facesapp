@@ -121,6 +121,36 @@ class FacesWatchFaceService : WatchFaceService() {
         }
         updateBattery()
 
+        // Load Cached Weather only if previously received from companion phone
+        val weatherPrefs = applicationContext.getSharedPreferences("faces_weather_prefs", android.content.Context.MODE_PRIVATE)
+        if (weatherPrefs.contains("temp") && weatherPrefs.contains("condition")) {
+            val savedTemp = weatherPrefs.getInt("temp", 0)
+            val savedCond = weatherPrefs.getString("condition", null)
+            if (!savedCond.isNullOrBlank()) {
+                renderer.complicationState = renderer.complicationState.copy(
+                    weatherTempC = savedTemp,
+                    weatherCondition = savedCond
+                )
+            }
+        }
+
+        // Load Cached Health (Steps, Calories, Distance, Active Minutes)
+        val healthPrefs = applicationContext.getSharedPreferences("faces_health_prefs", android.content.Context.MODE_PRIVATE)
+        val savedSteps = healthPrefs.getLong("today_steps", 0L)
+        val savedCalories = healthPrefs.getInt("calories", (savedSteps * 0.04f).toInt())
+        val savedDist = healthPrefs.getFloat("distance", savedSteps * 0.000762f)
+        val savedMins = healthPrefs.getInt("active_mins", (savedSteps / 100).toInt())
+        val savedBpm = healthPrefs.getInt("last_heart_rate", 0).takeIf { it > 0 }
+        if (savedSteps > 0L || savedCalories > 0) {
+            renderer.complicationState = renderer.complicationState.copy(
+                stepCount = savedSteps,
+                caloriesBurned = savedCalories,
+                distanceKm = savedDist,
+                activeMinutes = savedMins,
+                heartRateBpm = savedBpm ?: renderer.complicationState.heartRateBpm
+            )
+        }
+
         // Live Health Sensors (Steps, Heart Rate, Estimated Calories)
         healthSensorManager = HealthSensorManager(applicationContext) { healthState ->
             renderer.complicationState = renderer.complicationState.copy(
@@ -131,6 +161,15 @@ class FacesWatchFaceService : WatchFaceService() {
                 activeMinutes = healthState.activeMinutes,
                 sunriseSunsetSummary = healthState.sunriseSunsetSummary,
                 sunriseSunsetIsSunset = healthState.sunriseSunsetIsSunset
+            )
+            val s = healthState.stepCount ?: 0L
+            syncHealthToPhone(
+                applicationContext,
+                s,
+                healthState.heartRateBpm,
+                healthState.caloriesBurned ?: (s * 0.04f).toInt(),
+                healthState.distanceKm ?: (s * 0.000762f),
+                healthState.activeMinutes ?: (s / 100).toInt()
             )
             if (renderer.faceMode in listOf(
                     FaceMode.STEPS,
@@ -160,19 +199,6 @@ class FacesWatchFaceService : WatchFaceService() {
             }
         }
         refreshCalendar()
-
-        // Load Cached Weather only if previously received from companion phone
-        val weatherPrefs = applicationContext.getSharedPreferences("faces_weather_prefs", android.content.Context.MODE_PRIVATE)
-        if (weatherPrefs.contains("temp") && weatherPrefs.contains("condition")) {
-            val savedTemp = weatherPrefs.getInt("temp", 0)
-            val savedCond = weatherPrefs.getString("condition", null)
-            if (!savedCond.isNullOrBlank()) {
-                renderer.complicationState = renderer.complicationState.copy(
-                    weatherTempC = savedTemp,
-                    weatherCondition = savedCond
-                )
-            }
-        }
 
         // Load Cached Calendar Event if previously received from companion phone
         val calPrefs = applicationContext.getSharedPreferences("faces_calendar_prefs", android.content.Context.MODE_PRIVATE)
@@ -213,6 +239,14 @@ class FacesWatchFaceService : WatchFaceService() {
                         caloriesBurned = calories,
                         distanceKm = distance,
                         activeMinutes = activeMins
+                    )
+                    syncHealthToPhone(
+                        applicationContext,
+                        steps,
+                        renderer.complicationState.heartRateBpm,
+                        calories,
+                        distance,
+                        activeMins
                     )
                     if (renderer.faceMode in listOf(FaceMode.STEPS, FaceMode.CALORIES, FaceMode.DISTANCE, FaceMode.ACTIVE_MINUTES)) {
                         renderer.invalidate()
@@ -420,6 +454,58 @@ class FacesWatchFaceService : WatchFaceService() {
                 if (renderer.faceMode == FaceMode.WEATHER) {
                     renderer.invalidate()
                 }
+            }
+        }
+
+        fun updateHealthFromPhone(steps: Long, bpm: Int?, calories: Int, distance: Float, activeMins: Int) {
+            activeRenderer?.let { renderer ->
+                val currentSteps = renderer.complicationState.stepCount ?: 0L
+                val bestSteps = maxOf(steps, currentSteps)
+                val bestCalories = if (steps >= currentSteps) calories else (renderer.complicationState.caloriesBurned ?: calories)
+                val bestDistance = if (steps >= currentSteps) distance else (renderer.complicationState.distanceKm ?: distance)
+                val bestActiveMins = if (steps >= currentSteps) activeMins else (renderer.complicationState.activeMinutes ?: activeMins)
+                val bestBpm = bpm ?: renderer.complicationState.heartRateBpm
+                renderer.complicationState = renderer.complicationState.copy(
+                    stepCount = bestSteps,
+                    caloriesBurned = bestCalories,
+                    distanceKm = bestDistance,
+                    activeMinutes = bestActiveMins,
+                    heartRateBpm = bestBpm
+                )
+                if (renderer.faceMode in listOf(
+                        FaceMode.STEPS,
+                        FaceMode.CALORIES,
+                        FaceMode.DISTANCE,
+                        FaceMode.ACTIVE_MINUTES,
+                        FaceMode.HEART_RATE
+                    )
+                ) {
+                    renderer.invalidate()
+                }
+            }
+            activeHealthManager?.updateExternalSteps(steps)
+        }
+
+        fun syncHealthToPhone(
+            context: android.content.Context,
+            steps: Long,
+            bpm: Int?,
+            calories: Int,
+            distance: Float,
+            activeMins: Int
+        ) {
+            try {
+                val payload = "$steps|${bpm ?: 0}|$calories|$distance|$activeMins"
+                val bytes = payload.toByteArray(Charsets.UTF_8)
+                val nodeClient = com.google.android.gms.wearable.Wearable.getNodeClient(context)
+                val messageClient = com.google.android.gms.wearable.Wearable.getMessageClient(context)
+                nodeClient.connectedNodes.addOnSuccessListener { nodes ->
+                    for (node in nodes) {
+                        messageClient.sendMessage(node.id, WearMessageListener.PATH_HEALTH, bytes)
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("FacesWatchFaceService", "Error syncing health to phone", e)
             }
         }
 

@@ -1,6 +1,7 @@
 package watch.facesapp.mobile.ui.home
 
 import android.app.Application
+import android.content.Context
 import android.text.format.DateUtils
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -78,10 +79,23 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val _faceMode = MutableStateFlow(FaceMode.TIME)
     val faceMode: StateFlow<FaceMode> = _faceMode.asStateFlow()
 
+    private var phoneHealthManager: watch.facesapp.mobile.sensor.PhoneHealthManager? = null
+
     private val _complicationState = MutableStateFlow(
-        watch.facesapp.core.model.ComplicationState(
-            batteryPercent = getBatteryPercentage(application)
-        )
+        run {
+            val initialSteps = application.getSharedPreferences("faces_phone_health_prefs", Context.MODE_PRIVATE)
+                .getLong("today_steps", 1420L)
+            val initialCalories = (initialSteps * 0.04f).toInt()
+            val initialDistance = initialSteps * 0.000762f
+            val initialActiveMins = (initialSteps / 100).toInt()
+            watch.facesapp.core.model.ComplicationState(
+                batteryPercent = getBatteryPercentage(application),
+                stepCount = initialSteps,
+                caloriesBurned = initialCalories,
+                distanceKm = initialDistance,
+                activeMinutes = initialActiveMins
+            )
+        }
     )
     val complicationState: StateFlow<watch.facesapp.core.model.ComplicationState> = _complicationState.asStateFlow()
 
@@ -132,6 +146,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     )
                     syncManager.syncCalendarEvent(event.title, event.minutesUntil)
                 }
+
+                // Synchronize health state to watch as well
+                val currentState = _complicationState.value
+                val steps = currentState.stepCount ?: 1420L
+                val cals = currentState.caloriesBurned ?: (steps * 0.04f).toInt()
+                val dist = currentState.distanceKm ?: (steps * 0.000762f)
+                val activeMins = currentState.activeMinutes ?: (steps / 100).toInt()
+                syncManager.syncHealth(steps, currentState.heartRateBpm, cals, dist, activeMins)
             } catch (_: Exception) {
             }
         }
@@ -159,6 +181,40 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         // Live Weather & Calendar fetch and Wear OS synchronization
         refreshLiveComplications()
 
+        // Live Health & Activity tracking on Phone
+        phoneHealthManager = watch.facesapp.mobile.sensor.PhoneHealthManager(application) { healthState ->
+            _complicationState.value = _complicationState.value.copy(
+                stepCount = healthState.stepCount,
+                heartRateBpm = healthState.heartRateBpm ?: _complicationState.value.heartRateBpm,
+                caloriesBurned = healthState.caloriesBurned,
+                distanceKm = healthState.distanceKm,
+                activeMinutes = healthState.activeMinutes
+            )
+            viewModelScope.launch {
+                syncManager.syncHealth(
+                    healthState.stepCount ?: 0L,
+                    healthState.heartRateBpm,
+                    healthState.caloriesBurned,
+                    healthState.distanceKm,
+                    healthState.activeMinutes
+                )
+            }
+        }.apply {
+            start()
+        }
+
+        // Live Health Stream from Wear OS watch (when user is wearing the watch)
+        syncManager.setHealthUpdateListener { steps, bpm, calories, distance, activeMins ->
+            phoneHealthManager?.updateFromWatch(steps, bpm, calories, distance, activeMins)
+            _complicationState.value = _complicationState.value.copy(
+                stepCount = steps,
+                heartRateBpm = if (bpm != null && bpm > 0) bpm else _complicationState.value.heartRateBpm,
+                caloriesBurned = calories ?: (steps * 0.04f).toInt(),
+                distanceKm = distance ?: (steps * 0.000762f),
+                activeMinutes = activeMins ?: (steps / 100).toInt()
+            )
+        }
+
         // Database auto-seed safeguard (in case database was empty or after destructive migration)
         viewModelScope.launch(Dispatchers.IO) {
             if (faceDao.getCount() == 0) {
@@ -169,6 +225,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        phoneHealthManager?.stop()
+        syncManager.removeHealthUpdateListener()
     }
 
     // Periodic ticker for relative time displays (every 30 seconds instead of 1 Hz)
