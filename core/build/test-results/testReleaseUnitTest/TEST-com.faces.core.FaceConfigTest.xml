@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.faces.core.FaceConfigTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-18T08:33:38" hostname="C26000228" time="0.007">
-  <properties/>
-  <testcase name="testDefaultColorsForStyles" classname="com.faces.core.FaceConfigTest" time="0.007"/>
-  <testcase name="testAmbientModeOverrides" classname="com.faces.core.FaceConfigTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.faces.core.NumbersToWordsTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-18T08:33:38" hostname="C26000228" time="0.004">
-  <properties/>
-  <testcase name="testMinutesCompact" classname="com.faces.core.NumbersToWordsTest" time="0.003"/>
-  <testcase name="testBasicConversions" classname="com.faces.core.NumbersToWordsTest" time="0.001"/>
-  <testcase name="testHoursAndMinutesWords" classname="com.faces.core.NumbersToWordsTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

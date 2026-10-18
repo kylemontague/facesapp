@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 320 480" xml:space="preserve">
-<line fill="none" stroke="#212B34" stroke-width="2" stroke-miterlimit="10" x1="100" y1="0" x2="100" y2="480"/>
-<line fill="none" stroke="#212B34" stroke-width="2" stroke-miterlimit="10" x1="219" y1="480" x2="219" y2="0"/>
-<path fill="none" stroke="#212B34" stroke-width="2"  stroke-miterlimit="10" d="M266,377H53c-2.2,0-4-1.8-4-4V107c0-2.2,1.8-4,4-4h213
-	c2.2,0,4,1.8,4,4v266C270,375.2,268.2,377,266,377z"/>
-<path fill="none" stroke="#212B34" stroke-miterlimit="10" d="M254,349H65c-2.2,0-4-1.8-4-4V135c0-2.2,1.8-4,4-4h189
-	c2.2,0,4,1.8,4,4v210C258,347.2,256.2,349,254,349z"/>
-</svg>
