@@ -92,17 +92,24 @@ class WearSyncManager(context: Context) {
     }
 
     /**
-     * Synchronizes live weather temperature and condition to connected Wear OS watch.
+     * Synchronizes live weather temperature, condition, and sun cycle to connected Wear OS watch.
      */
-    suspend fun syncWeather(tempC: Int, condition: String): Result<Unit> {
+    suspend fun syncWeather(
+        tempC: Int,
+        condition: String,
+        sunriseSunsetSummary: String? = null,
+        isSunset: Boolean = true
+    ): Result<Unit> {
         return runCatching {
             val nodes = nodeClient.connectedNodes.await()
-            val payload = "$tempC|$condition"
+            val sunSummary = sunriseSunsetSummary ?: ""
+            val isSunsetInt = if (isSunset) 1 else 0
+            val payload = "$tempC|$condition|$sunSummary|$isSunsetInt"
             val bytes = payload.toByteArray(Charsets.UTF_8)
             for (node in nodes) {
                 messageClient.sendMessage(node.id, PATH_WEATHER, bytes).await()
             }
-            Log.d(TAG, "Sent live weather ($tempC°C, $condition) to ${nodes.size} node(s)")
+            Log.d(TAG, "Sent live weather ($tempC°C, $condition, $sunSummary, isSunset=$isSunset) to ${nodes.size} node(s)")
             Unit
         }.onFailure { e ->
             Log.e(TAG, "Failed to send weather update to Wear OS", e)

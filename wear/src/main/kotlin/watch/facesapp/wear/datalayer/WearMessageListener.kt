@@ -91,10 +91,17 @@ class WearMessageListener : WearableListenerService() {
                 if (parts.size >= 2) {
                     val temp = parts[0].toIntOrNull() ?: 21
                     val condition = parts[1]
+                    val sunSummary = parts.getOrNull(2)?.takeIf { it.isNotBlank() }
+                    val isSunset = parts.getOrNull(3)?.toIntOrNull() != 0
                     getSharedPreferences("faces_weather_prefs", MODE_PRIVATE).edit {
-                        putInt("temp", temp).putString("condition", condition)
+                        putInt("temp", temp)
+                        putString("condition", condition)
+                        if (sunSummary != null) {
+                            putString("sun_summary", sunSummary)
+                            putBoolean("is_sunset", isSunset)
+                        }
                     }
-                    FacesWatchFaceService.updateWeather(temp, condition)
+                    FacesWatchFaceService.updateWeather(temp, condition, sunSummary, isSunset)
                 }
             }
             PATH_CALENDAR -> {

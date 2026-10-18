@@ -126,10 +126,14 @@ class FacesWatchFaceService : WatchFaceService() {
         if (weatherPrefs.contains("temp") && weatherPrefs.contains("condition")) {
             val savedTemp = weatherPrefs.getInt("temp", 0)
             val savedCond = weatherPrefs.getString("condition", null)
+            val savedSunSummary = weatherPrefs.getString("sun_summary", null)
+            val savedIsSunset = weatherPrefs.getBoolean("is_sunset", true)
             if (!savedCond.isNullOrBlank()) {
                 renderer.complicationState = renderer.complicationState.copy(
                     weatherTempC = savedTemp,
-                    weatherCondition = savedCond
+                    weatherCondition = savedCond,
+                    sunriseSunsetSummary = savedSunSummary ?: renderer.complicationState.sunriseSunsetSummary,
+                    sunriseSunsetIsSunset = if (savedSunSummary != null) savedIsSunset else renderer.complicationState.sunriseSunsetIsSunset
                 )
             }
         }
@@ -153,14 +157,15 @@ class FacesWatchFaceService : WatchFaceService() {
 
         // Live Health Sensors (Steps, Heart Rate, Estimated Calories)
         healthSensorManager = HealthSensorManager(applicationContext) { healthState ->
+            val existingSunSummary = renderer.complicationState.sunriseSunsetSummary
             renderer.complicationState = renderer.complicationState.copy(
                 stepCount = healthState.stepCount,
                 heartRateBpm = healthState.heartRateBpm,
                 caloriesBurned = healthState.caloriesBurned,
                 distanceKm = healthState.distanceKm,
                 activeMinutes = healthState.activeMinutes,
-                sunriseSunsetSummary = healthState.sunriseSunsetSummary,
-                sunriseSunsetIsSunset = healthState.sunriseSunsetIsSunset
+                sunriseSunsetSummary = existingSunSummary ?: healthState.sunriseSunsetSummary,
+                sunriseSunsetIsSunset = if (existingSunSummary != null) renderer.complicationState.sunriseSunsetIsSunset else healthState.sunriseSunsetIsSunset
             )
             val s = healthState.stepCount ?: 0L
             syncHealthToPhone(
@@ -445,13 +450,20 @@ class FacesWatchFaceService : WatchFaceService() {
             }
         }
 
-        fun updateWeather(tempC: Int, condition: String) {
+        fun updateWeather(
+            tempC: Int,
+            condition: String,
+            sunriseSunsetSummary: String? = null,
+            isSunset: Boolean = true
+        ) {
             activeRenderer?.let { renderer ->
                 renderer.complicationState = renderer.complicationState.copy(
                     weatherTempC = tempC,
-                    weatherCondition = condition
+                    weatherCondition = condition,
+                    sunriseSunsetSummary = sunriseSunsetSummary ?: renderer.complicationState.sunriseSunsetSummary,
+                    sunriseSunsetIsSunset = if (sunriseSunsetSummary != null) isSunset else renderer.complicationState.sunriseSunsetIsSunset
                 )
-                if (renderer.faceMode == FaceMode.WEATHER) {
+                if (renderer.faceMode in listOf(FaceMode.WEATHER, FaceMode.SUNRISE_SUNSET)) {
                     renderer.invalidate()
                 }
             }

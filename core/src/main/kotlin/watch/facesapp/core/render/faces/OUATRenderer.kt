@@ -138,8 +138,18 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
                 Pair((complicationState.nextEventTitle ?: "event").lowercase(), listOf("in", minsWords, "minutes"))
             }
             FaceMode.SUNRISE_SUNSET -> {
+                val rawTime = (complicationState.sunriseSunsetSummary ?: "18:00")
+                    .replace("(?i)sunset\\s*".toRegex(), "")
+                    .replace("(?i)sunrise\\s*".toRegex(), "")
+                    .trim()
+                val timeParts = rawTime.split(":")
+                val rawH = timeParts.getOrNull(0)?.toIntOrNull() ?: 18
+                val rawM = timeParts.getOrNull(1)?.toIntOrNull() ?: 0
+                val h12 = if (rawH % 12 == 0) 12 else rawH % 12
+                val hourWord = NumbersToWords.convert(h12).substringBefore('\n')
+                val minWords = NumbersToWords.getMinutesCompact(rawM).split("\n")
                 val eventWord = if (complicationState.sunriseSunsetIsSunset) "sunset" else "sunrise"
-                Pair(eventWord, listOf((complicationState.sunriseSunsetSummary ?: "18:00").lowercase()))
+                Pair("$eventWord at", listOf(hourWord) + minWords)
             }
             FaceMode.ACTIVE_MINUTES -> {
                 val words = NumbersToWords.convert(complicationState.activeMinutes ?: 0)

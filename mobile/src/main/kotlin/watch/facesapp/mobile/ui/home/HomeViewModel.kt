@@ -88,12 +88,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val initialCalories = (initialSteps * 0.04f).toInt()
             val initialDistance = initialSteps * 0.000762f
             val initialActiveMins = (initialSteps / 100).toInt()
+            val (initialSunSummary, initialIsSunset) = weatherManager.getInitialSunCycle()
             watch.facesapp.core.model.ComplicationState(
                 batteryPercent = getBatteryPercentage(application),
                 stepCount = initialSteps,
                 caloriesBurned = initialCalories,
                 distanceKm = initialDistance,
-                activeMinutes = initialActiveMins
+                activeMinutes = initialActiveMins,
+                sunriseSunsetSummary = initialSunSummary,
+                sunriseSunsetIsSunset = initialIsSunset
             )
         }
     )
@@ -135,9 +138,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 if (weather != null) {
                     _complicationState.value = _complicationState.value.copy(
                         weatherTempC = weather.tempC,
-                        weatherCondition = weather.condition
+                        weatherCondition = weather.condition,
+                        sunriseSunsetSummary = weather.sunriseSunsetSummary,
+                        sunriseSunsetIsSunset = weather.isSunset
                     )
-                    syncManager.syncWeather(weather.tempC, weather.condition)
+                    syncManager.syncWeather(
+                        weather.tempC,
+                        weather.condition,
+                        weather.sunriseSunsetSummary,
+                        weather.isSunset
+                    )
                 }
                 if (event != null) {
                     _complicationState.value = _complicationState.value.copy(

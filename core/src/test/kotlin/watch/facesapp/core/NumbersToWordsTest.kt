@@ -47,5 +47,27 @@ class NumbersToWordsTest {
         assertEquals("on the dot", NumbersToWords.getMinutesCompact(0))
         assertEquals("oh five", NumbersToWords.getMinutesCompact(5))
         assertEquals("thirty", NumbersToWords.getMinutesCompact(30))
+        assertEquals("forty three", NumbersToWords.getMinutesCompact(43))
+    }
+
+    @Test
+    fun testSunriseSunsetWordConversion() {
+        // 07:43 -> hour 7 ("seven"), minutes 43 ("forty three")
+        val rawH = 7
+        val rawM = 43
+        val h12 = if (rawH % 12 == 0) 12 else rawH % 12
+        val hourWord = NumbersToWords.convert(h12).substringBefore('\n')
+        val minWords = NumbersToWords.getMinutesCompact(rawM).split("\n")
+        assertEquals("seven", hourWord)
+        assertEquals(listOf("forty three"), minWords)
+
+        // 18:00 (sunset) -> hour 6 ("six"), minutes 0 ("on the dot")
+        val rawH2 = 18
+        val rawM2 = 0
+        val h12_2 = if (rawH2 % 12 == 0) 12 else rawH2 % 12
+        val hourWord2 = NumbersToWords.convert(h12_2).substringBefore('\n')
+        val minWords2 = NumbersToWords.getMinutesCompact(rawM2).split("\n")
+        assertEquals("six", hourWord2)
+        assertEquals(listOf("on the dot"), minWords2)
     }
 }

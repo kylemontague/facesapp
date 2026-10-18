@@ -20,14 +20,16 @@ import kotlinx.coroutines.delay
 
 data class WeatherInfo(
     val tempC: Int,
-    val condition: String
+    val condition: String,
+    val sunriseSunsetSummary: String,
+    val isSunset: Boolean
 )
 
 class WeatherManager(private val context: Context) {
 
     suspend fun fetchCurrentWeather(): WeatherInfo? = withContext(Dispatchers.IO) {
         val (lat, lon) = getApproximateCoordinates()
-        val urlString = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code"
+        val urlString = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto"
         Log.d(TAG, "Requesting weather from: $urlString")
 
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
@@ -58,8 +60,49 @@ class WeatherManager(private val context: Context) {
                     val code = current.getInt("weather_code")
                     val condition = mapWmoCode(code)
 
-                    Log.d(TAG, "Fetched live weather for ($lat, $lon): $temp°C, $condition")
-                    return@withContext WeatherInfo(temp, condition)
+                    var sunSummary: String? = null
+                    var isSunset = true
+
+                    val daily = json.optJSONObject("daily")
+                    if (daily != null) {
+                        val sunrises = daily.optJSONArray("sunrise")
+                        val sunsets = daily.optJSONArray("sunset")
+                        if (sunrises != null && sunsets != null && sunrises.length() > 0 && sunsets.length() > 0) {
+                            val todaySunrise = sunrises.optString(0, "")
+                            val todaySunset = sunsets.optString(0, "")
+                            val tomorrowSunrise = if (sunrises.length() > 1) sunrises.optString(1, "") else todaySunrise
+
+                            val nowCal = java.util.Calendar.getInstance()
+                            val curMinutes = nowCal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + nowCal.get(java.util.Calendar.MINUTE)
+
+                            val riseTime = todaySunrise.substringAfter("T").take(5)
+                            val setTime = todaySunset.substringAfter("T").take(5)
+                            val nextRiseTime = tomorrowSunrise.substringAfter("T").take(5)
+
+                            val riseMinutes = parseMinutes(riseTime)
+                            val setMinutes = parseMinutes(setTime)
+
+                            if (curMinutes in riseMinutes until setMinutes) {
+                                isSunset = true
+                                sunSummary = "Sunset $setTime"
+                            } else if (curMinutes < riseMinutes) {
+                                isSunset = false
+                                sunSummary = "Sunrise $riseTime"
+                            } else {
+                                isSunset = false
+                                sunSummary = "Sunrise $nextRiseTime"
+                            }
+                        }
+                    }
+
+                    if (sunSummary == null) {
+                        val fallback = getSunCycle(lat, lon)
+                        sunSummary = fallback.first
+                        isSunset = fallback.second
+                    }
+
+                    Log.d(TAG, "Fetched live weather for ($lat, $lon): $temp°C, $condition, $sunSummary (isSunset=$isSunset)")
+                    return@withContext WeatherInfo(temp, condition, sunSummary, isSunset)
                 } else {
                     val errBody = try {
                         connection.errorStream?.bufferedReader()?.use(BufferedReader::readText)
@@ -123,6 +166,64 @@ class WeatherManager(private val context: Context) {
             95, 96, 99 -> "Stormy"
             else -> "Clear"
         }
+    }
+
+    fun getInitialSunCycle(): Pair<String, Boolean> {
+        val (lat, lon) = getApproximateCoordinates()
+        return getSunCycle(lat, lon)
+    }
+
+    private fun calculateSunTimes(
+        lat: Double,
+        lon: Double,
+        calendar: java.util.Calendar = java.util.Calendar.getInstance()
+    ): Pair<String, String> {
+        val dayOfYear = calendar.get(java.util.Calendar.DAY_OF_YEAR)
+        val declination = 23.45 * kotlin.math.sin(Math.toRadians((360.0 / 365.0) * (dayOfYear - 81)))
+        val latRad = Math.toRadians(lat)
+        val decRad = Math.toRadians(declination)
+        val cosHourAngle = (-kotlin.math.tan(latRad) * kotlin.math.tan(decRad)).coerceIn(-1.0, 1.0)
+        val hourAngleDeg = Math.toDegrees(kotlin.math.acos(cosHourAngle))
+        val halfDayHours = hourAngleDeg / 15.0
+
+        val tzOffsetHours = calendar.timeZone.getOffset(calendar.timeInMillis) / 3600000.0
+        val solarNoon = 12.0 - (lon / 15.0) + tzOffsetHours
+
+        val sunriseHour = (solarNoon - halfDayHours + 24.0) % 24.0
+        val sunsetHour = (solarNoon + halfDayHours + 24.0) % 24.0
+
+        val sunriseH = sunriseHour.toInt()
+        val sunriseM = ((sunriseHour - sunriseH) * 60).toInt().coerceIn(0, 59)
+        val sunsetH = sunsetHour.toInt()
+        val sunsetM = ((sunsetHour - sunsetH) * 60).toInt().coerceIn(0, 59)
+
+        val sunriseStr = String.format(java.util.Locale.US, "%02d:%02d", sunriseH, sunriseM)
+        val sunsetStr = String.format(java.util.Locale.US, "%02d:%02d", sunsetH, sunsetM)
+        return Pair(sunriseStr, sunsetStr)
+    }
+
+    private fun getSunCycle(lat: Double, lon: Double): Pair<String, Boolean> {
+        val (sunriseStr, sunsetStr) = calculateSunTimes(lat, lon)
+        val now = java.util.Calendar.getInstance()
+        val currentMinutes = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
+
+        val riseMinutes = parseMinutes(sunriseStr)
+        val setMinutes = parseMinutes(sunsetStr)
+
+        return if (currentMinutes in riseMinutes until setMinutes) {
+            Pair("Sunset $sunsetStr", true)
+        } else if (currentMinutes < riseMinutes) {
+            Pair("Sunrise $sunriseStr", false)
+        } else {
+            Pair("Sunrise $sunriseStr", false)
+        }
+    }
+
+    private fun parseMinutes(timeStr: String): Int {
+        val parts = timeStr.split(":")
+        return if (parts.size >= 2) {
+            (parts[0].toIntOrNull() ?: 0) * 60 + (parts[1].toIntOrNull() ?: 0)
+        } else 0
     }
 
     companion object {
