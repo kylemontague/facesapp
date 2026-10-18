@@ -1,8 +1,6 @@
 package watch.facesapp.wear.service
 
-import android.graphics.RectF
 import android.view.SurfaceHolder
-import androidx.wear.watchface.CanvasComplicationFactory
 import androidx.wear.watchface.ComplicationSlot
 import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.TapEvent
@@ -11,12 +9,6 @@ import androidx.wear.watchface.WatchFace
 import androidx.wear.watchface.WatchFaceService
 import androidx.wear.watchface.WatchFaceType
 import androidx.wear.watchface.WatchState
-import androidx.wear.watchface.complications.ComplicationSlotBounds
-import androidx.wear.watchface.complications.DefaultComplicationDataSourcePolicy
-import androidx.wear.watchface.complications.SystemDataSources
-import androidx.wear.watchface.complications.data.ComplicationType
-import androidx.wear.watchface.complications.rendering.CanvasComplicationDrawable
-import androidx.wear.watchface.complications.rendering.ComplicationDrawable
 import androidx.wear.watchface.style.CurrentUserStyleRepository
 import watch.facesapp.core.model.FaceConfig
 import watch.facesapp.core.model.FaceMode
@@ -28,63 +20,8 @@ class FacesWatchFaceService : WatchFaceService() {
     override fun createComplicationSlotsManager(
         currentUserStyleRepository: CurrentUserStyleRepository
     ): ComplicationSlotsManager {
-        val defaultCanvasComplicationFactory = CanvasComplicationFactory { watchState, listener ->
-            val complicationDrawable = ComplicationDrawable(this@FacesWatchFaceService)
-            CanvasComplicationDrawable(complicationDrawable, watchState, listener)
-        }
-
-        // Left Complication: Steps / Health / Short Text
-        val leftComplication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
-            id = LEFT_COMPLICATION_ID,
-            canvasComplicationFactory = defaultCanvasComplicationFactory,
-            supportedTypes = listOf(
-                ComplicationType.SHORT_TEXT,
-                ComplicationType.RANGED_VALUE,
-                ComplicationType.MONOCHROMATIC_IMAGE,
-                ComplicationType.SMALL_IMAGE
-            ),
-            defaultDataSourcePolicy = DefaultComplicationDataSourcePolicy(
-                SystemDataSources.DATA_SOURCE_STEP_COUNT,
-                ComplicationType.SHORT_TEXT
-            ),
-            bounds = ComplicationSlotBounds(RectF(0.10f, 0.39f, 0.32f, 0.61f))
-        ).build()
-
-        // Right Complication: Watch Battery / Short Text
-        val rightComplication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
-            id = RIGHT_COMPLICATION_ID,
-            canvasComplicationFactory = defaultCanvasComplicationFactory,
-            supportedTypes = listOf(
-                ComplicationType.SHORT_TEXT,
-                ComplicationType.RANGED_VALUE,
-                ComplicationType.MONOCHROMATIC_IMAGE,
-                ComplicationType.SMALL_IMAGE
-            ),
-            defaultDataSourcePolicy = DefaultComplicationDataSourcePolicy(
-                SystemDataSources.DATA_SOURCE_WATCH_BATTERY,
-                ComplicationType.SHORT_TEXT
-            ),
-            bounds = ComplicationSlotBounds(RectF(0.68f, 0.39f, 0.90f, 0.61f))
-        ).build()
-
-        // Bottom Complication: Date / Next Event / Long Text
-        val bottomComplication = ComplicationSlot.createRoundRectComplicationSlotBuilder(
-            id = BOTTOM_COMPLICATION_ID,
-            canvasComplicationFactory = defaultCanvasComplicationFactory,
-            supportedTypes = listOf(
-                ComplicationType.SHORT_TEXT,
-                ComplicationType.LONG_TEXT,
-                ComplicationType.MONOCHROMATIC_IMAGE
-            ),
-            defaultDataSourcePolicy = DefaultComplicationDataSourcePolicy(
-                SystemDataSources.DATA_SOURCE_DATE,
-                ComplicationType.SHORT_TEXT
-            ),
-            bounds = ComplicationSlotBounds(RectF(0.25f, 0.72f, 0.75f, 0.88f))
-        ).build()
-
         return ComplicationSlotsManager(
-            listOf(leftComplication, rightComplication, bottomComplication),
+            emptyList(),
             currentUserStyleRepository
         )
     }
@@ -114,20 +51,23 @@ class FacesWatchFaceService : WatchFaceService() {
             renderer = renderer
         )
 
-        // Read initial battery status
-        val batteryFilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
-        val batteryIntent = applicationContext.registerReceiver(null, batteryFilter)
-        val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
-        val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
-        if (level >= 0 && scale > 0) {
-            val pct = (level * 100) / scale
-            renderer.complicationState = renderer.complicationState.copy(batteryPercent = pct)
+        fun updateBattery() {
+            val batteryFilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+            val batteryIntent = applicationContext.registerReceiver(null, batteryFilter)
+            val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+            val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+            if (level >= 0 && scale > 0) {
+                val pct = (level * 100) / scale
+                renderer.complicationState = renderer.complicationState.copy(batteryPercent = pct)
+            }
         }
+        updateBattery()
 
-        // Interactive taps: Complications are automatically handled by the framework; background taps cycle through active complications
+        // Interactive taps: cycle through active complications in our custom rendered face
         watchFace.setTapListener(object : WatchFace.TapListener {
             override fun onTapEvent(tapType: Int, tapEvent: TapEvent, complicationSlot: ComplicationSlot?) {
-                if (tapType == TapType.UP && complicationSlot == null) {
+                if (tapType == TapType.UP) {
+                    updateBattery()
                     val activeCycle = renderer.faceConfig.activeComplications
                     renderer.faceMode = renderer.faceMode.next(activeCycle)
                     renderer.invalidate()
@@ -144,10 +84,6 @@ class FacesWatchFaceService : WatchFaceService() {
     }
 
     companion object {
-        const val LEFT_COMPLICATION_ID = 100
-        const val RIGHT_COMPLICATION_ID = 101
-        const val BOTTOM_COMPLICATION_ID = 102
-
         var activeRenderer: FacesCanvasRenderer? = null
 
         fun updateConfig(newConfig: FaceConfig) {

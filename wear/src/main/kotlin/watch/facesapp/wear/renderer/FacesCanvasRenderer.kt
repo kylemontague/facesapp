@@ -67,12 +67,6 @@ class FacesCanvasRenderer(
             complicationState = complicationState
         )
 
-        // 2. Render live complication slots over watch face
-        for ((_, complication) in complicationSlotsManager.complicationSlots) {
-            if (complication.enabled) {
-                complication.render(canvas, zonedDateTime, renderParameters)
-            }
-        }
     }
 
     override fun renderHighlightLayer(
@@ -83,10 +77,5 @@ class FacesCanvasRenderer(
     ) {
         val highlight = renderParameters.highlightLayer ?: return
         canvas.drawColor(highlight.backgroundTint)
-        for ((_, complication) in complicationSlotsManager.complicationSlots) {
-            if (complication.enabled) {
-                complication.renderHighlightLayer(canvas, zonedDateTime, renderParameters)
-            }
-        }
     }
 }
