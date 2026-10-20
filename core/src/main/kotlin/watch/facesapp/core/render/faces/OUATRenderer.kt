@@ -201,6 +201,8 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
         }
     }
 
+    private val scratchTextBounds = Rect()
+
     private fun checkFits(
         fontSize: Float,
         startX: Float,
@@ -225,20 +227,18 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
         val safeRadiusSq = safeRadius * safeRadius
         val safeMargin = width * 0.07f
 
-        val rect = Rect()
-
         for (i in lines.indices) {
             val text = lines[i]
             val paint = if (i == 0) hPaint else mPaint
             val lineY = startY + (i * lineSpacing)
 
-            paint.getTextBounds(text, 0, text.length, rect)
-            val textWidth = maxOf(rect.width().toFloat(), paint.measureText(text))
+            paint.getTextBounds(text, 0, text.length, scratchTextBounds)
+            val textWidth = maxOf(scratchTextBounds.width().toFloat(), paint.measureText(text))
 
-            val left = startX + rect.left
-            val right = startX + rect.left + textWidth
-            val top = lineY + rect.top
-            val bottom = lineY + rect.bottom
+            val left = startX + scratchTextBounds.left
+            val right = startX + scratchTextBounds.left + textWidth
+            val top = lineY + scratchTextBounds.top
+            val bottom = lineY + scratchTextBounds.bottom
 
             if (shape == WatchShape.SQUARE) {
                 if (left < bounds.left + safeMargin ||
@@ -249,19 +249,18 @@ class OUATRenderer(private val context: Context) : TemplateRenderer {
                     return false
                 }
             } else {
-                // Round watch face: verify all 4 corners are inside safe radius
-                val corners = arrayOf(
-                    left to top,
-                    right to top,
-                    left to bottom,
-                    right to bottom
-                )
-                for ((cx, cy) in corners) {
-                    val dx = cx - centerX
-                    val dy = cy - centerY
-                    if (dx * dx + dy * dy > safeRadiusSq) {
-                        return false
-                    }
+                // Round watch face: verify all 4 corners are inside safe radius (without allocating Pair/Array)
+                val dxL = left - centerX
+                val dxR = right - centerX
+                val dyT = top - centerY
+                val dyB = bottom - centerY
+
+                if ((dxL * dxL + dyT * dyT > safeRadiusSq) ||
+                    (dxR * dxR + dyT * dyT > safeRadiusSq) ||
+                    (dxL * dxL + dyB * dyB > safeRadiusSq) ||
+                    (dxR * dxR + dyB * dyB > safeRadiusSq)
+                ) {
+                    return false
                 }
             }
         }

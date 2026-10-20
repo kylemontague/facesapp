@@ -14,8 +14,15 @@ object TimeUtils {
     const val DAY_ONLY = "dd"
     const val YEAR_ONLY = "yyyy"
 
+    private val formatterCache = object : ThreadLocal<MutableMap<String, SimpleDateFormat>>() {
+        override fun initialValue(): MutableMap<String, SimpleDateFormat> = mutableMapOf()
+    }
+
     fun formatDate(date: Date, pattern: String = UK_DATE, locale: Locale = Locale.getDefault()): String {
-        return SimpleDateFormat(pattern, locale).format(date)
+        val key = "$pattern-${locale.toLanguageTag()}"
+        val map = formatterCache.get() ?: mutableMapOf()
+        val formatter = map.getOrPut(key) { SimpleDateFormat(pattern, locale) }
+        return formatter.format(date)
     }
 
     /**

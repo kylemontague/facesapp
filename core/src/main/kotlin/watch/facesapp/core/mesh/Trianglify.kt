@@ -105,6 +105,16 @@ object Trianglify {
         return blendARGB(colors[index], colors[index + 1], localFactor)
     }
 
+    private val triangleCache = java.util.concurrent.ConcurrentHashMap<Long, List<Triangle>>()
+
+    fun getOrComputeTriangles(width: Int, height: Int, seed: Long = 42L): List<Triangle> {
+        val key = (width.toLong() shl 32) or (height.toLong() and 0xFFFFFFFFL) xor seed
+        return triangleCache.getOrPut(key) {
+            val points = generatePoints(width.toFloat(), height.toFloat(), seed = seed)
+            triangulate(points, width.toFloat(), height.toFloat())
+        }
+    }
+
     fun renderToBitmap(
         width: Int,
         height: Int,
@@ -113,11 +123,11 @@ object Trianglify {
     ): Bitmap {
         val w = width.coerceAtLeast(1)
         val h = height.coerceAtLeast(1)
-        val bitmap = createBitmap(w, h)
+        // RGB_565 cuts memory footprint by 50% compared to ARGB_8888 for opaque background mesh
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.RGB_565)
         val canvas = Canvas(bitmap)
 
-        val points = generatePoints(w.toFloat(), h.toFloat(), seed = seed)
-        val triangles = triangulate(points, w.toFloat(), h.toFloat())
+        val triangles = getOrComputeTriangles(w, h, seed)
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL

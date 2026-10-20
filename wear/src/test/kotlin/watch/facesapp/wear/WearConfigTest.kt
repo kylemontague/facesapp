@@ -31,4 +31,20 @@ class WearConfigTest {
         val colors = FaceConfig.defaultColorsForStyle(style)
         assertTrue(colors.isNotEmpty())
     }
+
+    @Test
+    fun testDynamicRefreshRate() {
+        // OUAT: 1000ms in active TIME mode, 60,000ms in ambient or complications
+        assertEquals(1000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.OUA_TIME, watch.facesapp.core.model.FaceMode.TIME, isAmbient = false))
+        assertEquals(60_000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.OUA_TIME, watch.facesapp.core.model.FaceMode.TIME, isAmbient = true))
+        assertEquals(60_000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.OUA_TIME, watch.facesapp.core.model.FaceMode.STEPS, isAmbient = false))
+
+        // Business Time: 1000ms in active TIME mode, 60,000ms in ambient or complications
+        assertEquals(1000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.BUSINESS_TIME, watch.facesapp.core.model.FaceMode.TIME, isAmbient = false))
+        assertEquals(60_000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.BUSINESS_TIME, watch.facesapp.core.model.FaceMode.BATTERY, isAmbient = false))
+
+        // Two Time & Prism: Always 60,000ms (no seconds representation)
+        assertEquals(60_000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.TWO_TIME, watch.facesapp.core.model.FaceMode.TIME, isAmbient = false))
+        assertEquals(60_000L, watch.facesapp.wear.renderer.FacesCanvasRenderer.calculateUpdateDelayMillis(FaceStyle.PRISM_TIME, watch.facesapp.core.model.FaceMode.TIME, isAmbient = false))
+    }
 }

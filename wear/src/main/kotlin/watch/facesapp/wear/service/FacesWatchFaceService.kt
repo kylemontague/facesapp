@@ -34,7 +34,6 @@ class FacesWatchFaceService : WatchFaceService() {
 
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var healthSensorManager: HealthSensorManager? = null
-    private var batteryReceiver: android.content.BroadcastReceiver? = null
 
     override fun createComplicationSlotsManager(
         currentUserStyleRepository: CurrentUserStyleRepository
@@ -174,7 +173,8 @@ class FacesWatchFaceService : WatchFaceService() {
                 healthState.heartRateBpm,
                 healthState.caloriesBurned ?: (s * 0.04f).toInt(),
                 healthState.distanceKm ?: (s * 0.000762f),
-                healthState.activeMinutes ?: (s / 100).toInt()
+                healthState.activeMinutes ?: (s / 100).toInt(),
+                force = false
             )
             if (renderer.faceMode in listOf(
                     FaceMode.STEPS,
@@ -187,20 +187,36 @@ class FacesWatchFaceService : WatchFaceService() {
             ) {
                 renderer.invalidate()
             }
-        }.apply {
-            start()
         }
         activeHealthManager = healthSensorManager
+
+        // Lifecycle-gated sensor control: sensors run only when the watch face is visible and in active (non-ambient) mode
+        serviceScope.launch {
+            kotlinx.coroutines.flow.combine(watchState.isAmbient, watchState.isVisible) { isAmbient, isVisible ->
+                (isVisible == true) && (isAmbient != true)
+            }.collect { isActivelyVisible ->
+                if (isActivelyVisible) {
+                    healthSensorManager?.start()
+                } else {
+                    healthSensorManager?.stop()
+                }
+            }
+        }
 
         // Live Calendar Event Check
         val calendarEventManager = CalendarEventManager(applicationContext)
         fun refreshCalendar() {
-            val event = calendarEventManager.getNextEvent()
-            if (event != null) {
-                renderer.complicationState = renderer.complicationState.copy(
-                    nextEventTitle = event.title,
-                    nextEventMinutes = event.minutesUntil
-                )
+            serviceScope.launch(Dispatchers.IO) {
+                val event = calendarEventManager.getNextEvent()
+                if (event != null) {
+                    renderer.complicationState = renderer.complicationState.copy(
+                        nextEventTitle = event.title,
+                        nextEventMinutes = event.minutesUntil
+                    )
+                    if (renderer.faceMode == FaceMode.NEXT_EVENT) {
+                        renderer.invalidate()
+                    }
+                }
             }
         }
         refreshCalendar()
@@ -217,18 +233,6 @@ class FacesWatchFaceService : WatchFaceService() {
                 )
             }
         }
-
-        // Register dynamic battery updates
-        val bReceiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(c: android.content.Context?, intent: android.content.Intent?) {
-                updateBattery()
-                if (renderer.faceMode == FaceMode.BATTERY) {
-                    renderer.invalidate()
-                }
-            }
-        }
-        batteryReceiver = bReceiver
-        applicationContext.registerReceiver(bReceiver, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
 
         // Listen to Wear OS system complication data sources (Steps & Heart Rate)
         serviceScope.launch {
@@ -290,6 +294,9 @@ class FacesWatchFaceService : WatchFaceService() {
 
                     val activeCycle = renderer.faceConfig.activeComplications
                     renderer.faceMode = renderer.faceMode.nextAvailable(activeCycle, renderer.complicationState)
+                    if (renderer.faceMode == FaceMode.HEART_RATE) {
+                        activeHealthManager?.triggerImmediateHeartRateSample()
+                    }
                     renderer.invalidate()
 
                     // Reset auto-revert timer to return to TIME (start of cycle) after 5 seconds of inactivity
@@ -317,12 +324,6 @@ class FacesWatchFaceService : WatchFaceService() {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
-        batteryReceiver?.let {
-            try {
-                applicationContext.unregisterReceiver(it)
-            } catch (_: Exception) {}
-        }
-        batteryReceiver = null
         syncStatusToDataClient(applicationContext, false)
         complicationRevertRunnable?.let { tapHandler.removeCallbacks(it) }
         complicationRevertRunnable = null
@@ -498,14 +499,22 @@ class FacesWatchFaceService : WatchFaceService() {
             activeHealthManager?.updateExternalSteps(steps)
         }
 
+        private var lastPhoneSyncTimeMs: Long = 0L
+
         fun syncHealthToPhone(
             context: android.content.Context,
             steps: Long,
             bpm: Int?,
             calories: Int,
             distance: Float,
-            activeMins: Int
+            activeMins: Int,
+            force: Boolean = false
         ) {
+            val now = System.currentTimeMillis()
+            if (!force && (now - lastPhoneSyncTimeMs < 15 * 60 * 1000L)) {
+                return // Throttle Bluetooth transmissions to at most once per 15 minutes unless forced
+            }
+            lastPhoneSyncTimeMs = now
             try {
                 val payload = "$steps|${bpm ?: 0}|$calories|$distance|$activeMins"
                 val bytes = payload.toByteArray(Charsets.UTF_8)

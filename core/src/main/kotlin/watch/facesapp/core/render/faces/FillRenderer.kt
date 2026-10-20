@@ -31,6 +31,11 @@ class FillRenderer(private val context: Context) : TemplateRenderer {
     private val clipPath = Path()
     private val rectF = RectF()
 
+    private val bgColors = IntArray(4)
+    private val bgPositions = FloatArray(4)
+    private val txtColors = IntArray(4)
+    private val txtPositions = FloatArray(4)
+
     override fun render(
         canvas: Canvas,
         bounds: Rect,
@@ -74,8 +79,8 @@ class FillRenderer(private val context: Context) : TemplateRenderer {
             }
 
             // Dual tone step gradient shader for background
-            val bgColors = intArrayOf(c1, c1, c2, c2)
-            val bgPositions = floatArrayOf(0f, split, split, 1f)
+            bgColors[0] = c1; bgColors[1] = c1; bgColors[2] = c2; bgColors[3] = c2
+            bgPositions[0] = 0f; bgPositions[1] = split; bgPositions[2] = split; bgPositions[3] = 1f
             bgPaint.shader = LinearGradient(
                 rectF.left, rectF.bottom, rectF.right, rectF.top,
                 bgColors, bgPositions, Shader.TileMode.CLAMP
@@ -84,8 +89,8 @@ class FillRenderer(private val context: Context) : TemplateRenderer {
             bgPaint.shader = null
 
             // Inverted dual tone shader for text
-            val txtColors = intArrayOf(c2, c2, c1, c1)
-            val txtPositions = floatArrayOf(0f, split, split, 1f)
+            txtColors[0] = c2; txtColors[1] = c2; txtColors[2] = c1; txtColors[3] = c1
+            txtPositions[0] = 0f; txtPositions[1] = split; txtPositions[2] = split; txtPositions[3] = 1f
             textPaint.shader = LinearGradient(
                 rectF.left, rectF.bottom, rectF.right, rectF.top,
                 txtColors, txtPositions, Shader.TileMode.CLAMP

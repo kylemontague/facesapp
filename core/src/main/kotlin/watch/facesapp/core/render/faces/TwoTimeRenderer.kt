@@ -41,6 +41,12 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
     private val clipPath = Path()
     private val rectF = RectF()
 
+    private var cachedGradient: LinearGradient? = null
+    private var cachedStartColor: Int = 0
+    private var cachedEndColor: Int = 0
+    private var cachedWidth: Float = 0f
+    private var cachedHeight: Float = 0f
+
     override fun render(
         canvas: Canvas,
         bounds: Rect,
@@ -72,10 +78,22 @@ class TwoTimeRenderer(private val context: Context) : TemplateRenderer {
             if (!isAmbient) {
                 val startColor = config.getBackgroundColor(isAmbient = false)
                 val endColor = config.getAccentColor(isAmbient = false)
-                bgPaint.shader = LinearGradient(
-                    rectF.left, rectF.bottom, rectF.right, rectF.top,
-                    startColor, endColor, Shader.TileMode.CLAMP
-                )
+                if (cachedGradient == null ||
+                    startColor != cachedStartColor ||
+                    endColor != cachedEndColor ||
+                    width != cachedWidth ||
+                    height != cachedHeight
+                ) {
+                    cachedStartColor = startColor
+                    cachedEndColor = endColor
+                    cachedWidth = width
+                    cachedHeight = height
+                    cachedGradient = LinearGradient(
+                        rectF.left, rectF.bottom, rectF.right, rectF.top,
+                        startColor, endColor, Shader.TileMode.CLAMP
+                    )
+                }
+                bgPaint.shader = cachedGradient
                 drawPaint(bgPaint)
                 bgPaint.shader = null
             } else {

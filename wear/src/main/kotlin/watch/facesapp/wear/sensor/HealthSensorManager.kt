@@ -35,14 +35,28 @@ class HealthSensorManager(
     private var hasRealHeartRate: Boolean = currentHeartRate > 0
 
     private var isListening = false
+    private var isSamplingHeartRate = false
+    private var lastHeartRateSampleTimeMs = 0L
+
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var lastSavedSteps: Long = currentSteps
+    private var lastDiskSaveTimeMs: Long = 0L
+
+    private val heartRateTimeoutRunnable = Runnable {
+        stopHeartRateSampling()
+        scheduleNextHeartRateSample(HEART_RATE_INTERVAL_MS)
+    }
+
+    private val periodicHeartRateRunnable = Runnable {
+        if (isListening) {
+            startHeartRateSampling()
+        }
+    }
 
     fun updateExternalSteps(steps: Long) {
         currentSteps = steps
         hasRealSteps = true
-        prefs.edit {
-            putString(KEY_SAVED_DATE, todayStr)
-                .putLong(KEY_TODAY_STEPS, steps)
-        }
+        persistHealthStateToDisk(force = false)
         notifyUpdate()
     }
 
@@ -59,11 +73,17 @@ class HealthSensorManager(
         if (isListening || sensorManager == null) return
         isListening = true
 
-        // 1. Step Counter Sensor
+        // 1. Register step counter
         registerStepSensor()
 
-        // 2. Heart Rate Sensor
-        registerHeartRateSensor()
+        // 2. Schedule or trigger initial periodic heart rate sample
+        val now = System.currentTimeMillis()
+        if (now - lastHeartRateSampleTimeMs >= HEART_RATE_INTERVAL_MS) {
+            startHeartRateSampling()
+        } else {
+            val remainingDelay = (HEART_RATE_INTERVAL_MS - (now - lastHeartRateSampleTimeMs)).coerceAtLeast(1000L)
+            scheduleNextHeartRateSample(remainingDelay)
+        }
 
         // Deliver initial state
         notifyUpdate()
@@ -75,12 +95,36 @@ class HealthSensorManager(
     }
 
     fun stop() {
-        if (!isListening || sensorManager == null) return
+        if (!isListening && !isSamplingHeartRate) return
         isListening = false
+
+        // Cancel periodic polling & timeouts
+        handler.removeCallbacks(periodicHeartRateRunnable)
+        handler.removeCallbacks(heartRateTimeoutRunnable)
+
+        // Stop optical PPG sensor immediately
+        stopHeartRateSampling()
+
+        // Unregister all listeners
         try {
-            sensorManager.unregisterListener(this)
+            sensorManager?.unregisterListener(this)
         } catch (e: Exception) {
             Log.w(TAG, "Error unregistering sensor listener", e)
+        }
+
+        // Flush any uncommitted steps or health stats to disk
+        persistHealthStateToDisk(force = true)
+    }
+
+    /**
+     * Triggered when the user explicitly navigates to the HEART_RATE complication,
+     * ensuring a fresh reading without waiting for the next periodic cycle.
+     */
+    fun triggerImmediateHeartRateSample() {
+        val now = System.currentTimeMillis()
+        if (!isSamplingHeartRate && (now - lastHeartRateSampleTimeMs > 30_000L)) {
+            handler.removeCallbacks(periodicHeartRateRunnable)
+            startHeartRateSampling()
         }
     }
 
@@ -110,24 +154,53 @@ class HealthSensorManager(
         }
     }
 
-    private fun registerHeartRateSensor() {
+    private fun startHeartRateSampling() {
         val sm = sensorManager ?: return
+        if (isSamplingHeartRate) return
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.BODY_SENSORS)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.d(TAG, "BODY_SENSORS permission not yet granted; heart rate listener deferred")
+            Log.d(TAG, "BODY_SENSORS permission not yet granted; heart rate sampling deferred")
+            scheduleNextHeartRateSample(HEART_RATE_INTERVAL_MS)
             return
         }
 
         try {
             val heartRateSensor = sm.getDefaultSensor(Sensor.TYPE_HEART_RATE)
             if (heartRateSensor != null) {
+                isSamplingHeartRate = true
                 sm.registerListener(this, heartRateSensor, SensorManager.SENSOR_DELAY_NORMAL)
-                Log.d(TAG, "Registered TYPE_HEART_RATE listener")
+                Log.d(TAG, "Started periodic TYPE_HEART_RATE sample (PPG active)")
+
+                // Automatically timeout sampling after 15s if no reading is obtained (e.g. watch off wrist)
+                handler.removeCallbacks(heartRateTimeoutRunnable)
+                handler.postDelayed(heartRateTimeoutRunnable, HEART_RATE_SAMPLE_TIMEOUT_MS)
             }
         } catch (e: SecurityException) {
             Log.w(TAG, "SecurityException registering heart rate sensor", e)
+            scheduleNextHeartRateSample(HEART_RATE_INTERVAL_MS)
         }
+    }
+
+    private fun stopHeartRateSampling() {
+        if (!isSamplingHeartRate) return
+        isSamplingHeartRate = false
+        handler.removeCallbacks(heartRateTimeoutRunnable)
+        val sm = sensorManager ?: return
+        try {
+            val heartRateSensor = sm.getDefaultSensor(Sensor.TYPE_HEART_RATE)
+            if (heartRateSensor != null) {
+                sm.unregisterListener(this, heartRateSensor)
+                Log.d(TAG, "Stopped TYPE_HEART_RATE sample (PPG powered off)")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error unregistering heart rate sensor", e)
+        }
+    }
+
+    private fun scheduleNextHeartRateSample(delayMs: Long) {
+        handler.removeCallbacks(periodicHeartRateRunnable)
+        handler.postDelayed(periodicHeartRateRunnable, delayMs)
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -141,7 +214,7 @@ class HealthSensorManager(
             Sensor.TYPE_STEP_DETECTOR -> {
                 hasRealSteps = true
                 currentSteps += 1
-                prefs.edit { putLong(KEY_TODAY_STEPS, currentSteps) }
+                persistHealthStateToDisk(force = false)
                 notifyUpdate()
             }
             Sensor.TYPE_HEART_RATE -> {
@@ -149,8 +222,13 @@ class HealthSensorManager(
                 if (bpm > 0) {
                     hasRealHeartRate = true
                     currentHeartRate = bpm
+                    lastHeartRateSampleTimeMs = System.currentTimeMillis()
                     prefs.edit { putInt(KEY_LAST_HEART_RATE, bpm) }
                     notifyUpdate()
+
+                    // Successful sample achieved: immediately shut down PPG LED to save battery!
+                    stopHeartRateSampling()
+                    scheduleNextHeartRateSample(HEART_RATE_INTERVAL_MS)
                 }
             }
         }
@@ -173,21 +251,36 @@ class HealthSensorManager(
         }
 
         currentSteps = (totalBootSteps - baseline).coerceAtLeast(0L)
-        prefs.edit { putLong(KEY_TODAY_STEPS, currentSteps) }
+        persistHealthStateToDisk(force = false)
+    }
+
+    /**
+     * Debounces writes to SharedPreferences to prevent constant flash I/O wakes.
+     * Persists if steps changed by >= 50, 60s has elapsed, or forced on lifecycle stop.
+     */
+    private fun persistHealthStateToDisk(force: Boolean) {
+        val now = System.currentTimeMillis()
+        if (force || kotlin.math.abs(currentSteps - lastSavedSteps) >= 50 || (now - lastDiskSaveTimeMs >= 60_000L)) {
+            lastDiskSaveTimeMs = now
+            lastSavedSteps = currentSteps
+            val calories = (currentSteps * 0.04f).toInt()
+            val distance = currentSteps * 0.000762f
+            val activeMins = (currentSteps / 100).toInt().coerceAtLeast(0)
+
+            prefs.edit {
+                putString(KEY_SAVED_DATE, todayStr)
+                putLong(KEY_TODAY_STEPS, currentSteps)
+                putInt("calories", calories)
+                putFloat("distance", distance)
+                putInt("active_mins", activeMins)
+            }
+        }
     }
 
     private fun notifyUpdate() {
         val calories = (currentSteps * 0.04f).toInt()
         val distance = currentSteps * 0.000762f
         val activeMins = (currentSteps / 100).toInt().coerceAtLeast(0)
-
-        prefs.edit {
-            putString(KEY_SAVED_DATE, todayStr)
-            putLong(KEY_TODAY_STEPS, currentSteps)
-            putInt("calories", calories)
-            putFloat("distance", distance)
-            putInt("active_mins", activeMins)
-        }
 
         // Sunrise / Sunset calculation (based on current hour and day of year)
         val now = java.time.LocalTime.now()
@@ -219,5 +312,9 @@ class HealthSensorManager(
         private const val KEY_BOOT_BASELINE = "boot_baseline"
         private const val KEY_TODAY_STEPS = "today_steps"
         private const val KEY_LAST_HEART_RATE = "last_heart_rate"
+
+        // Periodic sample every 3 minutes (180,000ms) with a 15s timeout
+        private const val HEART_RATE_INTERVAL_MS = 180_000L
+        private const val HEART_RATE_SAMPLE_TIMEOUT_MS = 15_000L
     }
 }

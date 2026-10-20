@@ -32,7 +32,8 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
 
     // Mesh bitmap cache
     private var cachedMeshBitmap: Bitmap? = null
-    private var cachedColors: List<Int>? = null
+    private var cachedBgColor: Int = 0
+    private var cachedAccentColor: Int = 0
     private var cachedWidth: Int = 0
     private var cachedHeight: Int = 0
 
@@ -63,10 +64,8 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
             clipPath(clipPath)
 
             if (!isAmbient) {
-                val meshColors = listOf(
-                    config.getBackgroundColor(isAmbient = false),
-                    config.getAccentColor(isAmbient = false)
-                )
+                val bg = config.getBackgroundColor(isAmbient = false)
+                val acc = config.getAccentColor(isAmbient = false)
 
                 val w = bounds.width()
                 val h = bounds.height()
@@ -75,13 +74,15 @@ class PrismRenderer(private val context: Context) : TemplateRenderer {
                 if (cachedMeshBitmap == null ||
                     cachedWidth != w ||
                     cachedHeight != h ||
-                    cachedColors != meshColors
+                    cachedBgColor != bg ||
+                    cachedAccentColor != acc
                 ) {
                     cachedMeshBitmap?.recycle()
-                    cachedMeshBitmap = Trianglify.renderToBitmap(w, h, meshColors)
+                    cachedMeshBitmap = Trianglify.renderToBitmap(w, h, listOf(bg, acc))
                     cachedWidth = w
                     cachedHeight = h
-                    cachedColors = meshColors
+                    cachedBgColor = bg
+                    cachedAccentColor = acc
                 }
 
                 cachedMeshBitmap?.let {
