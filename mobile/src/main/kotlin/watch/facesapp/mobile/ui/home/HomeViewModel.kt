@@ -180,11 +180,20 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        // 1 Hz live ticking clock
+        // Adaptive live ticking clock
         viewModelScope.launch {
             while (isActive) {
                 _calendar.value = Calendar.getInstance()
-                delay((if (_isAmbient.value) 10_000L else 1000L).milliseconds)
+                val isAmbient = _isAmbient.value
+                val mode = _faceMode.value
+                val activeFace = faceDao.getCurrentFace()
+                val style = activeFace?.style ?: FaceStyle.BUSINESS_TIME
+                val hasSeconds = !isAmbient && mode == FaceMode.TIME && when (style) {
+                    FaceStyle.BUSINESS_TIME, FaceStyle.OUA_TIME, FaceStyle.FILL_TIME -> true
+                    else -> false
+                }
+                val delayMs = if (hasSeconds) 1000L else 60_000L
+                delay(delayMs.milliseconds)
             }
         }
 
@@ -247,7 +256,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val periodicTicker: Flow<Long> = kotlinx.coroutines.flow.flow {
         while (kotlinx.coroutines.currentCoroutineContext().isActive) {
             emit(System.currentTimeMillis())
-            delay(30_000L)
+            delay(30_000L.milliseconds)
         }
     }
 
@@ -401,23 +410,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         complicationRevertJob?.cancel()
         if (_faceMode.value != FaceMode.TIME) {
             complicationRevertJob = viewModelScope.launch {
-                delay(5000L)
+                delay(5000L.milliseconds)
                 _faceMode.value = FaceMode.TIME
             }
         }
     }
 
-    fun toggleFaceMode() {
-        cycleFaceMode(complicationsRepo.activeComplications.value)
-    }
-
-    private fun getBatteryPercentage(context: android.content.Context): Int {
+    private fun getBatteryPercentage(context: Context): Int {
         return try {
             val intent = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
             val level = intent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
             val scale = intent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
             if (level >= 0 && scale > 0) (level * 100) / scale else 85
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             85
         }
     }

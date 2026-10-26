@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.view.SurfaceHolder
 import androidx.wear.watchface.CanvasType
-import androidx.wear.watchface.ComplicationSlotsManager
 import androidx.wear.watchface.DrawMode
 import androidx.wear.watchface.Renderer
 import androidx.wear.watchface.WatchState
@@ -23,7 +22,6 @@ class FacesCanvasRenderer(
     surfaceHolder: SurfaceHolder,
     watchState: WatchState,
     currentUserStyleRepository: CurrentUserStyleRepository,
-    private val complicationSlotsManager: ComplicationSlotsManager,
     canvasType: Int = CanvasType.HARDWARE
 ) : Renderer.CanvasRenderer2<Renderer.SharedAssets>(
     surfaceHolder = surfaceHolder,
@@ -106,6 +104,17 @@ class FacesCanvasRenderer(
 
     private val lowBitAmbientDrawFilter = android.graphics.PaintFlagsDrawFilter(android.graphics.Paint.ANTI_ALIAS_FLAG, 0)
 
+    private fun updateBattery() {
+        val batteryFilter = android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)
+        val batteryIntent = context.registerReceiver(null, batteryFilter)
+        val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+        if (level >= 0 && scale > 0) {
+            val pct = (level * 100) / scale
+            complicationState = complicationState.copy(batteryPercent = pct)
+        }
+    }
+
     override fun render(
         canvas: Canvas,
         bounds: Rect,
@@ -114,6 +123,10 @@ class FacesCanvasRenderer(
     ) {
         val isAmbient = renderParameters.drawMode == DrawMode.AMBIENT
         val shape = if (context.resources.configuration.isScreenRound) WatchShape.ROUND else WatchShape.SQUARE
+
+        if (!isAmbient) {
+            updateBattery()
+        }
 
         if (isAmbient) {
             if (faceMode != FaceMode.TIME) {

@@ -15,6 +15,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import watch.facesapp.mobile.data.sync.WearSyncManager
 import watch.facesapp.mobile.ui.theme.FacesTheme
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
 
@@ -62,7 +63,7 @@ class MainActivity : ComponentActivity() {
         previewHeartbeatJob?.cancel()
         previewHeartbeatJob = lifecycleScope.launch {
             while (isActive) {
-                delay(3000L)
+                delay(15000L.milliseconds)
                 syncManager.sendPreviewPing()
             }
         }

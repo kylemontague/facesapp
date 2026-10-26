@@ -5,18 +5,18 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
+import android.net.ConnectivityManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-
-import android.net.ConnectivityManager
-import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 data class WeatherInfo(
     val tempC: Int,
@@ -26,8 +26,24 @@ data class WeatherInfo(
 )
 
 class WeatherManager(private val context: Context) {
+    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     suspend fun fetchCurrentWeather(): WeatherInfo? = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        val cachedTime = prefs.getLong(KEY_CACHED_TIMESTAMP, 0L)
+        val fourHoursMs = 4 * 60 * 60 * 1000L
+
+        if (now - cachedTime < fourHoursMs) {
+            val cachedTemp = prefs.getInt(KEY_CACHED_TEMP, Int.MIN_VALUE)
+            val cachedCond = prefs.getString(KEY_CACHED_COND, null)
+            val cachedSummary = prefs.getString(KEY_CACHED_SUMMARY, null)
+            val cachedIsSunset = prefs.getBoolean(KEY_CACHED_IS_SUNSET, true)
+            if (cachedTemp != Int.MIN_VALUE && !cachedCond.isNullOrBlank() && !cachedSummary.isNullOrBlank()) {
+                Log.d(TAG, "Using cached weather (age ${(now - cachedTime) / 60000} minutes)")
+                return@withContext WeatherInfo(cachedTemp, cachedCond, cachedSummary, cachedIsSunset)
+            }
+        }
+
         val (lat, lon) = getApproximateCoordinates()
         val urlString = "https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current=temperature_2m,weather_code&daily=sunrise,sunset&timezone=auto"
         Log.d(TAG, "Requesting weather from: $urlString")
@@ -101,6 +117,14 @@ class WeatherManager(private val context: Context) {
                         isSunset = fallback.second
                     }
 
+                    prefs.edit {
+                        putLong(KEY_CACHED_TIMESTAMP, now)
+                        putInt(KEY_CACHED_TEMP, temp)
+                        putString(KEY_CACHED_COND, condition)
+                        putString(KEY_CACHED_SUMMARY, sunSummary)
+                        putBoolean(KEY_CACHED_IS_SUNSET, isSunset)
+                    }
+
                     Log.d(TAG, "Fetched live weather for ($lat, $lon): $temp°C, $condition, $sunSummary (isSunset=$isSunset)")
                     return@withContext WeatherInfo(temp, condition, sunSummary, isSunset)
                 } else {
@@ -114,7 +138,7 @@ class WeatherManager(private val context: Context) {
             } catch (e: Exception) {
                 Log.w(TAG, "Attempt $attempt failed fetching live weather: ${e.javaClass.simpleName} - ${e.message}")
                 if (attempt < 3) {
-                    delay(1000L * attempt)
+                    delay((1000L * attempt).milliseconds)
                 }
             } finally {
                 try {
@@ -124,7 +148,15 @@ class WeatherManager(private val context: Context) {
             }
         }
 
-        // Return null if offline or network unavailable so complication is not populated with dummy data
+        val cachedTemp = prefs.getInt(KEY_CACHED_TEMP, Int.MIN_VALUE)
+        val cachedCond = prefs.getString(KEY_CACHED_COND, null)
+        val cachedSummary = prefs.getString(KEY_CACHED_SUMMARY, null)
+        val cachedIsSunset = prefs.getBoolean(KEY_CACHED_IS_SUNSET, true)
+        if (cachedTemp != Int.MIN_VALUE && !cachedCond.isNullOrBlank() && !cachedSummary.isNullOrBlank()) {
+            Log.w(TAG, "Network fetch failed; falling back to cached weather")
+            return@withContext WeatherInfo(cachedTemp, cachedCond, cachedSummary, cachedIsSunset)
+        }
+
         null
     }
 
@@ -228,5 +260,11 @@ class WeatherManager(private val context: Context) {
 
     companion object {
         private const val TAG = "WeatherManager"
+        private const val PREFS_NAME = "faces_weather_cache_prefs"
+        private const val KEY_CACHED_TIMESTAMP = "cached_timestamp"
+        private const val KEY_CACHED_TEMP = "cached_temp"
+        private const val KEY_CACHED_COND = "cached_cond"
+        private const val KEY_CACHED_SUMMARY = "cached_summary"
+        private const val KEY_CACHED_IS_SUNSET = "cached_is_sunset"
     }
 }
